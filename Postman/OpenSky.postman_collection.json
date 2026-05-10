@@ -33,6 +33,80 @@
       }
     },
     {
+      "name": "Get AA Flights - North Carolina",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var template = `",
+              "<html>",
+              "<head>",
+              "    <link rel=\"stylesheet\" href=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.css\"/>",
+              "    <script src=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js\"><\\/script>",
+              "    <style>",
+              "        #map { height: 580px; width: 100%; }",
+              "        .flight-icon { font-size: 18px; }",
+              "    </style>",
+              "</head>",
+              "<body>",
+              "<div id=\"map\"></div>",
+              "<script>",
+              "    var map = L.map('map').setView([35.5, -79.5], 7);",
+              "    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {",
+              "        attribution: '© OpenStreetMap'",
+              "    }).addTo(map);",
+              "    var flights = {{{flights}}};",
+              "    flights.forEach(function(f) {",
+              "        if (f.lat && f.lon) {",
+              "            var icon = L.divIcon({ className: 'flight-icon', html: '✈️' });",
+              "            var marker = L.marker([f.lat, f.lon], { icon: icon }).addTo(map);",
+              "            marker.bindPopup(",
+              "                '<b>' + (f.callsign || 'Unknown') + '</b><br>' +",
+              "                'Country: ' + f.country + '<br>' +",
+              "                'Altitude: ' + (f.altitude ? Math.round(f.altitude) + ' m' : 'N/A') + '<br>' +",
+              "                'Speed: ' + (f.velocity ? Math.round(f.velocity) + ' m/s' : 'N/A') + '<br>' +",
+              "                'Heading: ' + (f.heading ? Math.round(f.heading) + '°' : 'N/A')",
+              "            );",
+              "        }",
+              "    });",
+              "<\\/script>",
+              "</body>",
+              "</html>`;",
+              "",
+              "var response = pm.response.json();",
+              "var flights = [];",
+              "",
+              "if (response.states) {",
+              "    response.states.forEach(function(s) {",
+              "        var callsign = s[1] ? s[1].trim() : '';",
+              "        if (callsign.startsWith('AAL')) {",
+              "            flights.push({",
+              "                icao24:   s[0],",
+              "                callsign: callsign,",
+              "                country:  s[2],",
+              "                lon:      s[5],",
+              "                lat:      s[6],",
+              "                altitude: s[7],",
+              "                velocity: s[9],",
+              "                heading:  s[10]",
+              "            });",
+              "        }",
+              "    });",
+              "}",
+              "",
+              "pm.visualizer.set(template, { flights: JSON.stringify(flights) });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/states/all?lamin=33.8&lomin=-84.3&lamax=36.6&lomax=-75.5"
+      }
+    },
+    {
       "name": "Get Flights - North Carolina",
       "event": [
         {
