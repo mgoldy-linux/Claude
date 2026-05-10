@@ -1,0 +1,128 @@
+{
+  "info": {
+    "name": "EIA - Jet Fuel",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.eia.gov/v2"
+    },
+    {
+      "key": "apiKey",
+      "value": "YOUR_API_KEY"
+    }
+  ],
+  "item": [
+    {
+      "name": "Browse Petroleum Categories",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/petroleum/pri/?api_key={{apiKey}}"
+      }
+    },
+    {
+      "name": "Browse Jet Fuel Products",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/petroleum/pri/spt/facet/product/?api_key={{apiKey}}"
+      }
+    },
+    {
+      "name": "Weekly Jet Fuel Prices",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var template = `",
+              "<html>",
+              "<head>",
+              "    <script src='https://cdn.jsdelivr.net/npm/chart.js'><\\/script>",
+              "    <style>",
+              "        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a2e; color: #eee; }",
+              "        h2 { color: #00d4ff; }",
+              "        .risk { color: #ff4444; font-weight: bold; font-size: 18px; margin-top: 10px; }",
+              "        .normal { color: #44ff88; font-weight: bold; font-size: 18px; margin-top: 10px; }",
+              "        canvas { margin-top: 20px; }",
+              "    </style>",
+              "</head>",
+              "<body>",
+              "    <h2>U.S. Gulf Coast Jet Fuel Spot Price ($/GAL)</h2>",
+              "    <div id='riskLabel'></div>",
+              "    <canvas id='chart' height='100'></canvas>",
+              "    <script>",
+              "        var data = {{{chartData}}};",
+              "        var threshold = 4.00;",
+              "        var latest = data.prices[data.prices.length - 1];",
+              "        var label = document.getElementById('riskLabel');",
+              "        if (latest >= threshold) {",
+              "            label.innerHTML = '<div class=\"risk\">⚠️ CANCELLATION RISK: $' + latest.toFixed(3) + '/GAL (above $' + threshold.toFixed(2) + ' threshold)</div>';",
+              "        } else {",
+              "            label.innerHTML = '<div class=\"normal\">✓ NORMAL: $' + latest.toFixed(3) + '/GAL (below $' + threshold.toFixed(2) + ' threshold)</div>';",
+              "        }",
+              "        new Chart(document.getElementById('chart'), {",
+              "            type: 'line',",
+              "            data: {",
+              "                labels: data.labels,",
+              "                datasets: [",
+              "                    {",
+              "                        label: 'Jet Fuel Price ($/GAL)',",
+              "                        data: data.prices,",
+              "                        borderColor: '#00d4ff',",
+              "                        backgroundColor: 'rgba(0,212,255,0.1)',",
+              "                        tension: 0.3,",
+              "                        pointRadius: 5,",
+              "                        pointBackgroundColor: data.prices.map(p => p >= threshold ? '#ff4444' : '#44ff88')",
+              "                    },",
+              "                    {",
+              "                        label: 'Cancellation Risk Threshold ($4.00)',",
+              "                        data: data.labels.map(() => threshold),",
+              "                        borderColor: '#ff4444',",
+              "                        borderDash: [6, 3],",
+              "                        borderWidth: 2,",
+              "                        pointRadius: 0",
+              "                    }",
+              "                ]",
+              "            },",
+              "            options: {",
+              "                plugins: { legend: { labels: { color: '#eee' } } },",
+              "                scales: {",
+              "                    x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },",
+              "                    y: {",
+              "                        ticks: { color: '#aaa', callback: v => '$' + v.toFixed(2) },",
+              "                        grid: { color: '#333' },",
+              "                        min: 2.00",
+              "                    }",
+              "                }",
+              "            }",
+              "        });",
+              "    <\\/script>",
+              "</body>",
+              "</html>`;",
+              "",
+              "var response = pm.response.json();",
+              "var labels = [];",
+              "var prices = [];",
+              "",
+              "if (response.response && response.response.data) {",
+              "    var sorted = response.response.data.slice().reverse();",
+              "    sorted.forEach(function(d) {",
+              "        labels.push(d.period);",
+              "        prices.push(parseFloat(d.value));",
+              "    });",
+              "}",
+              "",
+              "pm.visualizer.set(template, { chartData: JSON.stringify({ labels: labels, prices: prices }) });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/petroleum/pri/spt/data/?api_key={{apiKey}}&facets[product][]=EPJK&data[]=value&frequency=weekly&sort[0][column]=period&sort[0][direction]=desc&length=10"
+      }
+    }
+  ]
+}
