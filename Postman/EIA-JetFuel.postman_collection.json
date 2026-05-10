@@ -29,6 +29,20 @@
       }
     },
     {
+      "name": "Browse Petroleum Supply Categories",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/petroleum/sum/?api_key={{apiKey}}"
+      }
+    },
+    {
+      "name": "Browse Weekly Supply Products",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/petroleum/sum/sndw/facet/product/?api_key={{apiKey}}"
+      }
+    },
+    {
       "name": "Weekly Jet Fuel Prices",
       "event": [
         {
@@ -122,6 +136,105 @@
       "request": {
         "method": "GET",
         "url": "{{baseUrl}}/petroleum/pri/spt/data/?api_key={{apiKey}}&facets[product][]=EPJK&data[]=value&frequency=weekly&sort[0][column]=period&sort[0][direction]=desc&length=10"
+      }
+    }
+    ,{
+      "name": "Weekly Jet Fuel Supply",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var template = `",
+              "<html>",
+              "<head>",
+              "    <script src='https://cdn.jsdelivr.net/npm/chart.js'><\\/script>",
+              "    <style>",
+              "        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a2e; color: #eee; }",
+              "        h2 { color: #00d4ff; }",
+              "        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }",
+              "        .warning { color: #ff4444; font-weight: bold; font-size: 16px; margin-top: 10px; }",
+              "        .normal { color: #44ff88; font-weight: bold; font-size: 16px; margin-top: 10px; }",
+              "    </style>",
+              "</head>",
+              "<body>",
+              "    <h2>U.S. Commercial Jet Fuel Supply (MBBL/Day)</h2>",
+              "    <div id='riskLabel'></div>",
+              "    <div class='grid'>",
+              "        <canvas id='barChart'></canvas>",
+              "        <canvas id='trendChart'></canvas>",
+              "    </div>",
+              "    <script>",
+              "        var data = {{{chartData}}};",
+              "        new Chart(document.getElementById('barChart'), {",
+              "            type: 'bar',",
+              "            data: {",
+              "                labels: data.regions.map(r => r.name),",
+              "                datasets: [{",
+              "                    label: 'Production ' + data.latestWeek + ' (MBBL/D)',",
+              "                    data: data.regions.map(r => r.value),",
+              "                    backgroundColor: data.regions.map(r => r.name === 'East Coast' ? '#ff4444' : '#00d4ff')",
+              "                }]",
+              "            },",
+              "            options: {",
+              "                plugins: { title: { display: true, text: 'Production by Region (Latest Week)', color: '#eee' }, legend: { labels: { color: '#eee' } } },",
+              "                scales: { x: { ticks: { color: '#aaa' }, grid: { color: '#333' } }, y: { ticks: { color: '#aaa' }, grid: { color: '#333' } } }",
+              "            }",
+              "        });",
+              "        var usTotal = data.usTrend;",
+              "        var avg = usTotal.values.reduce((a, b) => a + b, 0) / usTotal.values.length;",
+              "        var latest = usTotal.values[usTotal.values.length - 1];",
+              "        var label = document.getElementById('riskLabel');",
+              "        if (latest < avg * 0.95) {",
+              "            label.innerHTML = '<div class=\"warning\">⚠️ SUPPLY RISK: U.S. production ' + latest + ' MBBL/D is more than 5% below 10-week average (' + Math.round(avg) + ' MBBL/D)</div>';",
+              "        } else {",
+              "            label.innerHTML = '<div class=\"normal\">✓ NORMAL: U.S. production ' + latest + ' MBBL/D is within normal range (10-week avg: ' + Math.round(avg) + ' MBBL/D)</div>';",
+              "        }",
+              "        new Chart(document.getElementById('trendChart'), {",
+              "            type: 'line',",
+              "            data: {",
+              "                labels: usTotal.periods,",
+              "                datasets: [",
+              "                    { label: 'U.S. Total (MBBL/D)', data: usTotal.values, borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.1)', tension: 0.3, pointRadius: 5 },",
+              "                    { label: '10-Week Average', data: usTotal.periods.map(() => Math.round(avg)), borderColor: '#ffaa00', borderDash: [6, 3], borderWidth: 2, pointRadius: 0 }",
+              "                ]",
+              "            },",
+              "            options: {",
+              "                plugins: { title: { display: true, text: 'U.S. Total Production Trend', color: '#eee' }, legend: { labels: { color: '#eee' } } },",
+              "                scales: { x: { ticks: { color: '#aaa' }, grid: { color: '#333' } }, y: { ticks: { color: '#aaa' }, grid: { color: '#333' } } }",
+              "            }",
+              "        });",
+              "    <\\/script>",
+              "</body>",
+              "</html>`;",
+              "",
+              "var response = pm.response.json();",
+              "var regions = {};",
+              "var usTrend = { periods: [], values: [] };",
+              "var latestWeek = '';",
+              "",
+              "if (response.response && response.response.data) {",
+              "    var d = response.response.data;",
+              "    var latestPeriod = d[0].period;",
+              "    latestWeek = latestPeriod;",
+              "    d.forEach(function(r) {",
+              "        if (r.period === latestPeriod && r.duoarea !== 'NUS') regions[r['area-name']] = parseFloat(r.value);",
+              "    });",
+              "    var usByPeriod = {};",
+              "    d.forEach(function(r) { if (r.duoarea === 'NUS') usByPeriod[r.period] = parseFloat(r.value); });",
+              "    Object.keys(usByPeriod).sort().forEach(function(p) { usTrend.periods.push(p); usTrend.values.push(usByPeriod[p]); });",
+              "}",
+              "",
+              "var regionList = Object.keys(regions).map(function(k) { return { name: k, value: regions[k] }; }).sort(function(a,b) { return b.value - a.value; });",
+              "pm.visualizer.set(template, { chartData: JSON.stringify({ regions: regionList, usTrend: usTrend, latestWeek: latestWeek }) });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/petroleum/sum/sndw/data/?api_key={{apiKey}}&facets[product][]=EPJKC&data[]=value&frequency=weekly&sort[0][column]=period&sort[0][direction]=desc&length=10"
       }
     }
   ]
