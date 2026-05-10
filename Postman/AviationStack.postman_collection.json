@@ -1,0 +1,53 @@
+{
+  "info": {
+    "name": "Aviation Stack",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://api.aviationstack.com/v1"
+    },
+    {
+      "key": "apiKey",
+      "value": "YOUR_API_KEY"
+    }
+  ],
+  "item": [
+    {
+      "name": "Get Live Flights",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/flights?access_key={{apiKey}}"
+      }
+    },
+    {
+      "name": "Get Flight by IATA",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/flights?access_key={{apiKey}}&flight_iata=AA100"
+      }
+    },
+    {
+      "name": "Get Flights by Airport",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/flights?access_key={{apiKey}}&dep_iata=KJFK"
+      }
+    },
+    {
+      "name": "Get Airports",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/airports?access_key={{apiKey}}"
+      }
+    },
+    {
+      "name": "Get Airlines",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/airlines?access_key={{apiKey}}"
+      }
+    }
+  ]
+}
