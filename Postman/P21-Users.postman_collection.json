@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "P21 - Users",
-    "description": "Get active P21 users via P21 API.\nPrerequisite: set {{base_url}} in your environment, then paste your Bearer token into the collection Authorization tab.\nIMPORTANT: Disable SSL certificate verification in Postman Settings (internal cert).",
+    "description": "P21 API collection — sessions, server info, DynaChange, inventory, and orders.\nPrerequisite: set {{base_url}} and run 'Get Token' first.\nIMPORTANT: Disable SSL certificate verification in Postman Settings (internal cert).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -24,6 +24,10 @@
       "value": ""
     },
     {
+      "key": "token_expires_at",
+      "value": ""
+    },
+    {
       "key": "username",
       "value": "mgoldyn"
     },
@@ -36,11 +40,31 @@
       "value": ""
     },
     {
+      "key": "sessionId",
+      "value": ""
+    },
+    {
       "key": "windowId",
       "value": ""
     },
     {
-      "key": "sessionId",
+      "key": "orderId",
+      "value": ""
+    },
+    {
+      "key": "itemId",
+      "value": ""
+    },
+    {
+      "key": "locationId",
+      "value": "100"
+    },
+    {
+      "key": "customerId",
+      "value": ""
+    },
+    {
+      "key": "dynachangeId",
       "value": ""
     }
   ],
@@ -53,15 +77,27 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "var json = pm.response.json();",
-              "console.log('Auth response:', JSON.stringify(json, null, 2));",
-              "var token = json.token || json.Token || json.access_token || json.AccessToken;",
-              "if (token) {",
-              "    pm.collectionVariables.set('token', token);",
-              "    console.log('Token saved: ' + token.substring(0, 30) + '...');",
-              "} else {",
-              "    console.warn('Token NOT found - check full response above');",
-              "}"
+              "var xml2js = require('xml2js');",
+              "xml2js.parseString(pm.response.text(), { explicitArray: false, ignoreAttrs: true }, function(err, result) {",
+              "    if (err) { console.error('XML parse error: ' + err); return; }",
+              "    var tokenRoot = result['act:Token'] || result['Token'] || {};",
+              "    var accessToken = tokenRoot['AccessToken'];",
+              "    var expiresIn   = tokenRoot['ExpiresIn'];",
+              "    if (accessToken) {",
+              "        pm.collectionVariables.set('token', accessToken);",
+              "        console.log('Token saved: ' + accessToken.substring(0, 30) + '...');",
+              "    } else {",
+              "        console.warn('AccessToken not found. Full response: ' + JSON.stringify(result));",
+              "    }",
+              "    if (expiresIn) {",
+              "        var secs = parseInt(expiresIn, 10);",
+              "        if (!isNaN(secs)) {",
+              "            var expiresAt = Date.now() + (secs * 1000);",
+              "            pm.collectionVariables.set('token_expires_at', expiresAt.toString());",
+              "            console.log('Token expires at: ' + new Date(expiresAt).toLocaleTimeString());",
+              "        }",
+              "    }",
+              "});"
             ]
           }
         }
@@ -75,6 +111,76 @@
           { "key": "appKey",   "value": "{{consumer_key}}" }
         ],
         "url": "{{base_url}}/api/security/token/"
+      }
+    },
+    {
+      "name": "Get P21 Info",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var xml2js = require('xml2js');",
+              "xml2js.parseString(pm.response.text(), { explicitArray: false, ignoreAttrs: true }, function(err, result) {",
+              "    if (err) { console.log('Response (raw):', pm.response.text()); return; }",
+              "    var info = result.UiServerInfo || result;",
+              "    console.log('=== P21 Server Info ===');",
+              "    if (info.ServerVersion)  console.log('Version:      ' + info.ServerVersion);",
+              "    if (info.ServerName)     console.log('Server:       ' + info.ServerName);",
+              "    if (info.DatabaseName)   console.log('Database:     ' + info.DatabaseName);",
+              "    if (info.CompanyName)    console.log('Company:      ' + info.CompanyName);",
+              "    if (info.LicenseCount)   console.log('Licenses:     ' + info.LicenseCount);",
+              "    if (info.ActiveSessions) console.log('Active users: ' + info.ActiveSessions);",
+              "    console.log('--- Full response ---');",
+              "    console.log(JSON.stringify(result, null, 2));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/uiserver0/ui/common/v1/info/"
+      }
+    },
+    {
+      "name": "Get File Handler Settings",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "console.log('File Handler Settings:', pm.response.text());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/uiserver0/api/ui/settings/filehandlersettings"
+      }
+    },
+    {
+      "name": "Get Print Settings",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "console.log('Print Settings:', pm.response.text());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/uiserver0/api/ui/settings/print"
       }
     },
     {
@@ -96,11 +202,10 @@
               "        return { userId: s['a:UserId'][0], sessionId: s['a:SessionId'][0], sessionStart: raw, time: time };",
               "    });",
               "    sessions.sort(function(a, b) { return a.sessionStart.localeCompare(b.sessionStart); });",
-              "    // Save first sessionId so 'Get Session Detail' can use it immediately",
               "    pm.collectionVariables.set('sessionId', sessions[0].sessionId);",
               "    console.log('--- Logged in users (' + sessions.length + ') ---');",
               "    console.log('(sessionId set to first row - change {{sessionId}} variable to target a different user)');",
-              "    sessions.forEach(function(s, i) {",
+              "    sessions.forEach(function(s) {",
               "        console.log(s.userId.padEnd(14) + s.time + '   ' + s.sessionId);",
               "    });",
               "});"
@@ -126,13 +231,10 @@
               "xml2js.parseString(pm.response.text(), function(err, result) {",
               "    if (err) { console.error('Parse error:', err); return; }",
               "    var s = result.SessionState;",
-              "",
-              "    // Build attrs lookup",
               "    var attrs = {};",
               "    s.Attributes[0].SessionAttribute.forEach(function(a) {",
               "        attrs[a.Name[0]] = a.Value[0];",
               "    });",
-              "",
               "    function fmtBytes(b) {",
               "        var n = parseInt(b);",
               "        if (n >= 1048576) return (n / 1048576).toFixed(1) + ' MB';",
@@ -140,14 +242,12 @@
               "        return n + ' B';",
               "    }",
               "    function fmtTime(iso) { return iso.substring(11, 16); }",
-              "",
               "    console.log('=== ' + s.UserId[0] + ' ===');",
               "    console.log('Logged in:   ' + fmtTime(s.SessionStart[0]));",
               "    console.log('Last access: ' + fmtTime(attrs.LastAccess));",
               "    console.log('CPU time:    ' + attrs.ProcessorTime.substring(0, 8));",
               "    console.log('Memory:      ' + fmtBytes(attrs.Memory));",
               "    console.log('Proc memory: ' + fmtBytes(attrs.ProcessMemory));",
-              "",
               "    var windows = s.Windows && s.Windows[0].WindowState;",
               "    if (windows && windows.length) {",
               "        windows.sort(function(a, b) { return b.LastAccess[0].localeCompare(a.LastAccess[0]); });",
@@ -167,6 +267,127 @@
         "method": "GET",
         "header": [],
         "url": "{{base_url}}/uiserver0/ui/common/v1/admin/session/{{sessionId}}?windows=true"
+      }
+    },
+    {
+      "name": "Get DynaChange Versions for User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "console.log('DynaChange versions:', pm.response.text());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/uiserver0/extensibility/dynachange/design/versions?userId={{username}}&location={{locationId}}"
+      }
+    },
+    {
+      "name": "Get DynaChange Assignments",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "console.log('DynaChange assignments:', pm.response.text());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/uiserver0/extensibility/dynachange/versionmanager/assignments"
+      }
+    },
+    {
+      "name": "Get DynaChange Version Detail",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "console.log('DynaChange version detail:', pm.response.text());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/uiserver0/extensibility/dynachange/versionmanager/versiondetailobjects?id={{dynachangeId}}&type=detail"
+      }
+    },
+    {
+      "name": "Get Item Availability",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "console.log('Item availability:', pm.response.text());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/api/inventory/v2/parts/availability?itemId={{itemId}}&locationId={{locationId}}"
+      }
+    },
+    {
+      "name": "Get Item Price",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "console.log('Item price:', pm.response.text());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "<GetItemPrice>\n  <Request>\n    <B2BSellerVersion>\n      <MajorVersion xmlns=\"Request\">5</MajorVersion>\n      <MinorVersion xmlns=\"Request\">11</MinorVersion>\n      <BuildNumber xmlns=\"Request\">100</BuildNumber>\n    </B2BSellerVersion>\n    <CustomerCode>{{customerId}}</CustomerCode>\n    <StoreName>1</StoreName>\n    <LocationID>{{locationId}}</LocationID>\n    <GetAvailabilityOnly>FALSE</GetAvailabilityOnly>\n    <ShipToID>{{customerId}}</ShipToID>\n    <ListOfItems>\n      <Item>\n        <ItemID xmlns=\"Request\">{{itemId}}</ItemID>\n        <Quantity xmlns=\"Request\">1</Quantity>\n        <UnitName xmlns=\"Request\">EA</UnitName>\n      </Item>\n    </ListOfItems>\n    <GetListOfItemLocationQuantities>FALSE</GetListOfItemLocationQuantities>\n  </Request>\n</GetItemPrice>",
+          "options": {
+            "raw": { "language": "xml" }
+          }
+        },
+        "url": "{{base_url}}/api/ecommerce"
+      }
+    },
+    {
+      "name": "Get Order Info",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "console.log('Order info:', pm.response.text());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/api/sales/orders/{{orderId}}"
       }
     },
     {

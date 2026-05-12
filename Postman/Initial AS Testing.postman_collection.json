@@ -1,0 +1,526 @@
+{
+  "info": {
+    "_postman_id": "a930769c-150b-4e79-ad34-06a6dd72e1ce",
+    "name": "Initial AS Testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "16327396",
+    "_collection_link": "https://go.postman.co/collection/16327396-a930769c-150b-4e79-ad34-06a6dd72e1ce?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Post Get P21 Bearer Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              " var xml2js = require('xml2js');                                                                                                                                                                                                                                              ",
+              "  xml2js.parseString(pm.response.text(), { explicitArray: false, ignoreAttrs: true }, function(err, result) {",
+              "      if (err) {",
+              "          console.error(\"XML parse error: \" + err);",
+              "          return;",
+              "      }",
+              "",
+              "      console.log(\"Parsed XML: \" + JSON.stringify(result));",
+              "",
+              "      var tokenRoot = result[\"act:Token\"] || result[\"Token\"] || {};",
+              "",
+              "      var accessToken = tokenRoot[\"AccessToken\"];",
+              "      var tokenType = tokenRoot[\"TokenType\"] || \"Bearer\";",
+              "      var expiresIn = tokenRoot[\"ExpiresIn\"];",
+              "",
+              "      if (accessToken) {",
+              "          pm.environment.set(\"AccessToken\", accessToken);",
+              "          console.log(\"AccessToken set successfully\");",
+              "      } else {",
+              "          console.warn(\"AccessToken not found. Full object: \" + JSON.stringify(result));",
+              "      }",
+              "",
+              "      pm.environment.set(\"TokenType\", tokenType);",
+              "",
+              "      if (expiresIn) {",
+              "          var expiresSeconds = parseInt(expiresIn, 10);",
+              "          if (!isNaN(expiresSeconds)) {",
+              "              var expiresAt = Date.now() + (expiresSeconds * 1000);",
+              "              pm.environment.set(\"token_expires_at\", expiresAt.toString());",
+              "              console.log(\"token_expires_at set to: \" + expiresAt);",
+              "          }",
+              "      }",
+              "  });",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "username",
+            "value": "{{username}}",
+            "type": "text"
+          },
+          {
+            "key": "password",
+            "value": "{{password}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/security/token/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "security",
+            "token",
+            ""
+          ],
+          "query": [
+            {
+              "key": "",
+              "value": null,
+              "type": "text",
+              "disabled": true
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get File Handler Settings",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{Endpoint}}/uiserver0/api/ui/settings/filehandlersettings",
+          "host": [
+            "{{Endpoint}}"
+          ],
+          "path": [
+            "uiserver0",
+            "api",
+            "ui",
+            "settings",
+            "filehandlersettings"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Print Settings",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{Endpoint}}/uiserver0/api/ui/settings/print",
+          "host": [
+            "{{Endpoint}}"
+          ],
+          "path": [
+            "uiserver0",
+            "api",
+            "ui",
+            "settings",
+            "print"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get P21 Help",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{Endpoint}}/api/help/location?name={USERNAME}&email={EMAIL}&topic={TOPIC}\n",
+          "host": [
+            "{{Endpoint}}"
+          ],
+          "path": [
+            "api",
+            "help",
+            "location"
+          ],
+          "query": [
+            {
+              "key": "name",
+              "value": "{USERNAME}"
+            },
+            {
+              "key": "email",
+              "value": "{EMAIL}"
+            },
+            {
+              "key": "topic",
+              "value": "{TOPIC}\n"
+            }
+          ]
+        },
+        "description": "Returns a link , click on the link wrong way to log in"
+      },
+      "response": []
+    },
+    {
+      "name": "Get P21 Info",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{AccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/uiserver0/ui/common/v1/info/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "uiserver0",
+            "ui",
+            "common",
+            "v1",
+            "info",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get DynaChange version for user",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{Endpoint}}/uiserver0/extensibility/dynachange/design/versions?userId={mgoldyn}&location={100}",
+          "host": [
+            "{{Endpoint}}"
+          ],
+          "path": [
+            "uiserver0",
+            "extensibility",
+            "dynachange",
+            "design",
+            "versions"
+          ],
+          "query": [
+            {
+              "key": "userId",
+              "value": "{mgoldyn}"
+            },
+            {
+              "key": "location",
+              "value": "{100}"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get P21 DynaChanges Assignments",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhaGkubG9jYWxcXG1nb2xkeW4iLCJhdWQiOiIiLCJQMjEuU2Vzc2lvbklkIjoiNmY4NTQ3NjUtYzNlMC00MDY1LWE0M2YtYThkMmQwZmM2M2UzIiwibmJmIjoxNzQ3MzMxODg2LCJleHAiOjE3NDc0MTgyODYsImlhdCI6MTc0NzMzMTg4NiwiaXNzIjoiUDIxLlNvYSJ9.8sQngo0icnWT1e6DDXEWNYoz_oa0poLrhyVungxlG1M",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{Endpoint}}/uiserver0/extensibility/dynachange/versionmanager/assignments",
+          "host": [
+            "{{Endpoint}}"
+          ],
+          "path": [
+            "uiserver0",
+            "extensibility",
+            "dynachange",
+            "versionmanager",
+            "assignments"
+          ]
+        },
+        "description": "Get all assignees (user/roles) assigned to a specific design"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Item ID Availability",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{Endpoint}}/api/inventory/v2/parts/availability?itemId={MAP1559508}&locationId={100}",
+          "host": [
+            "{{Endpoint}}"
+          ],
+          "path": [
+            "api",
+            "inventory",
+            "v2",
+            "parts",
+            "availability"
+          ],
+          "query": [
+            {
+              "key": "itemId",
+              "value": "{MAP1559508}"
+            },
+            {
+              "key": "locationId",
+              "value": "{100}"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Dynachange Verision",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{Endpoint}}/uiserver0/extensibility/dynachange/versionmanager/versiondetailobjects?id={2}&type={detail}",
+          "host": [
+            "{{Endpoint}}"
+          ],
+          "path": [
+            "uiserver0",
+            "extensibility",
+            "dynachange",
+            "versionmanager",
+            "versiondetailobjects"
+          ],
+          "query": [
+            {
+              "key": "id",
+              "value": "{2}"
+            },
+            {
+              "key": "type",
+              "value": "{detail}"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get-Item-Price",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{AccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": " <GetItemPrice>\r\n  <Request>\r\n    <B2BSellerVersion>\r\n      <MajorVersion xmlns=\"Request\">5</MajorVersion>\r\n      <MinorVersion xmlns=\"Request\">11</MinorVersion>\r\n      <BuildNumber xmlns=\"Request\">100</BuildNumber>\r\n    </B2BSellerVersion>\r\n    <CustomerCode>3021881</CustomerCode>\r\n    <StoreName>1</StoreName>\r\n    <LocationID>100</LocationID>\r\n    <GetAvailabilityOnly>FALSE</GetAvailabilityOnly>\r\n    <ShipToID>3021881</ShipToID>\r\n    <ListOfItems>\r\n      <Item>\r\n        <ItemID xmlns=\"Request\">HBF15030396</ItemID>\r\n        <Quantity xmlns=\"Request\">1</Quantity>\r\n        <UnitName xmlns=\"Request\">EA</UnitName>\r\n      </Item>\r\n    </ListOfItems>\r\n    <GetListOfItemLocationQuantities>FALSE</GetListOfItemLocationQuantities>\r\n  </Request>\r\n</GetItemPrice>",
+          "options": {
+            "raw": {
+              "language": "xml"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/ecommerce",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ecommerce"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get-Item-Price-Mx",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{AccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": " <GetItemPrice>\r\n  <Request>\r\n    <B2BSellerVersion>\r\n      <MajorVersion xmlns=\"Request\">5</MajorVersion>\r\n      <MinorVersion xmlns=\"Request\">11</MinorVersion>\r\n      <BuildNumber xmlns=\"Request\">100</BuildNumber>\r\n    </B2BSellerVersion>\r\n    <CustomerCode>3021881</CustomerCode>\r\n    <StoreName>1</StoreName>\r\n    <LocationID>100</LocationID>\r\n    <GetAvailabilityOnly>FALSE</GetAvailabilityOnly>\r\n    <ShipToID>3021881</ShipToID>\r\n    <ListOfItems>\r\n      <Item>\r\n        <ItemID xmlns=\"Request\">SCHLTECD1W</ItemID>\r\n        <Quantity xmlns=\"Request\">1</Quantity>\r\n        <UnitName xmlns=\"Request\">EA</UnitName>\r\n      </Item>\r\n    </ListOfItems>\r\n    <GetListOfItemLocationQuantities>FALSE</GetListOfItemLocationQuantities>\r\n  </Request>\r\n</GetItemPrice>",
+          "options": {
+            "raw": {
+              "language": "xml"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/ecommerce",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "ecommerce"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Order Info from Order No",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{AccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/sales/orders/5664671",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "sales",
+            "orders",
+            "5664671"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get the server information",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{AccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/uiserver0/ui/common/v1/serverinfo/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "uiserver0",
+            "ui",
+            "common",
+            "v1",
+            "serverinfo",
+            ""
+          ]
+        },
+        "description": "Only Returns a 1"
+      },
+      "response": []
+    }
+  ]
+}
