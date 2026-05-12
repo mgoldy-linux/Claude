@@ -33,18 +33,21 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "var json = xml2Json(pm.response.text());",
-              "var states = json.UiServerInfo.SessionStates['a:SessionState'];",
-              "if (!Array.isArray(states)) { states = [states]; }",
-              "var sessions = states.map(function(s) {",
-              "    var raw  = s['a:SessionStart'];",
-              "    var time = raw.substring(11, 16);",
-              "    return { userId: s['a:UserId'], sessionStart: raw, time: time };",
-              "});",
-              "sessions.sort(function(a, b) { return a.sessionStart.localeCompare(b.sessionStart); });",
-              "console.log('--- Logged in users (' + sessions.length + ') ---');",
-              "sessions.forEach(function(s) {",
-              "    console.log(s.userId.padEnd(14) + s.time);",
+              "var xml2js = require('xml2js');",
+              "xml2js.parseString(pm.response.text(), function(err, result) {",
+              "    if (err) { console.error('Parse error:', err); return; }",
+              "    var states = result.UiServerInfo.SessionStates[0]['a:SessionState'];",
+              "    if (!Array.isArray(states)) { states = [states]; }",
+              "    var sessions = states.map(function(s) {",
+              "        var raw  = s['a:SessionStart'][0];",
+              "        var time = raw.substring(11, 16);",
+              "        return { userId: s['a:UserId'][0], sessionStart: raw, time: time };",
+              "    });",
+              "    sessions.sort(function(a, b) { return a.sessionStart.localeCompare(b.sessionStart); });",
+              "    console.log('--- Logged in users (' + sessions.length + ') ---');",
+              "    sessions.forEach(function(s) {",
+              "        console.log(s.userId.padEnd(14) + s.time);",
+              "    });",
               "});"
             ]
           }
