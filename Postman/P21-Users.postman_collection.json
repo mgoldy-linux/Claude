@@ -22,6 +22,10 @@
     {
       "key": "windowId",
       "value": ""
+    },
+    {
+      "key": "sessionId",
+      "value": ""
     }
   ],
   "item": [
@@ -41,12 +45,15 @@
               "    var sessions = states.map(function(s) {",
               "        var raw  = s['a:SessionStart'][0];",
               "        var time = raw.substring(11, 16);",
-              "        return { userId: s['a:UserId'][0], sessionStart: raw, time: time };",
+              "        return { userId: s['a:UserId'][0], sessionId: s['a:SessionId'][0], sessionStart: raw, time: time };",
               "    });",
               "    sessions.sort(function(a, b) { return a.sessionStart.localeCompare(b.sessionStart); });",
+              "    // Save first sessionId so 'Get Session Detail' can use it immediately",
+              "    pm.collectionVariables.set('sessionId', sessions[0].sessionId);",
               "    console.log('--- Logged in users (' + sessions.length + ') ---');",
-              "    sessions.forEach(function(s) {",
-              "        console.log(s.userId.padEnd(14) + s.time);",
+              "    console.log('(sessionId set to first row - change {{sessionId}} variable to target a different user)');",
+              "    sessions.forEach(function(s, i) {",
+              "        console.log(s.userId.padEnd(14) + s.time + '   ' + s.sessionId);",
               "    });",
               "});"
             ]
@@ -57,6 +64,29 @@
         "method": "GET",
         "header": [],
         "url": "{{base_url}}/uiserver0/ui/common/v1/admin/info"
+      }
+    },
+    {
+      "name": "Get Session Detail",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var xml2js = require('xml2js');",
+              "xml2js.parseString(pm.response.text(), function(err, result) {",
+              "    if (err) { console.error('Parse error:', err); return; }",
+              "    console.log('Session detail:', JSON.stringify(result, null, 2));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/uiserver0/ui/common/v1/admin/session/{{sessionId}}?windows=true"
       }
     },
     {
