@@ -16,8 +16,24 @@
   },
   "variable": [
     {
+      "key": "base_url",
+      "value": "https://p21upgrade.allsurfaces.com:3450"
+    },
+    {
       "key": "token",
-      "value": "PASTE_YOUR_BEARER_TOKEN_HERE"
+      "value": ""
+    },
+    {
+      "key": "username",
+      "value": "mgoldyn"
+    },
+    {
+      "key": "consumer_key",
+      "value": "73844b21-3b37-4d24-9db5-2bf9e143c53c"
+    },
+    {
+      "key": "password",
+      "value": ""
     },
     {
       "key": "windowId",
@@ -29,6 +45,38 @@
     }
   ],
   "item": [
+    {
+      "name": "Get Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var json = pm.response.json();",
+              "console.log('Auth response:', JSON.stringify(json, null, 2));",
+              "var token = json.token || json.Token || json.access_token || json.AccessToken;",
+              "if (token) {",
+              "    pm.collectionVariables.set('token', token);",
+              "    console.log('Token saved: ' + token.substring(0, 30) + '...');",
+              "} else {",
+              "    console.warn('Token NOT found - check full response above');",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "username", "value": "{{username}}" },
+          { "key": "password", "value": "{{password}}" },
+          { "key": "appKey",   "value": "{{consumer_key}}" }
+        ],
+        "url": "{{base_url}}/api/security/token/"
+      }
+    },
     {
       "name": "Who Is Logged In Right Now",
       "event": [
