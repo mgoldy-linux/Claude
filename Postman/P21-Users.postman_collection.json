@@ -1,0 +1,180 @@
+{
+  "info": {
+    "name": "P21 - Users",
+    "description": "Get active P21 users via P21 API.\nPrerequisite: set {{base_url}} in your environment, then paste your Bearer token into the collection Authorization tab.\nIMPORTANT: Disable SSL certificate verification in Postman Settings (internal cert).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "token",
+      "value": "PASTE_YOUR_BEARER_TOKEN_HERE"
+    },
+    {
+      "key": "windowId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Who Is Logged In Right Now",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var json = xml2Json(pm.response.text());",
+              "var states = json.UiServerInfo.SessionStates['a:SessionState'];",
+              "if (!Array.isArray(states)) { states = [states]; }",
+              "var sessions = states.map(function(s) {",
+              "    var raw  = s['a:SessionStart'];",
+              "    var time = raw.substring(11, 16);",
+              "    return { userId: s['a:UserId'], sessionStart: raw, time: time };",
+              "});",
+              "sessions.sort(function(a, b) { return a.sessionStart.localeCompare(b.sessionStart); });",
+              "console.log('--- Logged in users (' + sessions.length + ') ---');",
+              "sessions.forEach(function(s) {",
+              "    console.log(s.userId.padEnd(14) + s.time);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/uiserver0/ui/common/v1/admin/info"
+      }
+    },
+    {
+      "name": "0a - Check Session",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "console.log('Session response:', pm.response.text());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/uiserver0/ui/common/v1/sessions"
+      }
+    },
+    {
+      "name": "0b - Browse Menu (find User Maintenance menuId)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var text = pm.response.text();",
+              "console.log('Full menu response:', text);",
+              "var lines = text.split('\\n');",
+              "var hits  = lines.filter(function(l) {",
+              "    return l.toLowerCase().indexOf('user') > -1;",
+              "});",
+              "console.log('Lines containing \"user\":', hits.join('\\n'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/uiserver0/ui/full/v1/menu"
+      }
+    },
+    {
+      "name": "1 - Open User Window",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var text = pm.response.text();",
+              "console.log('Window open response:', text);",
+              "try {",
+              "    var json = pm.response.json();",
+              "    var windowId = json.windowId || json.id || json.WindowId || json.window_id;",
+              "    if (windowId) {",
+              "        pm.collectionVariables.set('windowId', windowId);",
+              "        console.log('windowId saved: ' + windowId);",
+              "    } else {",
+              "        console.warn('windowId NOT found in response');",
+              "    }",
+              "} catch(e) { console.log('Response was not JSON'); }"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"launchMenu\": {\n    \"menuId\": 0,\n    \"caption\": \"User Maintenance\"\n  }\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{base_url}}/uiserver0/ui/full/v1/window"
+      }
+    },
+    {
+      "name": "2 - Get Users Data",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "console.log('Data response:', pm.response.text());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/uiserver0/ui/full/v2/data?id={{windowId}}"
+      }
+    },
+    {
+      "name": "3 - Close Window",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "console.log('Close response:', pm.response.status, pm.response.text());",
+              "pm.collectionVariables.set('windowId', '');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{base_url}}/uiserver0/ui/full/v1/window?id={{windowId}}"
+      }
+    }
+  ]
+}
