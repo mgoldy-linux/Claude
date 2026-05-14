@@ -31,9 +31,6 @@ try {
     $Script:User = $env:USERNAME
     $Script:myPsHome = Split-Path -Path $PROFILE -Parent
     $Script:fDate = (Get-Date).ToString("-yyyyMMdd")
-    if ($Script:fDate -ne (Get-Date).ToString("-yyyyMMdd")) {
-        Write-Warning "fDate mismatch: $Script:fDate vs expected $((Get-Date).ToString('-yyyyMMdd'))"
-    }
     $Script:PSVer = $PSVersionTable.PSVersion.ToString()
     
     # VSCode-specific app identifier
@@ -547,7 +544,7 @@ try {
     }
     
     # Start transcript (with error handling) - Only if not in VSCode debug mode
-    if (-not $env:VSCODE_PID -or -not (Test-Path env:VSCODE_IPC_HOOK_CLI)) {
+    if (-not ($env:VSCODE_PID -and (Test-Path env:VSCODE_IPC_HOOK_CLI))) {
         try {
             Start-Transcript -OutputDirectory $Script:TranscriptPath -ErrorAction Stop | Out-Null
         }
@@ -562,8 +559,8 @@ try {
         $null = New-Item -Path $Script:RecordPath -ItemType File -Force -ErrorAction SilentlyContinue
     }
     
-    # Run initialization scripts (with error handling) - only if not debugging
-    if (-not $env:VSCODE_PID) {
+    # Run initialization scripts (with error handling) - skip only in VSCode debug sessions
+    if (-not ($env:VSCODE_PID -and (Test-Path env:VSCODE_IPC_HOOK_CLI))) {
         $initScripts = @(
             'C:\PowerShell-Scripts\Check-For-Transcript-Folder.ps1',
             'C:\PowerShell-Scripts\auto-update-modules.ps1'
@@ -582,15 +579,12 @@ try {
     }
     
     # Configure dbatools (suppress encryption warnings)
-    if (Get-Module -ListAvailable -Name dbatools) {
-        Import-Module dbatools -ErrorAction SilentlyContinue
+    if (Get-Module -Name dbatools) {
         Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register -ErrorAction SilentlyContinue
     }
     
     # Configure PSReadLine for VSCode (enhanced command-line editing)
-    if (Get-Module -ListAvailable -Name PSReadLine) {
-        Import-Module PSReadLine -ErrorAction SilentlyContinue
-        
+    if (Get-Module -Name PSReadLine) {
         # VSCode-optimized settings
         Set-PSReadLineOption -PredictionSource History -ErrorAction SilentlyContinue
         Set-PSReadLineOption -PredictionViewStyle ListView -ErrorAction SilentlyContinue
@@ -633,7 +627,6 @@ Set-Alias -Name grep -Value Select-String -ErrorAction SilentlyContinue
 
 # Quick file operations
 function touch { New-Item -ItemType File -Path $args }
-function mkdir { New-Item -ItemType Directory -Path $args }
 
 #endregion
 
