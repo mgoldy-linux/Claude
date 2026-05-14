@@ -477,8 +477,9 @@ try {
     
     # Run initialization scripts (with error handling)
     $initScripts = @(
-        'C:\PowerShell-Scripts\Check-For-Transcript-Folder.ps1',
-        'C:\PowerShell-Scripts\auto-update-modules.ps1'
+        'C:\Users\mgoldyn\Documents\PowerShell\Check-For-Transcript-Folder.ps1',
+        'C:\PowerShell-Scripts\auto-update-modules.ps1',
+        'C:\PowerShell-Scripts\PS_Skills\Find-all-shortcut-keys.ps1'
     )
     
     foreach ($script in $initScripts) {

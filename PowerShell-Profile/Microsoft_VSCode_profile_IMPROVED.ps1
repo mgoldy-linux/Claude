@@ -562,8 +562,9 @@ try {
     # Run initialization scripts (with error handling) - skip only in VSCode debug sessions
     if (-not ($env:VSCODE_PID -and (Test-Path env:VSCODE_IPC_HOOK_CLI))) {
         $initScripts = @(
-            'C:\PowerShell-Scripts\Check-For-Transcript-Folder.ps1',
-            'C:\PowerShell-Scripts\auto-update-modules.ps1'
+            'C:\Users\mgoldyn\Documents\PowerShell\Check-For-Transcript-Folder.ps1',
+            'C:\PowerShell-Scripts\auto-update-modules.ps1',
+            'C:\PowerShell-Scripts\PS_Skills\Find-all-shortcut-keys.ps1'
         )
         
         foreach ($script in $initScripts) {
