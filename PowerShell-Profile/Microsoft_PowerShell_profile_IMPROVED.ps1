@@ -492,7 +492,26 @@ try {
             }
         }
     }
-    
+
+    # Run Check-Job-History once per day on first terminal launch
+    $Script:CheckJobScript = 'C:\PowerShell-Scripts\DBATools\Jobs\Check-Job-History.ps1'
+    $Script:CheckJobLog    = 'C:\_P25\Logs\PS-Rec-Of\Check-Job-History.ps1' + (Get-Date).ToString('-yyyyMMdd') + '.txt'
+
+    if (Test-Path $Script:CheckJobScript) {
+        if (-not (Test-Path $Script:CheckJobLog)) {
+            Write-Host "Running job history check script"
+            try {
+                & $Script:CheckJobScript
+            }
+            catch {
+                Write-ProfileLog "Check-Job-History.ps1 failed: $_" -Level Warning
+            }
+        }
+        else {
+            Write-Host "Job history already checked today, skipping."
+        }
+    }
+
     # Configure dbatools (suppress encryption warnings)
     if (Get-Module -ListAvailable -Name dbatools) {
         Import-Module dbatools -ErrorAction SilentlyContinue
@@ -562,24 +581,5 @@ Write-ProfileLog "Profile loaded successfully in $([math]::Round($loadTime, 2))m
 
 # Restore progress preference
 $ProgressPreference = 'Continue'
-
-# Run Check-Job-History once per day on first terminal launch
-$Script:CheckJobScript = 'C:\PowerShell-Scripts\DBATools\Jobs\Check-Job-History.ps1'
-$Script:CheckJobLog    = 'C:\_P25\Logs\PS-Rec-Of\Check-Job-History.ps1' + (Get-Date).ToString('-yyyyMMdd') + '.txt'
-
-if (Test-Path $Script:CheckJobScript) {
-    if (-not (Test-Path $Script:CheckJobLog)) {
-        Write-Host "Running job history check script"
-        try {
-            & $Script:CheckJobScript
-        }
-        catch {
-            Write-ProfileLog "Check-Job-History.ps1 failed: $_" -Level Warning
-        }
-    }
-    else {
-        Write-Host "Job history already checked today, skipping."
-    }
-}
 
 #endregion
