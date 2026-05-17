@@ -282,8 +282,8 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 const EIA_BASE           = 'https://api.eia.gov/v2';
 const EUROSTAT_GREECE    = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&siec=O4661&lastTimePeriod=36';
 const EUROSTAT_EU        = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&geo=DE&geo=FR&geo=ES&geo=IT&siec=O4661&nrg_bal=INTAVI_E&lastTimePeriod=12';
-const OPENSKY_URL        = 'https://opensky-network.org/api/states/all?lamin=37.75&lomin=23.60&lamax=38.15&lomax=24.30';
-const OPENSKY_TBS_URL    = 'https://opensky-network.org/api/states/all?lamin=41.40&lomin=44.50&lamax=42.00&lomax=45.30';
+const OPENSKY_PARAMS_ATH = 'states/all?lamin=37.75&lomin=23.60&lamax=38.15&lomax=24.30';
+const OPENSKY_PARAMS_TBS = 'states/all?lamin=41.40&lomin=44.50&lamax=42.00&lomax=45.30';
 
 // Airport coordinates
 const ATH_LAT = 37.9364, ATH_LON = 23.9445;
@@ -325,15 +325,13 @@ async function refresh() {
   if (oskyP) localStorage.setItem('oskyPass',  oskyP);
   document.getElementById('lastUpdated').textContent = 'Refreshing…';
 
-  const oskyAuth = (oskyU && oskyP) ? 'Basic ' + btoa(oskyU + ':' + oskyP) : null;
-
   await Promise.allSettled([
     key ? fetchEIAPrice(key) : showNoKey('EIAPrice'),
     key ? fetchEIASupply(key) : showNoKey('EIASupply'),
     fetchEurostatGreece(),
     fetchEurostatEU(),
-    fetchOpenSky(oskyAuth),
-    fetchOpenSkyTBS(oskyAuth)
+    fetchOpenSky(oskyU, oskyP),
+    fetchOpenSkyTBS(oskyU, oskyP)
   ]);
 
   computeAndRenderRisk();
@@ -660,13 +658,20 @@ async function fetchEurostatEU() {
   }
 }
 
+// ─── OpenSky URL builder (CORS proxy + optional credentials in URL) ───────────
+function oskyUrl(params, user, pass) {
+  const host = (user && pass)
+    ? `https://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@opensky-network.org/api/`
+    : 'https://opensky-network.org/api/';
+  return `https://corsproxy.io/?${host}${params}`;
+}
+
 // ─── OpenSky: ATH ─────────────────────────────────────────────────────────────
-async function fetchOpenSky(auth) {
+async function fetchOpenSky(user, pass) {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    const headers = auth ? { Authorization: auth } : {};
-    const res = await fetch(OPENSKY_URL, { headers, signal: controller.signal });
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    const res = await fetch(oskyUrl(OPENSKY_PARAMS_ATH, user, pass), { signal: controller.signal });
     clearTimeout(timeout);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
@@ -729,12 +734,11 @@ async function fetchOpenSky(auth) {
 }
 
 // ─── OpenSky: TBS ─────────────────────────────────────────────────────────────
-async function fetchOpenSkyTBS(auth) {
+async function fetchOpenSkyTBS(user, pass) {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    const headers = auth ? { Authorization: auth } : {};
-    const res = await fetch(OPENSKY_TBS_URL, { headers, signal: controller.signal });
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    const res = await fetch(oskyUrl(OPENSKY_PARAMS_TBS, user, pass), { signal: controller.signal });
     clearTimeout(timeout);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
