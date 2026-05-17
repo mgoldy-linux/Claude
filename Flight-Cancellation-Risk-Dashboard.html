@@ -178,7 +178,7 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 <div class="charts-2col">
   <div class="chart-box">
     <h3>Greece — Aviation Energy Use (Thousand Tonnes)</h3>
-    <p class="chart-sub">Eurostat nrg_cb_oilm · INTAVI_E · last 24 months · vs 24-month avg</p>
+    <p class="chart-sub">Eurostat nrg_cb_oilm · INTAVI_E · last 24 months · orange = seasonal norm (same-month avg over 3 years)</p>
     <div class="chart-loading" id="loadGreeceUse">Loading from Eurostat…</div>
     <canvas id="chartGreeceUse" style="display:none"></canvas>
   </div>
@@ -235,9 +235,9 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
     </div>
     <div class="method-item">
       <strong>Greece Aviation Signal (0–1 pt)</strong>
-      INTAVI_E &lt;90% of 24-month avg = AT RISK (1pt)<br>
-      Within 10% = NORMAL (0pts)<br>
-      <em>Direct Greek fuel consumption indicator</em>
+      INTAVI_E &lt;15% below seasonal norm = AT RISK (1pt)<br>
+      Within 15% = NORMAL (0pts)<br>
+      <em>Seasonally adjusted — compares each month to same-month average across 3 years</em>
     </div>
     <div class="method-item">
       <strong>EU Comparison Signal (0–1 pt)</strong>
@@ -258,7 +258,7 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 <script>
 // ─── API Endpoints ────────────────────────────────────────────────────────────
 const EIA_BASE           = 'https://api.eia.gov/v2';
-const EUROSTAT_GREECE    = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&siec=O4661&lastTimePeriod=24';
+const EUROSTAT_GREECE    = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&siec=O4661&lastTimePeriod=36';
 const EUROSTAT_EU        = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&geo=DE&geo=FR&geo=ES&geo=IT&siec=O4661&nrg_bal=INTAVI_E&lastTimePeriod=12';
 const OPENSKY_URL        = 'https://opensky-network.org/api/states/all?lamin=37.75&lomin=23.60&lamax=38.15&lomax=24.30';
 
@@ -427,20 +427,42 @@ async function fetchEurostatGreece() {
     const exp    = getSeries('EXP');
     const stkChg = getSeries('STK_CHG');
 
+    // ── Seasonal baseline: per-calendar-month average across all available years ──
+    const monthGroups = {};
+    times.forEach((t, i) => {
+      const mm = t.slice(5, 7);
+      if (!monthGroups[mm]) monthGroups[mm] = [];
+      if (avi.values[i] !== null) monthGroups[mm].push(avi.values[i]);
+    });
+    const seasonalBaseline = times.map(t => {
+      const g = monthGroups[t.slice(5, 7)] || [];
+      return g.length ? parseFloat((g.reduce((a,b)=>a+b,0)/g.length).toFixed(1)) : null;
+    });
+
+    // Latest non-null value and its seasonal baseline
+    const latestAviIdx = avi.values.map((v,i)=>v!==null?i:-1).filter(i=>i>=0).slice(-1)[0];
+    const latestAvi    = avi.values[latestAviIdx];
+    const latestBase   = seasonalBaseline[latestAviIdx];
+    const adjPct       = latestBase ? ((latestAvi - latestBase) / latestBase * 100).toFixed(1) : null;
+
     // KPIs
     const aviValid = avi.values.filter(v=>v!==null);
     const impValid = imp.values.filter(v=>v!==null);
     if (aviValid.length) {
-      const latest = aviValid[aviValid.length-1];
-      const prev   = aviValid[aviValid.length-2] || latest;
-      const pct    = ((latest-prev)/prev*100).toFixed(1);
-      document.getElementById('kpiGreeceUse').textContent = latest.toFixed(1) + ' kt';
+      document.getElementById('kpiGreeceUse').textContent = latestAvi.toFixed(1) + ' kt';
       const chg = document.getElementById('kpiGreeceUseChange');
-      chg.textContent = (pct>=0?'▲':'▼') + ' ' + Math.abs(pct) + '% vs prev';
-      chg.className = 'change ' + (latest < avi.avg*0.90 ? 'up' : 'down');
+      if (adjPct !== null) {
+        chg.textContent = (adjPct>=0?'▲':'▼') + ' ' + Math.abs(adjPct) + '% vs seasonal norm';
+        chg.className = 'change ' + (parseFloat(adjPct) < -15 ? 'up' : parseFloat(adjPct) > 10 ? 'warn' : 'down');
+      }
 
-      if (latest < avi.avg * 0.90) { signals.greeceUse = 1; setSignal('sigGreeceUse', 'risk', `${latest.toFixed(1)} kt · >10% below 24-mo avg (${avi.avg.toFixed(1)}) — AT RISK`); }
-      else                         { signals.greeceUse = 0; setSignal('sigGreeceUse', 'ok',   `${latest.toFixed(1)} kt · within 10% of avg (${avi.avg.toFixed(1)}) — NORMAL`); }
+      if (adjPct !== null && parseFloat(adjPct) < -15) {
+        signals.greeceUse = 1;
+        setSignal('sigGreeceUse', 'risk', `${latestAvi.toFixed(1)} kt · ${adjPct}% below seasonal norm (${latestBase} kt) — AT RISK`);
+      } else if (adjPct !== null) {
+        signals.greeceUse = 0;
+        setSignal('sigGreeceUse', 'ok', `${latestAvi.toFixed(1)} kt · ${adjPct>=0?'+':''}${adjPct}% vs seasonal norm (${latestBase} kt) — NORMAL`);
+      }
     }
     if (impValid.length) {
       const latest = impValid[impValid.length-1];
@@ -452,19 +474,49 @@ async function fetchEurostatGreece() {
       chg.className = 'change ' + (pct < 0 ? 'up' : 'down');
     }
 
-    // Aviation use chart
+    // Aviation use chart — show only last 24 months for readability, seasonal baseline overlay
+    const display24 = times.slice(-24);
+    const avi24     = avi.values.slice(-24);
+    const base24    = seasonalBaseline.slice(-24);
+
     showChart('GreeceUse');
     destroyChart('chartGreeceUse');
     charts.greeceUse = new Chart(document.getElementById('chartGreeceUse'), {
       type: 'line',
       data: {
-        labels: times,
+        labels: display24,
         datasets: [
-          { label: 'Aviation Use (INTAVI_E)', data: avi.values, borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.08)', tension: 0.3, pointRadius: 4, spanGaps: true },
-          { label: '24-Mo Avg', data: times.map(()=>parseFloat(avi.avg.toFixed(1))), borderColor: '#ff4444', borderDash: [6,3], borderWidth: 2, pointRadius: 0 }
+          {
+            label: 'Aviation Use (INTAVI_E)',
+            data: avi24,
+            borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.08)',
+            tension: 0.3, pointRadius: 4, spanGaps: true
+          },
+          {
+            label: 'Seasonal Norm (same-month avg)',
+            data: base24,
+            borderColor: '#ffaa00', borderDash: [6,3], borderWidth: 2,
+            pointRadius: 0, spanGaps: true
+          }
         ]
       },
-      options: { ...CD, scales: { ...CD.scales, x: { ...CD.scales.x, ticks: { ...CD.scales.x.ticks, maxRotation: 45 } }, y: { ...CD.scales.y, title: { display: true, text: 'Thousand Tonnes', color: '#aaa', font: { size: 10 } } } } }
+      options: {
+        ...CD,
+        plugins: {
+          ...CD.plugins,
+          subtitle: {
+            display: adjPct !== null,
+            text: `Latest: ${latestAvi?.toFixed(1)} kt  ·  Seasonal norm: ${latestBase} kt  ·  Adj. deviation: ${adjPct>=0?'+':''}${adjPct}%`,
+            color: parseFloat(adjPct) < -15 ? '#ff4444' : parseFloat(adjPct) > 10 ? '#ff8800' : '#44ff88',
+            font: { size: 11 }
+          }
+        },
+        scales: {
+          ...CD.scales,
+          x: { ...CD.scales.x, ticks: { ...CD.scales.x.ticks, maxRotation: 45 } },
+          y: { ...CD.scales.y, title: { display: true, text: 'Thousand Tonnes', color: '#aaa', font: { size: 10 } } }
+        }
+      }
     });
 
     // Imports vs Exports chart
