@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Aegean Airlines · ATH Cancellation Risk Dashboard</title>
+<title>Aegean Airlines · ATH & TBS Cancellation Risk Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -29,7 +29,7 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 .risk-badge  { font-size: 22px; font-weight: bold; min-width: 40px; text-align: center; }
 .risk-detail { font-size: 13px; line-height: 1.5; }
 
-.kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 18px; }
+.kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 18px; }
 .kpi { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 14px; text-align: center; }
 .kpi .label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
 .kpi .value { font-size: 22px; font-weight: bold; color: #00d4ff; }
@@ -39,7 +39,7 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 .down { color: #44ff88; }
 .warn { color: #ff8800; }
 
-.signal-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px; }
+.signal-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 18px; }
 .signal { border-radius: 6px; padding: 10px 12px; font-size: 12px; border: 1px solid transparent; }
 .signal .sig-title { font-weight: bold; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 3px; }
 .signal .sig-value { font-size: 12px; }
@@ -61,7 +61,7 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 .opensky-box { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 18px; margin-bottom: 16px; }
 .opensky-box h3 { color: #00d4ff; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
 .opensky-meta { color: #aaa; font-size: 11px; margin-bottom: 12px; }
-#athMap { height: 380px; border-radius: 6px; }
+#athMap, #tbsMap { height: 340px; border-radius: 6px; }
 .opensky-status { color: #555; font-size: 13px; text-align: center; padding: 30px; border: 1px dashed #333; border-radius: 6px; }
 
 .method-box { background: #12182e; border: 1px solid #0f3460; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
@@ -77,6 +77,9 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
   .charts-2col { grid-template-columns: 1fr; }
   .method-grid { grid-template-columns: repeat(2, 1fr); }
 }
+@media (max-width: 1200px) and (min-width: 901px) {
+  .kpi-row, .signal-row { grid-template-columns: repeat(3, 1fr); }
+}
 </style>
 </head>
 <body>
@@ -84,8 +87,8 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 <!-- Header -->
 <div class="header">
   <div class="header-left">
-    <h1>Aegean Airlines · Athens (ATH) Cancellation Risk Dashboard</h1>
-    <div class="subtitle">Live feeds: EIA (global price reference) · Eurostat (Greece fuel supply) · OpenSky (ATH live flights)</div>
+    <h1>Aegean Airlines · ATH & TBS Cancellation Risk Dashboard</h1>
+    <div class="subtitle">Live feeds: EIA (global price reference) · Eurostat (Greece fuel supply) · OpenSky (ATH · TBS live flights)</div>
   </div>
   <div class="header-right">
     <input id="eiaKey" class="key-input" type="password" placeholder="EIA API Key (eia.gov/opendata)" title="Enter your EIA API key">
@@ -132,6 +135,12 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
     <div class="change" id="kpiFlightsChange">&nbsp;</div>
     <div class="sub">OpenSky · AEE callsigns</div>
   </div>
+  <div class="kpi">
+    <div class="label">Aegean Flights (TBS)</div>
+    <div class="value" id="kpiFlightsTBS">—</div>
+    <div class="change" id="kpiFlightsTBSChange">&nbsp;</div>
+    <div class="sub">OpenSky · AEE over Tbilisi</div>
+  </div>
 </div>
 
 <!-- Signal Status Row -->
@@ -154,6 +163,10 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
   </div>
   <div class="signal sig-load" id="sigOpenSky">
     <div class="sig-title">ATH Live Flights</div>
+    <div class="sig-value">Loading…</div>
+  </div>
+  <div class="signal sig-load" id="sigOpenSkyTBS">
+    <div class="sig-title">TBS Live Flights</div>
     <div class="sig-value">Loading…</div>
   </div>
 </div>
@@ -206,15 +219,22 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
   </div>
 </div>
 
-<!-- OpenSky ATH Flight Map -->
-<div class="opensky-box">
-  <h3>OpenSky — Live Flights over Athens International (ATH · LGAV)</h3>
-  <div class="opensky-meta" id="oskyMeta">Bounding box: lat 37.75–38.15, lon 23.60–24.30 · Aegean Airlines (AEE) highlighted · Loading…</div>
-  <div id="athMapContainer">
+<!-- OpenSky Maps: ATH + TBS side by side -->
+<div class="charts-2col">
+  <div class="opensky-box" style="margin-bottom:0">
+    <h3>OpenSky — Athens International (ATH · LGAV)</h3>
+    <div class="opensky-meta" id="oskyMeta">lat 37.75–38.15, lon 23.60–24.30 · AEE highlighted · Loading…</div>
     <div class="opensky-status" id="athMapMsg">Loading OpenSky data…</div>
     <div id="athMap" style="display:none"></div>
   </div>
+  <div class="opensky-box" style="margin-bottom:0">
+    <h3>OpenSky — Tbilisi International (TBS · UGTB)</h3>
+    <div class="opensky-meta" id="oskyMetaTBS">lat 41.40–42.00, lon 44.50–45.30 · AEE highlighted · Loading…</div>
+    <div class="opensky-status" id="tbsMapMsg">Loading OpenSky data…</div>
+    <div id="tbsMap" style="display:none"></div>
+  </div>
 </div>
+<div style="margin-bottom:16px"></div>
 
 <!-- Risk Methodology -->
 <div class="method-box">
@@ -261,9 +281,11 @@ const EIA_BASE           = 'https://api.eia.gov/v2';
 const EUROSTAT_GREECE    = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&siec=O4661&lastTimePeriod=36';
 const EUROSTAT_EU        = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&geo=DE&geo=FR&geo=ES&geo=IT&siec=O4661&nrg_bal=INTAVI_E&lastTimePeriod=12';
 const OPENSKY_URL        = 'https://opensky-network.org/api/states/all?lamin=37.75&lomin=23.60&lamax=38.15&lomax=24.30';
+const OPENSKY_TBS_URL    = 'https://opensky-network.org/api/states/all?lamin=41.40&lomin=44.50&lamax=42.00&lomax=45.30';
 
-// ATH coordinates
+// Airport coordinates
 const ATH_LAT = 37.9364, ATH_LON = 23.9445;
+const TBS_LAT = 41.6692, TBS_LON = 44.9547;
 
 // ─── Chart defaults ───────────────────────────────────────────────────────────
 const CD = {
@@ -277,7 +299,7 @@ const CD = {
 // ─── Risk state ───────────────────────────────────────────────────────────────
 const signals = { eiaPrice: null, eiaSupply: null, greeceUse: null, euComp: null };
 let charts = {};
-let leafletMap = null;
+let leafletMap = null, leafletMapTBS = null;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
@@ -298,7 +320,8 @@ async function refresh() {
     key ? fetchEIASupply(key) : showNoKey('EIASupply'),
     fetchEurostatGreece(),
     fetchEurostatEU(),
-    fetchOpenSky()
+    fetchOpenSky(),
+    fetchOpenSkyTBS()
   ]);
 
   computeAndRenderRisk();
@@ -689,6 +712,76 @@ async function fetchOpenSky() {
     document.getElementById('kpiFlights').textContent = 'N/A';
     document.getElementById('kpiFlightsChange').textContent = '';
     setSignal('sigOpenSky', 'load', 'Unavailable: ' + msg);
+  }
+}
+
+// ─── OpenSky: TBS ─────────────────────────────────────────────────────────────
+async function fetchOpenSkyTBS() {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(OPENSKY_TBS_URL, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+
+    const states  = json.states || [];
+    const flights = states.map(s => ({
+      icao24: s[0], callsign: (s[1]||'').trim(), country: s[2],
+      lon: s[5], lat: s[6], altitude: s[7], velocity: s[9], heading: s[10]
+    })).filter(f => f.lat && f.lon);
+
+    const aee   = flights.filter(f => f.callsign.startsWith('AEE'));
+    const total = flights.length;
+
+    document.getElementById('kpiFlightsTBS').textContent = aee.length;
+    const chg = document.getElementById('kpiFlightsTBSChange');
+    chg.textContent = `${total} total · ${aee.length} Aegean (AEE)`;
+    chg.className = 'change ' + (aee.length > 0 ? 'down' : 'warn');
+
+    document.getElementById('oskyMetaTBS').textContent =
+      `${total} aircraft · ${aee.length} Aegean (AEE) · lat 41.40–42.00, lon 44.50–45.30 · Live`;
+
+    if (aee.length > 0) setSignal('sigOpenSkyTBS', 'ok',   `${aee.length} Aegean (AEE) operating · ${total} total over TBS`);
+    else                setSignal('sigOpenSkyTBS', 'warn', `No Aegean flights detected over TBS · ${total} other aircraft`);
+
+    // TBS Map
+    document.getElementById('tbsMapMsg').style.display = 'none';
+    const mapDiv = document.getElementById('tbsMap');
+    mapDiv.style.display = 'block';
+    if (!leafletMapTBS) {
+      leafletMapTBS = L.map('tbsMap').setView([TBS_LAT, TBS_LON], 11);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(leafletMapTBS);
+      L.marker([TBS_LAT, TBS_LON], {
+        icon: L.divIcon({ className:'', html:'<span style="font-size:22px">🏢</span>', iconSize:[28,28], iconAnchor:[14,14] })
+      }).addTo(leafletMapTBS).bindPopup('<b>TBS · UGTB</b><br>Tbilisi International Airport');
+    } else {
+      leafletMapTBS.eachLayer(l => { if (l instanceof L.Marker && l._isAircraft) leafletMapTBS.removeLayer(l); });
+    }
+    flights.forEach(f => {
+      const isAEE  = f.callsign.startsWith('AEE');
+      const marker = L.marker([f.lat, f.lon], {
+        icon: L.divIcon({
+          className: '',
+          html: `<span style="font-size:${isAEE?'20':'13'}px;opacity:${isAEE?'1':'0.5'}">${isAEE?'✈️':'🛩️'}</span>`,
+          iconSize:[24,24], iconAnchor:[12,12]
+        })
+      }).addTo(leafletMapTBS);
+      marker._isAircraft = true;
+      marker.bindPopup(
+        `<b>${f.callsign||'Unknown'}</b>${isAEE?' — Aegean Airlines':''}<br>` +
+        `${f.country}<br>` +
+        `Alt: ${f.altitude ? Math.round(f.altitude)+' m' : 'N/A'}<br>` +
+        `Speed: ${f.velocity ? Math.round(f.velocity)+' m/s' : 'N/A'}`
+      );
+    });
+
+  } catch (e) {
+    const msg = e.name==='AbortError' ? 'Timed out' : e.message;
+    document.getElementById('tbsMapMsg').textContent = `OpenSky TBS unavailable: ${msg}`;
+    document.getElementById('kpiFlightsTBS').textContent = 'N/A';
+    document.getElementById('kpiFlightsTBSChange').textContent = '';
+    setSignal('sigOpenSkyTBS', 'load', 'Unavailable: ' + msg);
   }
 }
 
