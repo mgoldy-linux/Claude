@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Flight Cancellation Risk Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding: 20px; }
+
+/* Header */
+.header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+.header-left h1 { color: #00d4ff; font-size: 22px; }
+.header-left .subtitle { color: #aaa; font-size: 12px; margin-top: 3px; }
+.header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.key-input { background: #16213e; border: 1px solid #0f3460; border-radius: 5px; color: #eee; padding: 7px 10px; font-size: 12px; width: 280px; }
+.key-input::placeholder { color: #555; }
+.btn { background: #0f3460; border: 1px solid #00d4ff; border-radius: 5px; color: #00d4ff; cursor: pointer; font-size: 12px; padding: 7px 14px; }
+.btn:hover { background: #1a4a80; }
+.last-updated { color: #555; font-size: 11px; }
+
+/* Risk banner */
+.risk-banner { border-radius: 8px; padding: 12px 18px; margin-bottom: 18px; font-size: 14px; display: flex; align-items: center; gap: 12px; }
+.risk-banner.low    { background: #0a2e1a; border: 1px solid #44ff88; color: #44ff88; }
+.risk-banner.mod    { background: #2e2a0a; border: 1px solid #ffdd00; color: #ffdd00; }
+.risk-banner.elev   { background: #2e1a0a; border: 1px solid #ff8800; color: #ff8800; }
+.risk-banner.high   { background: #2e0a0a; border: 1px solid #ff4444; color: #ff6666; }
+.risk-banner.crit   { background: #3a0000; border: 1px solid #ff0000; color: #ff4444; }
+.risk-badge { font-size: 22px; font-weight: bold; min-width: 40px; text-align: center; }
+.risk-detail { font-size: 13px; line-height: 1.5; }
+
+/* KPI row */
+.kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 18px; }
+.kpi { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 14px; text-align: center; }
+.kpi .label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.kpi .value { font-size: 22px; font-weight: bold; color: #00d4ff; }
+.kpi .change { font-size: 11px; margin-top: 4px; }
+.kpi .sub   { font-size: 11px; color: #666; margin-top: 2px; }
+.up   { color: #ff4444; }
+.down { color: #44ff88; }
+.warn { color: #ff8800; }
+
+/* Signal status row */
+.signal-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px; }
+.signal { border-radius: 6px; padding: 10px 12px; font-size: 12px; border: 1px solid transparent; }
+.signal .sig-title { font-weight: bold; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 3px; }
+.signal .sig-value { font-size: 12px; }
+.sig-ok   { background: #0a1f10; border-color: #44ff88; }
+.sig-ok .sig-title   { color: #44ff88; }
+.sig-warn { background: #1f180a; border-color: #ff8800; }
+.sig-warn .sig-title { color: #ff8800; }
+.sig-risk { background: #1f0a0a; border-color: #ff4444; }
+.sig-risk .sig-title { color: #ff4444; }
+.sig-load { background: #12182e; border-color: #0f3460; }
+.sig-load .sig-title { color: #aaa; }
+
+/* Charts */
+.charts-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.chart-box { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 18px; }
+.chart-box h3 { color: #00d4ff; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+.chart-box .chart-sub { color: #666; font-size: 10px; margin-top: -10px; margin-bottom: 12px; }
+.chart-loading { color: #555; font-size: 13px; text-align: center; padding: 40px 0; }
+
+/* OpenSky */
+.opensky-box { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 18px; margin-bottom: 16px; }
+.opensky-box h3 { color: #00d4ff; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.opensky-meta { color: #aaa; font-size: 11px; margin-bottom: 12px; }
+#ncMap { height: 340px; border-radius: 6px; }
+.opensky-status { color: #555; font-size: 13px; text-align: center; padding: 30px; border: 1px dashed #333; border-radius: 6px; }
+
+/* Methodology */
+.method-box { background: #12182e; border: 1px solid #0f3460; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.method-box h3 { color: #00d4ff; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.method-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.method-item { font-size: 11px; color: #aaa; line-height: 1.5; }
+.method-item strong { color: #eee; display: block; margin-bottom: 2px; }
+
+.footer { color: #444; font-size: 10px; text-align: center; margin-top: 10px; }
+
+@media (max-width: 900px) {
+  .kpi-row, .signal-row { grid-template-columns: repeat(2, 1fr); }
+  .charts-2col { grid-template-columns: 1fr; }
+  .method-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <h1>Flight Cancellation Risk Dashboard</h1>
+    <div class="subtitle">Live feeds: EIA (prices & supply) · Eurostat (EU) · OpenSky (NC flights) &nbsp;|&nbsp; Static: BTS Form 41 Jan–Mar 2026</div>
+  </div>
+  <div class="header-right">
+    <input id="eiaKey" class="key-input" type="password" placeholder="EIA API Key (eia.gov/opendata)" title="Enter your EIA API key">
+    <button class="btn" onclick="refresh()">Refresh</button>
+    <span class="last-updated" id="lastUpdated">Not loaded</span>
+  </div>
+</div>
+
+<!-- Risk Banner -->
+<div class="risk-banner sig-load" id="riskBanner">
+  <div class="risk-badge" id="riskBadge">—</div>
+  <div class="risk-detail" id="riskDetail">Loading data from EIA, Eurostat, and OpenSky…</div>
+</div>
+
+<!-- KPI Row -->
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="label">EIA Spot Price</div>
+    <div class="value" id="kpiEIAPrice">—</div>
+    <div class="change" id="kpiEIAPriceChange">&nbsp;</div>
+    <div class="sub">U.S. Gulf Coast $/GAL</div>
+  </div>
+  <div class="kpi">
+    <div class="label">U.S. Jet Supply</div>
+    <div class="value" id="kpiSupply">—</div>
+    <div class="change" id="kpiSupplyChange">&nbsp;</div>
+    <div class="sub">MBBL/Day (latest week)</div>
+  </div>
+  <div class="kpi">
+    <div class="label">BTS Avg (Mar 2026)</div>
+    <div class="value">$3.12</div>
+    <div class="change up">▲ 32% vs Jan ($2.36)</div>
+    <div class="sub">Airline cost per gallon</div>
+  </div>
+  <div class="kpi">
+    <div class="label">EU Aviation Bunkers</div>
+    <div class="value" id="kpiEU">—</div>
+    <div class="change" id="kpiEUChange">&nbsp;</div>
+    <div class="sub">Greece latest (kt)</div>
+  </div>
+  <div class="kpi">
+    <div class="label">NC Live Flights</div>
+    <div class="value" id="kpiFlights">—</div>
+    <div class="change" id="kpiFlightsChange">&nbsp;</div>
+    <div class="sub">OpenSky bounding box</div>
+  </div>
+</div>
+
+<!-- Signal Status Row -->
+<div class="signal-row">
+  <div class="signal sig-load" id="sigEIAPrice">
+    <div class="sig-title">EIA Price Signal</div>
+    <div class="sig-value">Loading…</div>
+  </div>
+  <div class="signal sig-load" id="sigEIASupply">
+    <div class="sig-title">EIA Supply Signal</div>
+    <div class="sig-value">Loading…</div>
+  </div>
+  <div class="signal sig-warn" id="sigBTS">
+    <div class="sig-title">BTS Trend Signal</div>
+    <div class="sig-value">+32% price surge Jan→Mar 2026 · $3.12/GAL (above $3.00 threshold)</div>
+  </div>
+  <div class="signal sig-load" id="sigEU">
+    <div class="sig-title">Eurostat EU Signal</div>
+    <div class="sig-value">Loading…</div>
+  </div>
+  <div class="signal sig-load" id="sigOpenSky">
+    <div class="sig-title">OpenSky Signal</div>
+    <div class="sig-value">Loading…</div>
+  </div>
+</div>
+
+<!-- Charts Row 1: EIA -->
+<div class="charts-2col">
+  <div class="chart-box">
+    <h3>EIA Spot Price — U.S. Gulf Coast ($/GAL)</h3>
+    <p class="chart-sub">Weekly · $4.00/GAL cancellation risk threshold</p>
+    <div class="chart-loading" id="loadEIAPrice">Enter EIA API key and click Refresh</div>
+    <canvas id="chartEIAPrice" style="display:none"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>U.S. Commercial Jet Supply by Region (MBBL/Day)</h3>
+    <p class="chart-sub">Weekly · latest available week</p>
+    <div class="chart-loading" id="loadEIASupply">Enter EIA API key and click Refresh</div>
+    <canvas id="chartEIASupply" style="display:none"></canvas>
+  </div>
+</div>
+
+<!-- Charts Row 2: BTS + Eurostat -->
+<div class="charts-2col">
+  <div class="chart-box">
+    <h3>BTS Airline Price Per Gallon — 2026 YTD</h3>
+    <p class="chart-sub">Source: BTS Form 41 (static) · $3.00 threshold</p>
+    <canvas id="chartBTS"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>EU Aviation Bunkers by Country (Thousand Tonnes)</h3>
+    <p class="chart-sub">Eurostat nrg_cb_oilm · AVBUNK · last 12 months</p>
+    <div class="chart-loading" id="loadEU">Loading from Eurostat…</div>
+    <canvas id="chartEU" style="display:none"></canvas>
+  </div>
+</div>
+
+<!-- BTS Supply/Cost Charts -->
+<div class="charts-2col">
+  <div class="chart-box">
+    <h3>BTS Total Fuel Cost ($ Billions)</h3>
+    <p class="chart-sub">Source: BTS Form 41 (static)</p>
+    <canvas id="chartBTSCost"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>BTS Domestic vs International Cost Split</h3>
+    <p class="chart-sub">Source: BTS Form 41 (static)</p>
+    <canvas id="chartBTSSplit"></canvas>
+  </div>
+</div>
+
+<!-- OpenSky NC Flight Map -->
+<div class="opensky-box">
+  <h3>OpenSky — Live Flights over North Carolina</h3>
+  <div class="opensky-meta" id="oskyMeta">Bounding box: lat 33.8–36.6, lon -84.3–-75.5 · Attempting live data…</div>
+  <div id="ncMapContainer">
+    <div class="opensky-status" id="ncMapMsg">Loading OpenSky data…</div>
+    <div id="ncMap" style="display:none"></div>
+  </div>
+</div>
+
+<!-- Risk Methodology -->
+<div class="method-box">
+  <h3>Risk Scoring Methodology</h3>
+  <div class="method-grid">
+    <div class="method-item">
+      <strong>EIA Price Signal (0–2 pts)</strong>
+      &ge;$4.00/GAL = HIGH (2pts)<br>
+      $3.00–$3.99 = ELEVATED (1pt)<br>
+      &lt;$3.00 = NORMAL (0pts)
+    </div>
+    <div class="method-item">
+      <strong>EIA Supply Signal (0–1 pt)</strong>
+      U.S. total &lt;95% of 10-week avg = AT RISK (1pt)<br>
+      Within 5% = NORMAL (0pts)
+    </div>
+    <div class="method-item">
+      <strong>BTS Trend Signal (0–1 pt)</strong>
+      Airline avg &ge;$3.00/GAL = ELEVATED (1pt)<br>
+      Mar 2026: $3.12 — threshold exceeded
+    </div>
+    <div class="method-item">
+      <strong>EU Eurostat Signal (0–1 pt)</strong>
+      Aviation bunkers &lt;90% of 24-month avg = AT RISK (1pt)<br>
+      Within 10% = NORMAL (0pts)
+    </div>
+  </div>
+  <div style="margin-top:10px; font-size:11px; color:#555">
+    Total 0–5 pts &rarr; Low (0) · Moderate (1) · Elevated (2) · High (3) · Critical (4–5)
+  </div>
+</div>
+
+<div class="footer">
+  Data sources: EIA Open Data API · Eurostat API (nrg_cb_oilm) · OpenSky Network REST API · BTS Form 41 (static)
+</div>
+
+<script>
+// ─── Static BTS Data ──────────────────────────────────────────────────────────
+const BTS = {
+  months: ['Jan-2026', 'Feb-2026', 'Mar-2026'],
+  avgPrice:  [2.36, 2.40, 3.12],
+  totalCostB:[3.687726064, 3.501419668, 5.450213696],
+  domCostB:  [2.290521312, 2.230647413, 3.551860997],
+  intlCostB: [1.397204752, 1.270772255, 1.898352699]
+};
+
+// ─── API Endpoints ────────────────────────────────────────────────────────────
+const EIA_BASE     = 'https://api.eia.gov/v2';
+const EUROSTAT_URL = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&geo=DE&geo=FR&geo=ES&geo=IT&siec=O4661&nrg_bal=AVBUNK&lastTimePeriod=12';
+const OPENSKY_URL  = 'https://opensky-network.org/api/states/all?lamin=33.8&lomin=-84.3&lamax=36.6&lomax=-75.5';
+
+// ─── Chart defaults ───────────────────────────────────────────────────────────
+const CD = {
+  plugins: { legend: { labels: { color: '#eee', font: { size: 11 } } } },
+  scales: {
+    x: { ticks: { color: '#aaa', font: { size: 10 } }, grid: { color: '#2a2a4a' } },
+    y: { ticks: { color: '#aaa', font: { size: 10 } }, grid: { color: '#2a2a4a' } }
+  }
+};
+
+// ─── Risk state ───────────────────────────────────────────────────────────────
+const signals = { eiaPrice: null, eiaSupply: null, bts: 1, eu: null };
+let charts = {};
+let leafletMap = null;
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('eiaApiKey');
+  if (saved) document.getElementById('eiaKey').value = saved;
+  renderBTSCharts();
+  refresh();
+});
+
+async function refresh() {
+  const key = document.getElementById('eiaKey').value.trim();
+  if (key) localStorage.setItem('eiaApiKey', key);
+
+  document.getElementById('lastUpdated').textContent = 'Refreshing…';
+
+  await Promise.allSettled([
+    key ? fetchEIAPrice(key) : showNoKey('EIAPrice'),
+    key ? fetchEIASupply(key) : showNoKey('EIASupply'),
+    fetchEurostat(),
+    fetchOpenSky()
+  ]);
+
+  computeAndRenderRisk();
+  document.getElementById('lastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+// ─── No API key state ─────────────────────────────────────────────────────────
+function showNoKey(which) {
+  if (which === 'EIAPrice') {
+    document.getElementById('loadEIAPrice').textContent = 'EIA API key required — get one free at eia.gov/opendata';
+    setSignal('sigEIAPrice', 'load', 'No API key · enter key above');
+  } else {
+    document.getElementById('loadEIASupply').textContent = 'EIA API key required — get one free at eia.gov/opendata';
+    setSignal('sigEIASupply', 'load', 'No API key · enter key above');
+  }
+}
+
+// ─── EIA Spot Price ───────────────────────────────────────────────────────────
+async function fetchEIAPrice(key) {
+  try {
+    const url = `${EIA_BASE}/petroleum/pri/spt/data/?api_key=${key}&facets[product][]=EPJK&data[]=value&frequency=weekly&sort[0][column]=period&sort[0][direction]=desc&length=12`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+
+    const rows = (json.response?.data || []).slice().reverse();
+    const labels = rows.map(r => r.period);
+    const prices = rows.map(r => parseFloat(r.value));
+
+    if (!prices.length) throw new Error('No data');
+
+    const latest = prices[prices.length - 1];
+    const prev   = prices[prices.length - 2] || latest;
+    const pct    = ((latest - prev) / prev * 100).toFixed(1);
+
+    // KPI
+    document.getElementById('kpiEIAPrice').textContent = '$' + latest.toFixed(3);
+    const kpiChg = document.getElementById('kpiEIAPriceChange');
+    kpiChg.textContent = (pct >= 0 ? '▲' : '▼') + ' ' + Math.abs(pct) + '% week-over-week';
+    kpiChg.className = 'change ' + (latest >= 4.00 ? 'up' : latest >= 3.00 ? 'warn' : 'down');
+
+    // Signal
+    if (latest >= 4.00) {
+      signals.eiaPrice = 2;
+      setSignal('sigEIAPrice', 'risk', `$${latest.toFixed(3)}/GAL ≥ $4.00 — HIGH RISK`);
+    } else if (latest >= 3.00) {
+      signals.eiaPrice = 1;
+      setSignal('sigEIAPrice', 'warn', `$${latest.toFixed(3)}/GAL ≥ $3.00 — ELEVATED`);
+    } else {
+      signals.eiaPrice = 0;
+      setSignal('sigEIAPrice', 'ok', `$${latest.toFixed(3)}/GAL — below threshold`);
+    }
+
+    // Chart
+    showChart('EIAPrice');
+    destroyChart('chartEIAPrice');
+    charts.eiaPrice = new Chart(document.getElementById('chartEIAPrice'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Spot Price ($/GAL)',
+            data: prices,
+            borderColor: '#00d4ff',
+            backgroundColor: 'rgba(0,212,255,0.08)',
+            tension: 0.3,
+            pointRadius: 5,
+            pointBackgroundColor: prices.map(p => p >= 4.00 ? '#ff4444' : p >= 3.00 ? '#ff8800' : '#44ff88')
+          },
+          {
+            label: 'HIGH Risk ($4.00)',
+            data: labels.map(() => 4.00),
+            borderColor: '#ff4444',
+            borderDash: [6, 3],
+            borderWidth: 2,
+            pointRadius: 0
+          },
+          {
+            label: 'ELEVATED ($3.00)',
+            data: labels.map(() => 3.00),
+            borderColor: '#ff8800',
+            borderDash: [4, 4],
+            borderWidth: 1.5,
+            pointRadius: 0
+          }
+        ]
+      },
+      options: { ...CD, scales: { ...CD.scales, y: { ...CD.scales.y, ticks: { ...CD.scales.y.ticks, callback: v => '$' + v.toFixed(2) }, min: 2.00 } } }
+    });
+
+  } catch (e) {
+    document.getElementById('loadEIAPrice').textContent = 'EIA price fetch failed: ' + e.message;
+    setSignal('sigEIAPrice', 'load', 'Data unavailable: ' + e.message);
+    signals.eiaPrice = null;
+  }
+}
+
+// ─── EIA Supply ───────────────────────────────────────────────────────────────
+async function fetchEIASupply(key) {
+  try {
+    const url = `${EIA_BASE}/petroleum/sum/sndw/data/?api_key=${key}&facets[product][]=EPJKC&data[]=value&frequency=weekly&sort[0][column]=period&sort[0][direction]=desc&length=10`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+
+    const d = json.response?.data || [];
+    if (!d.length) throw new Error('No data');
+
+    const latestPeriod = d[0].period;
+
+    // Regional breakdown for latest week (exclude NUS = national total)
+    const regionMap = {};
+    const usByPeriod = {};
+    d.forEach(r => {
+      if (r.duoarea === 'NUS') {
+        usByPeriod[r.period] = parseFloat(r.value);
+      } else if (r.period === latestPeriod) {
+        regionMap[r['area-name']] = parseFloat(r.value);
+      }
+    });
+
+    const regions = Object.entries(regionMap).sort((a, b) => b[1] - a[1]);
+    const usPeriods = Object.keys(usByPeriod).sort();
+    const usValues  = usPeriods.map(p => usByPeriod[p]);
+    const usLatest  = usValues[usValues.length - 1];
+    const usAvg     = usValues.reduce((a, b) => a + b, 0) / usValues.length;
+
+    // KPI
+    document.getElementById('kpiSupply').textContent = usLatest.toLocaleString(undefined, {maximumFractionDigits: 0});
+    const supChg = document.getElementById('kpiSupplyChange');
+    const supPct = ((usLatest - usAvg) / usAvg * 100).toFixed(1);
+    supChg.textContent = (supPct >= 0 ? '▲' : '▼') + ' ' + Math.abs(supPct) + '% vs 10-wk avg';
+    supChg.className = 'change ' + (usLatest < usAvg * 0.95 ? 'up' : 'down');
+
+    // Signal
+    if (usLatest < usAvg * 0.95) {
+      signals.eiaSupply = 1;
+      setSignal('sigEIASupply', 'risk', `${usLatest.toFixed(0)} MBBL/D · >5% below avg (${usAvg.toFixed(0)}) — AT RISK`);
+    } else {
+      signals.eiaSupply = 0;
+      setSignal('sigEIASupply', 'ok', `${usLatest.toFixed(0)} MBBL/D · within 5% of avg (${usAvg.toFixed(0)}) — NORMAL`);
+    }
+
+    // Chart: regional bar (latest week)
+    showChart('EIASupply');
+    destroyChart('chartEIASupply');
+    charts.eiaSupply = new Chart(document.getElementById('chartEIASupply'), {
+      type: 'bar',
+      data: {
+        labels: regions.map(r => r[0]),
+        datasets: [{
+          label: `${latestPeriod} (MBBL/Day)`,
+          data: regions.map(r => r[1]),
+          backgroundColor: regions.map(r => r[0] === 'East Coast' ? '#ff4444' : '#00d4ff')
+        }]
+      },
+      options: { ...CD, indexAxis: 'y' }
+    });
+
+  } catch (e) {
+    document.getElementById('loadEIASupply').textContent = 'EIA supply fetch failed: ' + e.message;
+    setSignal('sigEIASupply', 'load', 'Data unavailable: ' + e.message);
+    signals.eiaSupply = null;
+  }
+}
+
+// ─── Eurostat ─────────────────────────────────────────────────────────────────
+async function fetchEurostat() {
+  try {
+    const res = await fetch(EUROSTAT_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const resp = await res.json();
+
+    const ids    = resp.id;
+    const sizes  = resp.size;
+    const dims   = resp.dimension;
+    const values = resp.value;
+
+    // Compute strides
+    const strides = new Array(ids.length);
+    strides[ids.length - 1] = 1;
+    for (let i = ids.length - 2; i >= 0; i--) strides[i] = strides[i + 1] * sizes[i + 1];
+
+    const geoIdx   = ids.indexOf('geo');
+    const timeIdx  = ids.indexOf('time');
+    const geoCats  = dims['geo'].category;
+    const timeCats = dims['time'].category;
+
+    const times  = Object.keys(timeCats.index).sort();
+    const geoList= Object.keys(geoCats.index).sort((a, b) => geoCats.index[a] - geoCats.index[b]);
+
+    const palette = { EL: '#00d4ff', DE: '#ffaa00', FR: '#44ff88', ES: '#ff6644', IT: '#cc44ff' };
+
+    const series = geoList.map(geo => {
+      const gi   = geoCats.index[geo];
+      const vals = times.map(t => values[gi * strides[geoIdx] + timeCats.index[t] * strides[timeIdx]] ?? null);
+      return { geo, label: geoCats.label[geo], values: vals };
+    });
+
+    // Greece latest for KPI + signal
+    const el = series.find(s => s.geo === 'EL');
+    if (el) {
+      const valid  = el.values.filter(v => v !== null);
+      const latest = valid[valid.length - 1] || 0;
+      const avg    = valid.reduce((a, b) => a + b, 0) / valid.length;
+      const pct    = ((latest - avg) / avg * 100).toFixed(1);
+
+      document.getElementById('kpiEU').textContent = latest.toFixed(1) + ' kt';
+      const euChg = document.getElementById('kpiEUChange');
+      euChg.textContent = (pct >= 0 ? '▲' : '▼') + ' ' + Math.abs(pct) + '% vs 24-mo avg';
+      euChg.className = 'change ' + (latest < avg * 0.90 ? 'up' : 'down');
+
+      if (latest < avg * 0.90) {
+        signals.eu = 1;
+        setSignal('sigEU', 'risk', `Greece ${latest.toFixed(1)} kt · >10% below avg (${avg.toFixed(1)}) — AT RISK`);
+      } else {
+        signals.eu = 0;
+        setSignal('sigEU', 'ok', `Greece ${latest.toFixed(1)} kt · within 10% of avg (${avg.toFixed(1)}) — NORMAL`);
+      }
+    }
+
+    // Chart
+    showChart('EU');
+    destroyChart('chartEU');
+    charts.eu = new Chart(document.getElementById('chartEU'), {
+      type: 'line',
+      data: {
+        labels: times,
+        datasets: series.map(s => ({
+          label: s.label + ' (' + s.geo + ')',
+          data: s.values,
+          borderColor: palette[s.geo] || '#888',
+          backgroundColor: s.geo === 'EL' ? 'rgba(0,212,255,0.08)' : 'transparent',
+          borderWidth: s.geo === 'EL' ? 2.5 : 1.5,
+          tension: 0.3,
+          pointRadius: s.geo === 'EL' ? 4 : 2,
+          spanGaps: true
+        }))
+      },
+      options: { ...CD, scales: { ...CD.scales, x: { ...CD.scales.x, ticks: { ...CD.scales.x.ticks, maxRotation: 45 } }, y: { ...CD.scales.y, title: { display: true, text: 'Thousand Tonnes', color: '#aaa', font: { size: 10 } } } } }
+    });
+
+  } catch (e) {
+    document.getElementById('loadEU').textContent = 'Eurostat fetch failed: ' + e.message;
+    setSignal('sigEU', 'load', 'Data unavailable: ' + e.message);
+    signals.eu = null;
+  }
+}
+
+// ─── OpenSky ──────────────────────────────────────────────────────────────────
+async function fetchOpenSky() {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(OPENSKY_URL, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+
+    const states = json.states || [];
+    const flights = states.map(s => ({
+      icao24: s[0], callsign: (s[1] || '').trim(), country: s[2],
+      lon: s[5], lat: s[6], altitude: s[7], velocity: s[9], heading: s[10]
+    })).filter(f => f.lat && f.lon);
+
+    const total = flights.length;
+    const aal   = flights.filter(f => f.callsign.startsWith('AAL')).length;
+
+    document.getElementById('kpiFlights').textContent = total;
+    document.getElementById('kpiFlightsChange').textContent = `${aal} American Airlines`;
+    document.getElementById('oskyMeta').textContent =
+      `${total} aircraft · ${aal} AA (AAL) · Bounding box lat 33.8–36.6, lon -84.3–-75.5 · Live`;
+
+    setSignal('sigOpenSky', 'ok', `${total} flights over NC · ${aal} American Airlines · Live`);
+
+    // Leaflet map
+    document.getElementById('ncMapMsg').style.display = 'none';
+    const mapDiv = document.getElementById('ncMap');
+    mapDiv.style.display = 'block';
+    if (!leafletMap) {
+      leafletMap = L.map('ncMap').setView([35.5, -79.5], 7);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+      }).addTo(leafletMap);
+    } else {
+      leafletMap.eachLayer(l => { if (l instanceof L.Marker) leafletMap.removeLayer(l); });
+    }
+    flights.forEach(f => {
+      const isAA = f.callsign.startsWith('AAL');
+      const icon = L.divIcon({
+        className: '',
+        html: `<span style="font-size:${isAA ? '20' : '14'}px;opacity:${isAA ? '1' : '0.6'}">${isAA ? '✈️' : '🛩️'}</span>`,
+        iconSize: [24, 24], iconAnchor: [12, 12]
+      });
+      L.marker([f.lat, f.lon], { icon })
+        .addTo(leafletMap)
+        .bindPopup(
+          `<b>${f.callsign || 'Unknown'}</b><br>` +
+          `${f.country}<br>` +
+          `Alt: ${f.altitude ? Math.round(f.altitude) + ' m' : 'N/A'}<br>` +
+          `Speed: ${f.velocity ? Math.round(f.velocity) + ' m/s' : 'N/A'}`
+        );
+    });
+
+  } catch (e) {
+    const msg = e.name === 'AbortError' ? 'Timed out (OpenSky rate limit or CORS)' : e.message;
+    document.getElementById('ncMapMsg').textContent =
+      `OpenSky unavailable: ${msg}. Try opening via a local web server (python -m http.server) or view flight data in Postman.`;
+    document.getElementById('kpiFlights').textContent = 'N/A';
+    document.getElementById('kpiFlightsChange').textContent = 'See Postman collection';
+    setSignal('sigOpenSky', 'load', 'Unavailable from file:// — use Postman or a local server');
+    signals.openSky = null;
+  }
+}
+
+// ─── BTS Static Charts ────────────────────────────────────────────────────────
+function renderBTSCharts() {
+  charts.bts = new Chart(document.getElementById('chartBTS'), {
+    type: 'line',
+    data: {
+      labels: BTS.months,
+      datasets: [
+        {
+          label: 'Avg $/GAL (All Airlines)',
+          data: BTS.avgPrice,
+          borderColor: '#00d4ff',
+          backgroundColor: 'rgba(0,212,255,0.08)',
+          tension: 0.3,
+          pointRadius: 7,
+          pointBackgroundColor: BTS.avgPrice.map(p => p >= 3.00 ? '#ff4444' : '#44ff88')
+        },
+        {
+          label: 'ELEVATED Threshold ($3.00)',
+          data: BTS.months.map(() => 3.00),
+          borderColor: '#ff8800',
+          borderDash: [6, 3],
+          borderWidth: 2,
+          pointRadius: 0
+        }
+      ]
+    },
+    options: { ...CD, scales: { ...CD.scales, y: { ...CD.scales.y, ticks: { ...CD.scales.y.ticks, callback: v => '$' + v.toFixed(2) }, min: 2.00 } } }
+  });
+
+  charts.btsCost = new Chart(document.getElementById('chartBTSCost'), {
+    type: 'bar',
+    data: {
+      labels: BTS.months,
+      datasets: [{
+        label: 'Total Fuel Cost ($B)',
+        data: BTS.totalCostB,
+        backgroundColor: BTS.totalCostB.map(v => v > 5 ? '#ff4444' : '#00d4ff')
+      }]
+    },
+    options: { ...CD, scales: { ...CD.scales, y: { ...CD.scales.y, ticks: { ...CD.scales.y.ticks, callback: v => '$' + v.toFixed(2) + 'B' } } } }
+  });
+
+  charts.btsSplit = new Chart(document.getElementById('chartBTSSplit'), {
+    type: 'bar',
+    data: {
+      labels: BTS.months,
+      datasets: [
+        { label: 'Domestic ($B)',      data: BTS.domCostB,  backgroundColor: '#00d4ff' },
+        { label: 'International ($B)', data: BTS.intlCostB, backgroundColor: '#a855f7' }
+      ]
+    },
+    options: { ...CD, scales: { ...CD.scales, y: { ...CD.scales.y, ticks: { ...CD.scales.y.ticks, callback: v => '$' + v.toFixed(2) + 'B' } } } }
+  });
+}
+
+// ─── Risk Computation ─────────────────────────────────────────────────────────
+function computeAndRenderRisk() {
+  const score =
+    (signals.eiaPrice  ?? 0) +
+    (signals.eiaSupply ?? 0) +
+    (signals.bts       ?? 0) +
+    (signals.eu        ?? 0);
+
+  const levels = [
+    { min: 0, label: 'LOW',      cls: 'low',  emoji: '✅' },
+    { min: 1, label: 'MODERATE', cls: 'mod',  emoji: '⚡' },
+    { min: 2, label: 'ELEVATED', cls: 'elev', emoji: '⚠️' },
+    { min: 3, label: 'HIGH',     cls: 'high', emoji: '🔴' },
+    { min: 4, label: 'CRITICAL', cls: 'crit', emoji: '🚨' }
+  ];
+  const level = levels.slice().reverse().find(l => score >= l.min) || levels[0];
+
+  const activeSignals = [];
+  if ((signals.eiaPrice ?? 0) >= 2) activeSignals.push('EIA price ≥$4.00/GAL');
+  else if ((signals.eiaPrice ?? 0) === 1) activeSignals.push('EIA price ≥$3.00/GAL');
+  if ((signals.eiaSupply ?? 0) >= 1) activeSignals.push('U.S. supply below 10-week average');
+  if ((signals.bts ?? 0) >= 1) activeSignals.push('BTS airline price $3.12/GAL (Mar 2026, +32% YTD)');
+  if ((signals.eu ?? 0) >= 1) activeSignals.push('EU aviation bunkers below 24-month average');
+
+  const banner = document.getElementById('riskBanner');
+  banner.className = 'risk-banner ' + level.cls;
+  document.getElementById('riskBadge').textContent = level.emoji + ' ' + level.label;
+  document.getElementById('riskDetail').textContent =
+    score + '/5 risk signals active' +
+    (activeSignals.length ? ': ' + activeSignals.join(' · ') : ' — all metrics within normal range');
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function setSignal(id, type, text) {
+  const el = document.getElementById(id);
+  el.className = 'signal sig-' + type;
+  el.querySelector('.sig-value').textContent = text;
+}
+
+function showChart(which) {
+  document.getElementById('load' + which).style.display = 'none';
+  document.getElementById('chart' + which).style.display = 'block';
+}
+
+function destroyChart(id) {
+  const existing = Chart.getChart(id);
+  if (existing) existing.destroy();
+}
+</script>
+</body>
+</html>
