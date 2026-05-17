@@ -92,6 +92,8 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
   </div>
   <div class="header-right">
     <input id="eiaKey" class="key-input" type="password" placeholder="EIA API Key (eia.gov/opendata)" title="Enter your EIA API key">
+    <input id="oskyUser" class="key-input" style="width:160px" type="text" placeholder="OpenSky username" title="OpenSky Network username">
+    <input id="oskyPass" class="key-input" style="width:160px" type="password" placeholder="OpenSky password" title="OpenSky Network password">
     <button class="btn" onclick="refresh()">Refresh</button>
     <span class="last-updated" id="lastUpdated">Not loaded</span>
   </div>
@@ -307,21 +309,31 @@ window.addEventListener('DOMContentLoaded', () => {
   if (urlKey) localStorage.setItem('eiaApiKey', urlKey);
   const saved = localStorage.getItem('eiaApiKey');
   if (saved) document.getElementById('eiaKey').value = saved;
+  const oskyU = localStorage.getItem('oskyUser');
+  const oskyP = localStorage.getItem('oskyPass');
+  if (oskyU) document.getElementById('oskyUser').value = oskyU;
+  if (oskyP) document.getElementById('oskyPass').value = oskyP;
   refresh();
 });
 
 async function refresh() {
-  const key = document.getElementById('eiaKey').value.trim();
-  if (key) localStorage.setItem('eiaApiKey', key);
+  const key   = document.getElementById('eiaKey').value.trim();
+  const oskyU = document.getElementById('oskyUser').value.trim();
+  const oskyP = document.getElementById('oskyPass').value.trim();
+  if (key)   localStorage.setItem('eiaApiKey', key);
+  if (oskyU) localStorage.setItem('oskyUser',  oskyU);
+  if (oskyP) localStorage.setItem('oskyPass',  oskyP);
   document.getElementById('lastUpdated').textContent = 'Refreshing…';
+
+  const oskyAuth = (oskyU && oskyP) ? 'Basic ' + btoa(oskyU + ':' + oskyP) : null;
 
   await Promise.allSettled([
     key ? fetchEIAPrice(key) : showNoKey('EIAPrice'),
     key ? fetchEIASupply(key) : showNoKey('EIASupply'),
     fetchEurostatGreece(),
     fetchEurostatEU(),
-    fetchOpenSky(),
-    fetchOpenSkyTBS()
+    fetchOpenSky(oskyAuth),
+    fetchOpenSkyTBS(oskyAuth)
   ]);
 
   computeAndRenderRisk();
@@ -649,11 +661,12 @@ async function fetchEurostatEU() {
 }
 
 // ─── OpenSky: ATH ─────────────────────────────────────────────────────────────
-async function fetchOpenSky() {
+async function fetchOpenSky(auth) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(OPENSKY_URL, { signal: controller.signal });
+    const headers = auth ? { Authorization: auth } : {};
+    const res = await fetch(OPENSKY_URL, { headers, signal: controller.signal });
     clearTimeout(timeout);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
@@ -716,11 +729,12 @@ async function fetchOpenSky() {
 }
 
 // ─── OpenSky: TBS ─────────────────────────────────────────────────────────────
-async function fetchOpenSkyTBS() {
+async function fetchOpenSkyTBS(auth) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(OPENSKY_TBS_URL, { signal: controller.signal });
+    const headers = auth ? { Authorization: auth } : {};
+    const res = await fetch(OPENSKY_TBS_URL, { headers, signal: controller.signal });
     clearTimeout(timeout);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
