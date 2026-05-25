@@ -1,0 +1,10 @@
+# Claude Code local settings
+.claude/settings.local.json
+
+# Personal session notes
+Claude-resume.txt
+Claude-resume.txt.bak
+
+# OS / editor
+Thumbs.db
+.DS_Store
