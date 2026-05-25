@@ -174,6 +174,36 @@
   <p style="color:#555;font-size:0.75rem;margin-top:12px">Source: BTS Form 41 — covers major, national &amp; large regional U.S. carriers (99.9% of consumption)</p>
 </div>
 
+<!-- ── Eurostat Section ────────────────────────────────────────────────── -->
+<hr class="section-divider" data-label="EUROSTAT — GREECE JET FUEL (LIVE)">
+
+<div id="eurostatStatus" class="loading" style="padding:16px 0">Loading Eurostat data...</div>
+<div class="error-msg" id="eurostatError"></div>
+
+<div id="eurostatContent" style="display:none">
+  <div class="kpi-row" id="eurostatKpiRow"></div>
+
+  <div class="charts-row">
+    <div class="chart-box">
+      <h3>Greece Aviation Bunkers, Imports &amp; Exports (Thousand Tonnes)</h3>
+      <canvas id="esSupplyChart" height="200"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>Greece Kerosene Stocks — Closing &amp; Opening (Thousand Tonnes)</h3>
+      <canvas id="esStocksChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-full">
+    <h3>EU-5 Aviation Bunkers Comparison — EL / DE / FR / ES / IT (Thousand Tonnes, last 12 months)</h3>
+    <canvas id="esCompChart" height="90"></canvas>
+  </div>
+
+  <p style="color:#555;font-size:0.75rem;margin-top:4px">
+    Source: Eurostat nrg_cb_oilm &amp; nrg_stk_oilm — siec=O4661 (Kerosene-type jet fuel) | No auth required
+  </p>
+</div>
+
 <script>
 const EIA_BASE = 'https://api.eia.gov/v2';
 const PRICE_THRESHOLD = 4.00;
@@ -592,9 +622,178 @@ function initBTS(eiaLatestPrice) {
   });
 }
 
+// ── Eurostat ──────────────────────────────────────────────────────────────
+const ES_BASE = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data';
+
+let esSupplyChartInst = null, esStocksChartInst = null, esCompChartInst = null;
+
+// Generic JSON-stat parser. Returns { labels: [...], [code]: { values, avg } }
+function parseJsonStat(resp, dimName, codes) {
+  const ids = resp.id, sizes = resp.size, dims = resp.dimension, vals = resp.value;
+  const strides = new Array(ids.length);
+  strides[ids.length - 1] = 1;
+  for (let i = ids.length - 2; i >= 0; i--) strides[i] = strides[i + 1] * sizes[i + 1];
+
+  const timeCats = dims.time.category;
+  const timeIdx = ids.indexOf('time');
+  const times = Object.keys(timeCats.index).sort();
+
+  const dimCats = dims[dimName].category;
+  const dimIdx = ids.indexOf(dimName);
+
+  function getSeries(code) {
+    const ci = dimCats.index[code];
+    if (ci === undefined) return null;
+    const series = times.map(t => {
+      const v = vals[ci * strides[dimIdx] + timeCats.index[t] * strides[timeIdx]];
+      return v ?? null;
+    });
+    const valid = series.filter(v => v !== null);
+    const avg = valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
+    return { values: series, avg };
+  }
+
+  const result = { labels: times };
+  codes.forEach(c => { result[c] = getSeries(c); });
+  return result;
+}
+
+// Find a stock flow code by trying candidates then searching labels
+function findStockCode(dimCats, candidates) {
+  for (const c of candidates) {
+    if (dimCats.index[c] !== undefined) return c;
+  }
+  for (const k of Object.keys(dimCats.label)) {
+    const lbl = (dimCats.label[k] || '').toLowerCase();
+    if (candidates.some(c => lbl.includes(c.toLowerCase()))) return k;
+  }
+  return null;
+}
+
+async function loadEurostat() {
+  try {
+    const [supplyResp, stocksResp, compResp] = await Promise.all([
+      fetch(`${ES_BASE}/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&siec=O4661&lastTimePeriod=24`).then(r => r.json()),
+      fetch(`${ES_BASE}/nrg_stk_oilm?lang=EN&format=JSON&geo=EL&siec=O4661&lastTimePeriod=24`).then(r => r.json()),
+      fetch(`${ES_BASE}/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&geo=DE&geo=FR&geo=ES&geo=IT&siec=O4661&nrg_bal=AVBUNK&lastTimePeriod=12`).then(r => r.json())
+    ]);
+
+    renderEurostat(supplyResp, stocksResp, compResp);
+    document.getElementById('eurostatStatus').style.display = 'none';
+    document.getElementById('eurostatContent').style.display = 'block';
+
+  } catch (err) {
+    document.getElementById('eurostatStatus').style.display = 'none';
+    const el = document.getElementById('eurostatError');
+    el.textContent = 'Failed to load Eurostat data: ' + err.message;
+    el.style.display = 'block';
+  }
+}
+
+function renderEurostat(supplyResp, stocksResp, compResp) {
+  // ── Supply (nrg_cb_oilm) ──
+  const supply = parseJsonStat(supplyResp, 'nrg_bal', ['AVBUNK', 'IMP', 'EXP', 'PPRD']);
+  const avbunk = supply['AVBUNK'];
+  const validAV = avbunk ? avbunk.values.filter(v => v !== null) : [];
+  const latestAV = validAV[validAV.length - 1] ?? null;
+  const avPct = avbunk && avbunk.avg > 0 && latestAV != null
+    ? ((latestAV - avbunk.avg) / avbunk.avg * 100).toFixed(1) : null;
+  const avRisk = avbunk && avbunk.avg > 0 && latestAV != null && latestAV < avbunk.avg * 0.90;
+
+  // ── Stocks (nrg_stk_oilm) ──
+  const stkDims = stocksResp.dimension?.stk_flow?.category;
+  const closingCode = stkDims ? findStockCode(stkDims, ['CF', 'S2', 'CLOSING', 'CLO']) : null;
+  const openingCode = stkDims ? findStockCode(stkDims, ['OF', 'S1', 'OPENING', 'OPE']) : null;
+  const stocks = parseJsonStat(stocksResp, 'stk_flow',
+    [closingCode, openingCode].filter(Boolean));
+  const closing = closingCode ? stocks[closingCode] : null;
+  const validCL = closing ? closing.values.filter(v => v !== null) : [];
+  const latestCL = validCL[validCL.length - 1] ?? null;
+  const clRisk = closing && closing.avg > 0 && latestCL != null && latestCL < closing.avg * 0.85;
+
+  // ── KPI cards ──
+  document.getElementById('eurostatKpiRow').innerHTML = `
+    <div class="kpi ${avRisk ? 'risk-high' : 'risk-ok'}" style="border-left-color:#44ff88">
+      <div class="kpi-label">Greece Aviation Bunkers</div>
+      <div class="kpi-value" style="color:#44ff88">${latestAV != null ? latestAV.toFixed(1) + ' kt' : '—'}</div>
+      <div class="kpi-sub">Latest month (${supply.labels[supply.labels.length - 1] ?? ''})</div>
+    </div>
+    <div class="kpi ${avRisk ? 'risk-high' : 'risk-ok'}" style="border-left-color:#44ff88">
+      <div class="kpi-label">vs 24-Month Avg</div>
+      <div class="kpi-value" style="color:${avRisk ? '#ff4444' : '#44ff88'}">${avPct != null ? (avPct >= 0 ? '+' : '') + avPct + '%' : '—'}</div>
+      <div class="kpi-sub">Avg: ${avbunk ? avbunk.avg.toFixed(1) + ' kt' : '—'}</div>
+    </div>
+    <div class="kpi ${clRisk ? 'risk-high' : 'risk-ok'}" style="border-left-color:#44ff88">
+      <div class="kpi-label">Greece Closing Stocks</div>
+      <div class="kpi-value" style="color:${clRisk ? '#ff4444' : '#44ff88'}">${latestCL != null ? latestCL.toFixed(1) + ' kt' : '—'}</div>
+      <div class="kpi-sub">24-mo avg: ${closing ? closing.avg.toFixed(1) + ' kt' : '—'}</div>
+    </div>
+    <div class="kpi ${avRisk || clRisk ? 'risk-high' : 'risk-ok'}" style="border-left-color:#44ff88">
+      <div class="kpi-label">Greece Supply Signal</div>
+      <div class="kpi-value" style="font-size:1.1rem;color:${avRisk || clRisk ? '#ff4444' : '#44ff88'}">${avRisk || clRisk ? 'RISK' : 'NORMAL'}</div>
+      <div class="kpi-sub">${avRisk ? 'Bunkers >10% below avg' : clRisk ? 'Stocks >15% below avg' : 'All indicators normal'}</div>
+    </div>
+  `;
+
+  // ── Supply chart ──
+  destroyChart(esSupplyChartInst);
+  const supplyDatasets = [];
+  if (avbunk) supplyDatasets.push({
+    label: 'Aviation Bunkers (AVBUNK)', data: avbunk.values,
+    borderColor: '#44ff88', backgroundColor: 'rgba(68,255,136,0.08)', tension: 0.3, pointRadius: 4,
+    pointBackgroundColor: avbunk.values.map(v => v != null && avbunk.avg > 0 && v < avbunk.avg * 0.90 ? '#ff4444' : '#44ff88')
+  });
+  if (avbunk && avbunk.avg > 0) supplyDatasets.push({
+    label: '24-Mo Avg (Bunkers)', data: supply.labels.map(() => avbunk.avg),
+    borderColor: '#ff4444', borderDash: [6, 3], borderWidth: 2, pointRadius: 0
+  });
+  if (supply['IMP']) supplyDatasets.push({ label: 'Imports (IMP)', data: supply['IMP'].values, borderColor: '#00d4ff', tension: 0.3, pointRadius: 3 });
+  if (supply['EXP']) supplyDatasets.push({ label: 'Exports (EXP)', data: supply['EXP'].values, borderColor: '#ffaa00', tension: 0.3, pointRadius: 3 });
+
+  esSupplyChartInst = new Chart(document.getElementById('esSupplyChart'), {
+    type: 'line',
+    data: { labels: supply.labels, datasets: supplyDatasets },
+    options: { ...btsChartDefaults, scales: { ...btsChartDefaults.scales, x: { ...btsChartDefaults.scales.x, ticks: { ...btsChartDefaults.scales.x.ticks, maxRotation: 45 } } } }
+  });
+
+  // ── Stocks chart ──
+  destroyChart(esStocksChartInst);
+  const stockDatasets = [];
+  if (closing) stockDatasets.push({ label: `Closing Stocks (${closingCode})`, data: closing.values, backgroundColor: 'rgba(68,255,136,0.6)', borderColor: '#44ff88', borderWidth: 1, borderRadius: 3 });
+  if (closing && closing.avg > 0) stockDatasets.push({ label: '24-Mo Avg', data: stocks.labels.map(() => closing.avg), type: 'line', borderColor: '#ff4444', borderDash: [6, 3], borderWidth: 2, pointRadius: 0 });
+  if (openingCode && stocks[openingCode]) stockDatasets.push({ label: `Opening Stocks (${openingCode})`, data: stocks[openingCode].values, backgroundColor: 'rgba(0,212,255,0.3)', borderColor: '#00d4ff', borderWidth: 1, borderRadius: 3 });
+
+  esStocksChartInst = new Chart(document.getElementById('esStocksChart'), {
+    type: 'bar',
+    data: { labels: stocks.labels, datasets: stockDatasets },
+    options: { ...btsChartDefaults, scales: { ...btsChartDefaults.scales, x: { ...btsChartDefaults.scales.x, ticks: { ...btsChartDefaults.scales.x.ticks, maxRotation: 45 } } } }
+  });
+
+  // ── EU-5 comparison chart ──
+  destroyChart(esCompChartInst);
+  const comp = parseJsonStat(compResp, 'geo', ['EL', 'DE', 'FR', 'ES', 'IT']);
+  const palette = { EL: '#44ff88', DE: '#ffaa00', FR: '#00d4ff', ES: '#ff6644', IT: '#cc44ff' };
+  const compDatasets = ['EL', 'DE', 'FR', 'ES', 'IT'].map(geo => ({
+    label: { EL: 'Greece (EL)', DE: 'Germany (DE)', FR: 'France (FR)', ES: 'Spain (ES)', IT: 'Italy (IT)' }[geo],
+    data: comp[geo]?.values ?? [],
+    borderColor: palette[geo],
+    backgroundColor: geo === 'EL' ? 'rgba(68,255,136,0.08)' : 'transparent',
+    borderWidth: geo === 'EL' ? 3 : 1.5,
+    tension: 0.3,
+    pointRadius: geo === 'EL' ? 5 : 3
+  }));
+
+  esCompChartInst = new Chart(document.getElementById('esCompChart'), {
+    type: 'line',
+    data: { labels: comp.labels, datasets: compDatasets },
+    options: { ...btsChartDefaults, scales: { ...btsChartDefaults.scales, x: { ...btsChartDefaults.scales.x, ticks: { ...btsChartDefaults.scales.x.ticks, maxRotation: 45 } } } }
+  });
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   initBTS(null);
+  loadEurostat();
   if (!getKey()) {
     document.getElementById('keyBanner').style.display = 'block';
     document.getElementById('kpiRow').innerHTML = '';
