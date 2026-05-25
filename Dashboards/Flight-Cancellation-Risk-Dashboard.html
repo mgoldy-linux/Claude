@@ -373,8 +373,8 @@ let leafletMap = null, leafletMapTBS = null;
 // ─── Init ─────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   const urlKey = new URLSearchParams(window.location.search).get('key');
-  if (urlKey) localStorage.setItem('eiaApiKey', urlKey);
-  const saved = localStorage.getItem('eiaApiKey');
+  if (urlKey) localStorage.setItem('eiaKey', urlKey);
+  const saved = localStorage.getItem('eiaKey');
   if (saved) document.getElementById('eiaKey').value = saved;
   const oskyU = localStorage.getItem('oskyUser');
   const oskyP = localStorage.getItem('oskyPass');
@@ -390,7 +390,7 @@ async function refresh() {
   const oskyU = document.getElementById('oskyUser').value.trim();
   const oskyP = document.getElementById('oskyPass').value.trim();
   const btK   = document.getElementById('btKey').value.trim();
-  if (key)   localStorage.setItem('eiaApiKey', key);
+  if (key)   localStorage.setItem('eiaKey', key);
   if (oskyU) localStorage.setItem('oskyUser',  oskyU);
   if (oskyP) localStorage.setItem('oskyPass',  oskyP);
   if (btK)   localStorage.setItem('btKey',     btK);

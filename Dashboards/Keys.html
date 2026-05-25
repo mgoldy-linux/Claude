@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Key Setup</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #0d0d1a; color: #eee; padding: 30px; max-width: 860px; margin: 0 auto; }
+
+    h1 { color: #00d4ff; font-size: 1.5rem; margin-bottom: 6px; }
+    .page-sub { color: #666; font-size: 0.85rem; margin-bottom: 30px; }
+
+    .key-card {
+      background: #1a1a2e; border-radius: 10px; padding: 22px 24px;
+      margin-bottom: 16px; border-left: 4px solid #00d4ff;
+    }
+    .key-card.opensky { border-left-color: #44ff88; }
+    .key-card.besttime { border-left-color: #aa44ff; }
+    .key-card.eia { border-left-color: #00d4ff; }
+
+    .card-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+    .card-title { font-size: 1rem; font-weight: bold; color: #eee; }
+    .card-title span { font-size: 0.75rem; font-weight: normal; color: #888; margin-left: 8px; }
+    .card-status { font-size: 0.75rem; padding: 2px 10px; border-radius: 10px; font-weight: bold; }
+    .status-saved    { background: #0a2e1a; color: #44ff88; border: 1px solid #44ff88; }
+    .status-missing  { background: #2e0a0a; color: #ff6666; border: 1px solid #ff4444; }
+
+    .card-desc { color: #888; font-size: 0.82rem; margin-bottom: 14px; line-height: 1.5; }
+    .card-desc a { color: #00d4ff; text-decoration: none; }
+    .card-desc a:hover { text-decoration: underline; }
+
+    .used-in { font-size: 0.75rem; color: #555; margin-bottom: 14px; }
+    .used-in span { background: #12182e; border: 1px solid #2a2a4a; border-radius: 4px; padding: 2px 8px; margin-right: 6px; color: #888; }
+
+    .field-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .field-label { color: #aaa; font-size: 0.8rem; width: 120px; flex-shrink: 0; }
+    .field-row input {
+      flex: 1; background: #0d0d1a; border: 1px solid #2a2a4a; color: #eee;
+      padding: 8px 12px; border-radius: 5px; font-size: 0.85rem; font-family: monospace;
+    }
+    .field-row input:focus { outline: none; border-color: #00d4ff; }
+    .field-row input.opensky:focus { border-color: #44ff88; }
+    .field-row input.besttime:focus { border-color: #aa44ff; }
+    .show-btn {
+      background: none; border: 1px solid #333; color: #666; padding: 6px 10px;
+      border-radius: 4px; cursor: pointer; font-size: 0.75rem; white-space: nowrap;
+    }
+    .show-btn:hover { border-color: #555; color: #aaa; }
+
+    .actions { display: flex; gap: 12px; margin-top: 28px; align-items: center; flex-wrap: wrap; }
+    .btn-save {
+      background: #00d4ff; color: #000; border: none; padding: 10px 28px;
+      border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: bold;
+    }
+    .btn-save:hover { background: #00b8e0; }
+    .btn-clear {
+      background: none; border: 1px solid #555; color: #888; padding: 10px 20px;
+      border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+    }
+    .btn-clear:hover { border-color: #ff4444; color: #ff6666; }
+    .save-status { font-size: 0.85rem; color: #44ff88; display: none; }
+
+    .dashboards { margin-top: 32px; padding-top: 24px; border-top: 1px solid #2a2a4a; }
+    .dashboards h2 { font-size: 0.9rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px; }
+    .dash-links { display: flex; gap: 12px; flex-wrap: wrap; }
+    .dash-link {
+      background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 8px;
+      padding: 14px 18px; text-decoration: none; color: #eee; flex: 1; min-width: 200px;
+    }
+    .dash-link:hover { border-color: #00d4ff; }
+    .dash-link .dl-title { font-size: 0.9rem; font-weight: bold; color: #00d4ff; margin-bottom: 4px; }
+    .dash-link .dl-keys  { font-size: 0.75rem; color: #666; }
+
+    .tip { background: #12182e; border: 1px solid #2a2a4a; border-radius: 6px; padding: 12px 16px; margin-top: 16px; font-size: 0.8rem; color: #666; line-height: 1.6; }
+    .tip strong { color: #aaa; }
+  </style>
+</head>
+<body>
+
+<h1>Dashboard Key Setup</h1>
+<p class="page-sub">Save your API credentials once — all dashboards read from the same browser storage.</p>
+
+<!-- EIA -->
+<div class="key-card eia">
+  <div class="card-header">
+    <div class="card-title">EIA API Key <span>U.S. Energy Information Administration</span></div>
+    <div class="card-status" id="statusEIA">Checking…</div>
+  </div>
+  <p class="card-desc">
+    Used for live U.S. jet fuel spot prices and commercial supply data (weekly updates).<br>
+    Free, no credit card required. Get yours at <a href="https://www.eia.gov/opendata/register.php" target="_blank">eia.gov/opendata</a>.
+  </p>
+  <div class="used-in">Used in: <span>EIA Jet Fuel Dashboard</span><span>Flight Cancellation Risk Dashboard</span></div>
+  <div class="field-row">
+    <div class="field-label">API Key</div>
+    <input type="password" id="eiaKey" placeholder="Paste your EIA API key here" autocomplete="off">
+    <button class="show-btn" onclick="toggleShow('eiaKey', this)">Show</button>
+  </div>
+</div>
+
+<!-- OpenSky -->
+<div class="key-card opensky">
+  <div class="card-header">
+    <div class="card-title">OpenSky Credentials <span>OpenSky Network</span></div>
+    <div class="card-status" id="statusOSky">Checking…</div>
+  </div>
+  <p class="card-desc">
+    Used for live flight maps over Athens (ATH) and Tbilisi (TBS) airports. Credentials are optional —
+    anonymous access works but is rate-limited. Register free at <a href="https://opensky-network.org/index.php?option=com_users&view=registration" target="_blank">opensky-network.org</a>.
+  </p>
+  <div class="used-in">Used in: <span>EIA Jet Fuel Dashboard</span><span>Flight Cancellation Risk Dashboard</span></div>
+  <div class="field-row">
+    <div class="field-label">Username</div>
+    <input type="text" id="oskyUser" class="opensky" placeholder="OpenSky username" autocomplete="username">
+  </div>
+  <div class="field-row">
+    <div class="field-label">Password</div>
+    <input type="password" id="oskyPass" class="opensky" placeholder="OpenSky password" autocomplete="current-password">
+    <button class="show-btn" onclick="toggleShow('oskyPass', this)">Show</button>
+  </div>
+</div>
+
+<!-- BestTime -->
+<div class="key-card besttime">
+  <div class="card-header">
+    <div class="card-title">BestTime Private Key <span>BestTime.app</span></div>
+    <div class="card-status" id="statusBT">Checking…</div>
+  </div>
+  <p class="card-desc">
+    Used for Athens crowd pressure data (Acropolis area). Each forecast fetch costs 1 API credit — dashboards
+    cache results for 24 hours. Free trial available at <a href="https://besttime.app" target="_blank">besttime.app</a>.
+    Use the <strong>private</strong> key (not the public key).
+  </p>
+  <div class="used-in">Used in: <span>EIA Jet Fuel Dashboard</span><span>Flight Cancellation Risk Dashboard</span></div>
+  <div class="field-row">
+    <div class="field-label">Private Key</div>
+    <input type="password" id="btKey" class="besttime" placeholder="Paste your BestTime private key here" autocomplete="off">
+    <button class="show-btn" onclick="toggleShow('btKey', this)">Show</button>
+  </div>
+</div>
+
+<div class="actions">
+  <button class="btn-save" onclick="saveAll()">Save All Keys</button>
+  <button class="btn-clear" onclick="clearAll()">Clear All Keys</button>
+  <span class="save-status" id="saveStatus">All keys saved to browser storage.</span>
+</div>
+
+<div class="tip">
+  <strong>How this works:</strong> Keys are saved to your browser's localStorage — they never leave your computer.
+  All dashboards in this folder read from the same storage, so you only need to enter them here once.
+  If you open dashboards in a different browser or clear browser data, re-run this page to restore them.
+</div>
+
+<div class="dashboards">
+  <h2>Open a Dashboard</h2>
+  <div class="dash-links">
+    <a class="dash-link" href="EIA-JetFuel-Dashboard.html">
+      <div class="dl-title">EIA Jet Fuel Dashboard</div>
+      <div class="dl-keys">Uses: EIA key · OpenSky · BestTime · Eurostat (no key)</div>
+    </a>
+    <a class="dash-link" href="Flight-Cancellation-Risk-Dashboard.html">
+      <div class="dl-title">Flight Cancellation Risk Dashboard</div>
+      <div class="dl-keys">Uses: EIA key · OpenSky · BestTime · Eurostat (no key)</div>
+    </a>
+  </div>
+</div>
+
+<script>
+const KEYS = [
+  { id: 'eiaKey',   lsKey: 'eiaKey',   statusId: 'statusEIA',  label: 'EIA key' },
+  { id: 'oskyUser', lsKey: 'oskyUser', statusId: 'statusOSky', label: 'OpenSky username' },
+  { id: 'oskyPass', lsKey: 'oskyPass', statusId: null,         label: null },
+  { id: 'btKey',    lsKey: 'btKey',    statusId: 'statusBT',   label: 'BestTime key' },
+];
+
+function updateStatus(statusId, saved) {
+  if (!statusId) return;
+  const el = document.getElementById(statusId);
+  if (statusId === 'statusOSky') {
+    const u = localStorage.getItem('oskyUser');
+    const p = localStorage.getItem('oskyPass');
+    if (u && p) { el.textContent = 'Saved'; el.className = 'card-status status-saved'; }
+    else if (u || p) { el.textContent = 'Partial'; el.className = 'card-status status-missing'; }
+    else { el.textContent = 'Not saved (optional)'; el.className = 'card-status status-missing'; }
+    return;
+  }
+  el.textContent = saved ? 'Saved' : 'Not saved';
+  el.className = 'card-status ' + (saved ? 'status-saved' : 'status-missing');
+}
+
+function loadFromStorage() {
+  KEYS.forEach(k => {
+    const val = localStorage.getItem(k.lsKey);
+    if (val) document.getElementById(k.id).value = val;
+  });
+  updateStatus('statusEIA',  !!localStorage.getItem('eiaKey'));
+  updateStatus('statusOSky', false); // handled specially inside
+  updateStatus('statusBT',   !!localStorage.getItem('btKey'));
+}
+
+function saveAll() {
+  KEYS.forEach(k => {
+    const val = document.getElementById(k.id).value.trim();
+    if (val) localStorage.setItem(k.lsKey, val);
+  });
+  updateStatus('statusEIA',  !!localStorage.getItem('eiaKey'));
+  updateStatus('statusOSky', false);
+  updateStatus('statusBT',   !!localStorage.getItem('btKey'));
+  const s = document.getElementById('saveStatus');
+  s.style.display = 'inline';
+  setTimeout(() => { s.style.display = 'none'; }, 3000);
+}
+
+function clearAll() {
+  if (!confirm('Clear all saved keys from browser storage?')) return;
+  ['eiaKey', 'oskyUser', 'oskyPass', 'btKey'].forEach(k => localStorage.removeItem(k));
+  KEYS.forEach(k => { document.getElementById(k.id).value = ''; });
+  updateStatus('statusEIA',  false);
+  updateStatus('statusOSky', false);
+  updateStatus('statusBT',   false);
+}
+
+function toggleShow(inputId, btn) {
+  const el = document.getElementById(inputId);
+  if (el.type === 'password') { el.type = 'text'; btn.textContent = 'Hide'; }
+  else { el.type = 'password'; btn.textContent = 'Show'; }
+}
+
+window.addEventListener('DOMContentLoaded', loadFromStorage);
+</script>
+
+</body>
+</html>
