@@ -217,13 +217,13 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 <div class="charts-2col">
   <div class="chart-box">
     <h3>Greece — Aviation Energy Use (Thousand Tonnes)</h3>
-    <p class="chart-sub">Eurostat nrg_cb_oilm · INTAVI_E · last 24 months · orange = seasonal norm (same-month avg over 3 years)</p>
+    <p class="chart-sub">Eurostat nrg_cb_oilm · INTAVI_E · last 3 months · orange = seasonal norm (same-month avg over 3 years)</p>
     <div class="chart-loading" id="loadGreeceUse">Loading from Eurostat…</div>
     <canvas id="chartGreeceUse" style="display:none"></canvas>
   </div>
   <div class="chart-box">
     <h3>Greece — Jet Fuel Imports vs Exports (Thousand Tonnes)</h3>
-    <p class="chart-sub">Eurostat nrg_cb_oilm · IMP / EXP · last 24 months</p>
+    <p class="chart-sub">Eurostat nrg_cb_oilm · IMP / EXP · last 3 months</p>
     <div class="chart-loading" id="loadGreeceImpExp">Loading from Eurostat…</div>
     <canvas id="chartGreeceImpExp" style="display:none"></canvas>
   </div>
@@ -233,15 +233,31 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 <div class="charts-2col">
   <div class="chart-box">
     <h3>EU-5 International Aviation Energy Use by Country (Thousand Tonnes)</h3>
-    <p class="chart-sub">Eurostat · INTAVI_E · Greece · Germany · France · Spain · Italy · last 12 months</p>
+    <p class="chart-sub">Eurostat · INTAVI_E · Greece · Germany · France · Spain · Italy · last 3 months</p>
     <div class="chart-loading" id="loadEU">Loading from Eurostat…</div>
     <canvas id="chartEU" style="display:none"></canvas>
   </div>
   <div class="chart-box">
     <h3>Greece — Stock Change (Thousand Tonnes)</h3>
-    <p class="chart-sub">Eurostat nrg_cb_oilm · STK_CHG · negative = drawdown · last 24 months</p>
+    <p class="chart-sub">Eurostat nrg_cb_oilm · STK_CHG · negative = drawdown · last 3 months</p>
     <div class="chart-loading" id="loadGreeceStkChg">Loading from Eurostat…</div>
     <canvas id="chartGreeceStkChg" style="display:none"></canvas>
+  </div>
+</div>
+
+<!-- Charts Row 4: Greece Stocks -->
+<div class="charts-2col">
+  <div class="chart-box">
+    <h3>Greece — Kerosene Closing &amp; Opening Stocks (Thousand Tonnes)</h3>
+    <p class="chart-sub">Eurostat nrg_stk_oilm · siec=O4661 · last 3 months</p>
+    <div class="chart-loading" id="loadGreeceStocks">Loading from Eurostat…</div>
+    <canvas id="chartGreeceStocks" style="display:none"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>Greece — Aviation Bunkers AVBUNK vs INTAVI_E (Thousand Tonnes)</h3>
+    <p class="chart-sub">Eurostat nrg_cb_oilm · AVBUNK = kerosene bunkers · INTAVI_E = intl aviation energy · last 3 months</p>
+    <div class="chart-loading" id="loadGreeceAVBUNK">Loading from Eurostat…</div>
+    <canvas id="chartGreeceAVBUNK" style="display:none"></canvas>
   </div>
 </div>
 
@@ -328,7 +344,8 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 // ─── API Endpoints ────────────────────────────────────────────────────────────
 const EIA_BASE           = 'https://api.eia.gov/v2';
 const EUROSTAT_GREECE    = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&siec=O4661&lastTimePeriod=36';
-const EUROSTAT_EU        = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&geo=DE&geo=FR&geo=ES&geo=IT&siec=O4661&nrg_bal=INTAVI_E&lastTimePeriod=12';
+const EUROSTAT_GREECE_STK= 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_stk_oilm?lang=EN&format=JSON&geo=EL&siec=O4661&lastTimePeriod=3';
+const EUROSTAT_EU        = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&geo=DE&geo=FR&geo=ES&geo=IT&siec=O4661&nrg_bal=INTAVI_E&lastTimePeriod=3';
 const OPENSKY_PARAMS_ATH = 'states/all?lamin=37.75&lomin=23.60&lamax=38.15&lomax=24.30';
 const OPENSKY_PARAMS_TBS = 'states/all?lamin=41.40&lomin=44.50&lamax=42.00&lomax=45.30';
 const BESTTIME_BASE      = 'https://besttime.app/api/v1';
@@ -384,6 +401,7 @@ async function refresh() {
     key ? fetchEIASupply(key) : showNoKey('EIASupply'),
     fetchEurostatGreece(),
     fetchEurostatEU(),
+    fetchEurostatGreeceStocks(),
     fetchOpenSky(oskyU, oskyP),
     fetchOpenSkyTBS(oskyU, oskyP),
     refreshCrowds(false)
@@ -563,19 +581,19 @@ async function fetchEurostatGreece() {
       chg.className = 'change ' + (pct < 0 ? 'up' : 'down');
     }
 
-    const display24 = times.slice(-24);
-    const avi24     = avi.values.slice(-24);
-    const base24    = seasonalBaseline.slice(-24);
+    const display3 = times.slice(-3);
+    const avi3     = avi.values.slice(-3);
+    const base3    = seasonalBaseline.slice(-3);
 
     showChart('GreeceUse');
     destroyChart('chartGreeceUse');
     charts.greeceUse = new Chart(document.getElementById('chartGreeceUse'), {
       type: 'line',
       data: {
-        labels: display24,
+        labels: display3,
         datasets: [
-          { label: 'Aviation Use (INTAVI_E)', data: avi24, borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.08)', tension: 0.3, pointRadius: 4, spanGaps: true },
-          { label: 'Seasonal Norm (same-month avg)', data: base24, borderColor: '#ffaa00', borderDash: [6,3], borderWidth: 2, pointRadius: 0, spanGaps: true }
+          { label: 'Aviation Use (INTAVI_E)', data: avi3, borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.08)', tension: 0.3, pointRadius: 4, spanGaps: true },
+          { label: 'Seasonal Norm (same-month avg)', data: base3, borderColor: '#ffaa00', borderDash: [6,3], borderWidth: 2, pointRadius: 0, spanGaps: true }
         ]
       },
       options: {
@@ -597,15 +615,21 @@ async function fetchEurostatGreece() {
       }
     });
 
+    const imp3    = imp.values.slice(-3);
+    const exp3    = exp.values.slice(-3);
+    const stkChg3 = stkChg.values.slice(-3);
+    const avbunk  = getSeries('AVBUNK');
+    const avbunk3 = avbunk.values.slice(-3);
+
     showChart('GreeceImpExp');
     destroyChart('chartGreeceImpExp');
     charts.greeceImpExp = new Chart(document.getElementById('chartGreeceImpExp'), {
       type: 'bar',
       data: {
-        labels: times,
+        labels: display3,
         datasets: [
-          { label: 'Imports (IMP)', data: imp.values, backgroundColor: 'rgba(0,212,255,0.7)', borderColor: '#00d4ff', borderWidth: 1 },
-          { label: 'Exports (EXP)', data: exp.values.map(v => v !== null ? -v : null), backgroundColor: 'rgba(255,68,68,0.7)', borderColor: '#ff4444', borderWidth: 1 }
+          { label: 'Imports (IMP)', data: imp3, backgroundColor: 'rgba(0,212,255,0.7)', borderColor: '#00d4ff', borderWidth: 1 },
+          { label: 'Exports (EXP)', data: exp3.map(v => v !== null ? -v : null), backgroundColor: 'rgba(255,68,68,0.7)', borderColor: '#ff4444', borderWidth: 1 }
         ]
       },
       options: { ...CD, scales: { ...CD.scales, x: { ...CD.scales.x, ticks: { ...CD.scales.x.ticks, maxRotation: 45 } }, y: { ...CD.scales.y, title: { display: true, text: 'kt (exports shown negative)', color: '#aaa', font: { size: 10 } } } } }
@@ -616,22 +640,83 @@ async function fetchEurostatGreece() {
     charts.greeceStkChg = new Chart(document.getElementById('chartGreeceStkChg'), {
       type: 'bar',
       data: {
-        labels: times,
+        labels: display3,
         datasets: [{
           label: 'Stock Change (STK_CHG)',
-          data: stkChg.values,
-          backgroundColor: stkChg.values.map(v => v === null ? 'transparent' : v < 0 ? 'rgba(255,68,68,0.7)' : 'rgba(68,255,136,0.7)'),
-          borderColor:     stkChg.values.map(v => v === null ? 'transparent' : v < 0 ? '#ff4444' : '#44ff88'),
+          data: stkChg3,
+          backgroundColor: stkChg3.map(v => v === null ? 'transparent' : v < 0 ? 'rgba(255,68,68,0.7)' : 'rgba(68,255,136,0.7)'),
+          borderColor:     stkChg3.map(v => v === null ? 'transparent' : v < 0 ? '#ff4444' : '#44ff88'),
           borderWidth: 1
         }]
       },
       options: { ...CD, scales: { ...CD.scales, x: { ...CD.scales.x, ticks: { ...CD.scales.x.ticks, maxRotation: 45 } }, y: { ...CD.scales.y, title: { display: true, text: 'Thousand Tonnes', color: '#aaa', font: { size: 10 } } } } }
     });
 
+    showChart('GreeceAVBUNK');
+    destroyChart('chartGreeceAVBUNK');
+    charts.greeceAVBUNK = new Chart(document.getElementById('chartGreeceAVBUNK'), {
+      type: 'line',
+      data: {
+        labels: display3,
+        datasets: [
+          { label: 'Aviation Bunkers (AVBUNK)', data: avbunk3, borderColor: '#44ff88', backgroundColor: 'rgba(68,255,136,0.08)', tension: 0.3, pointRadius: 5, spanGaps: true },
+          { label: 'Intl Aviation Energy (INTAVI_E)', data: avi3, borderColor: '#00d4ff', backgroundColor: 'transparent', tension: 0.3, pointRadius: 5, borderDash: [4,3], spanGaps: true }
+        ]
+      },
+      options: { ...CD, scales: { ...CD.scales, y: { ...CD.scales.y, title: { display: true, text: 'Thousand Tonnes', color: '#aaa', font: { size: 10 } } } } }
+    });
+
   } catch (e) {
     ['GreeceUse','GreeceImpExp','GreeceStkChg'].forEach(w => { document.getElementById('load'+w).textContent = 'Eurostat fetch failed: ' + e.message; });
     setSignal('sigGreeceUse', 'load', 'Unavailable: ' + e.message);
     signals.greeceUse = null;
+  }
+}
+
+// ─── Eurostat: Greece Stocks (nrg_stk_oilm) ──────────────────────────────────
+async function fetchEurostatGreeceStocks() {
+  try {
+    const res = await fetch(EUROSTAT_GREECE_STK);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const resp = await res.json();
+
+    const ids = resp.id, sizes = resp.size, dims = resp.dimension, values = resp.value;
+    const strides = buildStrides(ids, sizes);
+    const stkIdx  = ids.indexOf('stk_flow'), timeIdx = ids.indexOf('time');
+    const stkCats = dims['stk_flow'].category, timeCats = dims['time'].category;
+    const times   = Object.keys(timeCats.index).sort();
+
+    function findCode(candidates) {
+      for (const c of candidates) { if (stkCats.index[c] !== undefined) return c; }
+      return Object.keys(stkCats.label).find(k =>
+        candidates.some(c => (stkCats.label[k]||'').toLowerCase().includes(c.toLowerCase()))
+      ) || null;
+    }
+    const closingCode = findCode(['CF','S2','CLOSING','CLO']);
+    const openingCode = findCode(['OF','S1','OPENING','OPE']);
+
+    function getStkSeries(code) {
+      if (!code) return null;
+      const ci   = stkCats.index[code];
+      const vals = times.map(t => values[ci * strides[stkIdx] + timeCats.index[t] * strides[timeIdx]] ?? null);
+      return { code, values: vals };
+    }
+
+    const closing = getStkSeries(closingCode);
+    const opening = getStkSeries(openingCode);
+    const datasets = [];
+    if (closing) datasets.push({ label: `Closing Stocks (${closingCode})`, data: closing.values, backgroundColor: 'rgba(68,255,136,0.65)', borderColor: '#44ff88', borderWidth: 1, borderRadius: 3 });
+    if (opening) datasets.push({ label: `Opening Stocks (${openingCode})`, data: opening.values, backgroundColor: 'rgba(0,212,255,0.35)', borderColor: '#00d4ff', borderWidth: 1, borderRadius: 3 });
+
+    showChart('GreeceStocks');
+    destroyChart('chartGreeceStocks');
+    charts.greeceStocks = new Chart(document.getElementById('chartGreeceStocks'), {
+      type: 'bar',
+      data: { labels: times, datasets },
+      options: { ...CD, scales: { ...CD.scales, y: { ...CD.scales.y, title: { display: true, text: 'Thousand Tonnes', color: '#aaa', font: { size: 10 } } } } }
+    });
+  } catch (e) {
+    document.getElementById('loadGreeceStocks').textContent = 'Eurostat stocks fetch failed: ' + e.message;
   }
 }
 
