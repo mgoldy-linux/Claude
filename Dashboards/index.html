@@ -1,11 +1,86 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta http-equiv="refresh" content="0; url=Flight-Cancellation-Risk-Dashboard.html">
-<title>Flight Cancellation Risk Dashboard</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jet Fuel Risk — Dashboards</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #0d0d1a; color: #eee; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; }
+
+    h1 { color: #00d4ff; font-size: 1.6rem; margin-bottom: 6px; text-align: center; }
+    .subtitle { color: #555; font-size: 0.85rem; margin-bottom: 40px; text-align: center; }
+
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; width: 100%; max-width: 860px; }
+
+    .card {
+      background: #1a1a2e; border-radius: 12px; padding: 28px 24px;
+      border: 1px solid #2a2a4a; text-decoration: none; color: #eee;
+      transition: border-color 0.15s, transform 0.15s;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+    .card-icon { font-size: 2rem; line-height: 1; }
+    .card-title { font-size: 1rem; font-weight: bold; color: var(--accent); }
+    .card-desc { font-size: 0.8rem; color: #888; line-height: 1.6; }
+    .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; background: #12182e; border: 1px solid #2a2a4a; color: #666; }
+
+    .card.eia  { --accent: #00d4ff; }
+    .card.risk { --accent: #ff6644; }
+    .card.keys { --accent: #44ff88; }
+
+    .footer { margin-top: 40px; color: #333; font-size: 0.75rem; text-align: center; }
+  </style>
 </head>
 <body>
-<a href="Flight-Cancellation-Risk-Dashboard.html">Flight Cancellation Risk Dashboard</a>
+
+<h1>Jet Fuel Risk Dashboards</h1>
+<p class="subtitle">Flight cancellation risk model — fuel prices, supply, live flights &amp; crowd data</p>
+
+<div class="cards">
+
+  <a class="card eia" href="EIA-JetFuel-Dashboard.html">
+    <div class="card-icon">⛽</div>
+    <div class="card-title">EIA Jet Fuel Dashboard</div>
+    <div class="card-desc">Live U.S. spot prices &amp; supply, BTS airline fuel costs, Eurostat Greece data, OpenSky flight maps, and Athens crowd pressure.</div>
+    <div class="card-tags">
+      <span class="tag">EIA</span>
+      <span class="tag">BTS</span>
+      <span class="tag">Eurostat</span>
+      <span class="tag">OpenSky</span>
+      <span class="tag">BestTime</span>
+    </div>
+  </a>
+
+  <a class="card risk" href="Flight-Cancellation-Risk-Dashboard.html">
+    <div class="card-icon">✈️</div>
+    <div class="card-title">Flight Cancellation Risk Dashboard</div>
+    <div class="card-desc">Aegean Airlines risk score for ATH &amp; TBS routes — combining fuel price signals, Greece Eurostat supply, live flights, and tourist crowd pressure.</div>
+    <div class="card-tags">
+      <span class="tag">EIA</span>
+      <span class="tag">Eurostat</span>
+      <span class="tag">OpenSky</span>
+      <span class="tag">BestTime</span>
+      <span class="tag">Risk Score</span>
+    </div>
+  </a>
+
+  <a class="card keys" href="Keys.html">
+    <div class="card-icon">🔑</div>
+    <div class="card-title">API Key Setup</div>
+    <div class="card-desc">Save your EIA, OpenSky, and BestTime credentials once. All dashboards read from the same browser storage — no re-entry needed.</div>
+    <div class="card-tags">
+      <span class="tag">EIA key</span>
+      <span class="tag">OpenSky</span>
+      <span class="tag">BestTime</span>
+    </div>
+  </a>
+
+</div>
+
+<div class="footer">Data sources: EIA Open Data · Eurostat API · OpenSky Network · BestTime.app · BTS Form 41</div>
+
 </body>
 </html>
