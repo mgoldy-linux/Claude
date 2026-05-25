@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>U.S. Jet Fuel Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; background: #0d0d1a; color: #eee; padding: 20px; }
@@ -85,6 +87,14 @@
     /* BTS KPI accent */
     .kpi.bts { border-left-color: #ffaa00; }
     .kpi.bts .kpi-value { color: #ffaa00; }
+
+    /* OpenSky */
+    .osky-creds { background: #1a1a2e; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .osky-creds input { background: #0d0d1a; border: 1px solid #555; color: #eee; padding: 6px 10px; border-radius: 4px; font-size: 0.82rem; width: 160px; }
+    .osky-creds input::placeholder { color: #555; }
+    .osky-status { color: #888; font-size: 0.8rem; margin-left: 4px; }
+    #athMap, #tbsMap { height: 320px; border-radius: 6px; }
+    .map-placeholder { color: #555; font-size: 0.85rem; text-align: center; padding: 60px 20px; border: 1px dashed #2a2a4a; border-radius: 6px; }
 
     @media (max-width: 700px) { .charts-row { grid-template-columns: 1fr; } }
   </style>
@@ -203,6 +213,34 @@
     Source: Eurostat nrg_cb_oilm &amp; nrg_stk_oilm — siec=O4661 (Kerosene-type jet fuel) | No auth required
   </p>
 </div>
+
+<!-- ── OpenSky Section ────────────────────────────────────────────────── -->
+<hr class="section-divider" data-label="OPENSKY LIVE FLIGHTS">
+
+<div class="osky-creds">
+  <input type="text"     id="oskyUser" placeholder="OpenSky username (optional)">
+  <input type="password" id="oskyPass" placeholder="OpenSky password (optional)">
+  <button class="btn btn-sm" onclick="loadFlights()">Load Flights</button>
+  <span class="osky-status" id="oskyStatus">Enter credentials (optional) and click Load Flights</span>
+</div>
+
+<div class="charts-row">
+  <div class="chart-box">
+    <h3>Athens International (ATH · LGAV) — AEE highlighted</h3>
+    <div class="map-placeholder" id="athPlaceholder">Click "Load Flights" to fetch live OpenSky data</div>
+    <div id="athMap" style="display:none"></div>
+    <p style="color:#555;font-size:0.72rem;margin-top:8px" id="athMeta"></p>
+  </div>
+  <div class="chart-box">
+    <h3>Tbilisi International (TBS · UGTB) — AEE highlighted</h3>
+    <div class="map-placeholder" id="tbsPlaceholder">Click "Load Flights" to fetch live OpenSky data</div>
+    <div id="tbsMap" style="display:none"></div>
+    <p style="color:#555;font-size:0.72rem;margin-top:8px" id="tbsMeta"></p>
+  </div>
+</div>
+<p style="color:#555;font-size:0.75rem;margin-bottom:24px">
+  Source: OpenSky Network REST API · Anonymous requests may be rate-limited · Use credentials for higher limits · routed via corsproxy.io
+</p>
 
 <script>
 const EIA_BASE = 'https://api.eia.gov/v2';
@@ -790,8 +828,117 @@ function renderEurostat(supplyResp, stocksResp, compResp) {
   });
 }
 
+// ── OpenSky ───────────────────────────────────────────────────────────────
+const OSKY_ATH = 'states/all?lamin=37.75&lomin=23.60&lamax=38.15&lomax=24.30';
+const OSKY_TBS = 'states/all?lamin=41.40&lomin=44.50&lamax=42.00&lomax=45.30';
+const ATH_LAT = 37.9364, ATH_LON = 23.9445;
+const TBS_LAT = 41.6692, TBS_LON = 44.9547;
+let leafletATH = null, leafletTBS = null;
+
+function oskyUrl(params, user, pass) {
+  const host = (user && pass)
+    ? `https://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@opensky-network.org/api/`
+    : 'https://opensky-network.org/api/';
+  return `https://corsproxy.io/?${host}${params}`;
+}
+
+function parseFlights(states) {
+  return (states || []).map(s => ({
+    icao24: s[0], callsign: (s[1] || '').trim(), country: s[2],
+    lon: s[5], lat: s[6], altitude: s[7], velocity: s[9]
+  })).filter(f => f.lat && f.lon);
+}
+
+function populateMap(mapInst, flights, airportLabel) {
+  flights.forEach(f => {
+    const isAEE = f.callsign.startsWith('AEE');
+    const marker = L.marker([f.lat, f.lon], {
+      icon: L.divIcon({
+        className: '',
+        html: `<span style="font-size:${isAEE ? '20' : '13'}px;opacity:${isAEE ? '1' : '0.5'}">${isAEE ? '✈️' : '🛩️'}</span>`,
+        iconSize: [24, 24], iconAnchor: [12, 12]
+      })
+    }).addTo(mapInst);
+    marker._isAircraft = true;
+    marker.bindPopup(
+      `<b>${f.callsign || 'Unknown'}</b>${isAEE ? ' — Aegean Airlines' : ''}<br>` +
+      `${f.country}<br>Alt: ${f.altitude ? Math.round(f.altitude) + ' m' : 'N/A'}<br>` +
+      `Speed: ${f.velocity ? Math.round(f.velocity) + ' m/s' : 'N/A'}`
+    );
+  });
+}
+
+async function fetchOsky(params, user, pass, mapId, placeholderId, metaId, center, airportPopup, mapRef) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  try {
+    const res = await fetch(oskyUrl(params, user, pass), { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    const flights = parseFlights(json.states);
+    const aee = flights.filter(f => f.callsign.startsWith('AEE'));
+
+    document.getElementById(placeholderId).style.display = 'none';
+    const mapDiv = document.getElementById(mapId);
+    mapDiv.style.display = 'block';
+
+    if (!mapRef.inst) {
+      mapRef.inst = L.map(mapId).setView(center, 11);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapRef.inst);
+      L.marker(center, {
+        icon: L.divIcon({ className: '', html: '<span style="font-size:22px">🏢</span>', iconSize: [28, 28], iconAnchor: [14, 14] })
+      }).addTo(mapRef.inst).bindPopup(airportPopup);
+    } else {
+      mapRef.inst.eachLayer(l => { if (l instanceof L.Marker && l._isAircraft) mapRef.inst.removeLayer(l); });
+    }
+
+    populateMap(mapRef.inst, flights, mapId);
+    document.getElementById(metaId).textContent =
+      `${flights.length} aircraft in bounding box · ${aee.length} Aegean (AEE) · Live`;
+    return aee.length;
+  } catch (e) {
+    clearTimeout(timeout);
+    const msg = e.name === 'AbortError' ? 'Timed out — try again or check credentials' : e.message;
+    document.getElementById(placeholderId).textContent = 'OpenSky unavailable: ' + msg;
+    return null;
+  }
+}
+
+async function loadFlights() {
+  const user = document.getElementById('oskyUser').value.trim();
+  const pass = document.getElementById('oskyPass').value.trim();
+  if (user) localStorage.setItem('oskyUser', user);
+  if (pass) localStorage.setItem('oskyPass', pass);
+
+  document.getElementById('oskyStatus').textContent = 'Fetching live flights…';
+  const athRef = { inst: leafletATH };
+  const tbsRef = { inst: leafletTBS };
+
+  const [athAEE, tbsAEE] = await Promise.all([
+    fetchOsky(OSKY_ATH, user, pass, 'athMap', 'athPlaceholder', 'athMeta',
+      [ATH_LAT, ATH_LON], '<b>ATH · LGAV</b><br>Athens Intl — Eleftherios Venizelos', athRef),
+    fetchOsky(OSKY_TBS, user, pass, 'tbsMap', 'tbsPlaceholder', 'tbsMeta',
+      [TBS_LAT, TBS_LON], '<b>TBS · UGTB</b><br>Tbilisi International Airport', tbsRef)
+  ]);
+
+  leafletATH = athRef.inst;
+  leafletTBS = tbsRef.inst;
+
+  const updated = new Date().toLocaleTimeString();
+  document.getElementById('oskyStatus').textContent =
+    athAEE != null
+      ? `ATH: ${athAEE} Aegean · TBS: ${tbsAEE ?? 'N/A'} Aegean · Updated ${updated}`
+      : `Failed — check credentials or try again · ${updated}`;
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
+  const savedUser = localStorage.getItem('oskyUser');
+  const savedPass = localStorage.getItem('oskyPass');
+  if (savedUser) document.getElementById('oskyUser').value = savedUser;
+  if (savedPass) document.getElementById('oskyPass').value = savedPass;
+
   initBTS(null);
   loadEurostat();
   if (!getKey()) {
