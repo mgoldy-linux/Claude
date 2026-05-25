@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EIA Jet Fuel Live Dashboard</title>
+  <title>U.S. Jet Fuel Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -64,6 +64,28 @@
     .loading { text-align: center; color: #555; padding: 40px; font-size: 0.9rem; }
     .error-msg { background: #2a0a0a; border: 1px solid #ff4444; border-radius: 6px; padding: 12px; color: #ff9999; margin-bottom: 16px; font-size: 0.85rem; display: none; }
 
+    /* Section divider */
+    .section-divider {
+      border: none; border-top: 1px solid #2a2a4a;
+      margin: 32px 0 24px; position: relative;
+    }
+    .section-divider::after {
+      content: attr(data-label); position: absolute; top: -11px; left: 0;
+      background: #0d0d1a; padding: 0 12px 0 0;
+      color: #ffaa00; font-size: 0.85rem; font-weight: bold; letter-spacing: 0.05em;
+    }
+
+    /* BTS table */
+    .bts-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 4px; }
+    .bts-table th { background: #16213e; color: #888; text-transform: uppercase; font-size: 0.72rem; padding: 8px 10px; text-align: left; border-bottom: 1px solid #2a2a4a; }
+    .bts-table td { padding: 7px 10px; border-bottom: 1px solid #1e1e3a; color: #ddd; }
+    .bts-table tr.total td { color: #ffaa00; font-weight: bold; }
+    .bts-table tr:last-child td { border-bottom: none; }
+
+    /* BTS KPI accent */
+    .kpi.bts { border-left-color: #ffaa00; }
+    .kpi.bts .kpi-value { color: #ffaa00; }
+
     @media (max-width: 700px) { .charts-row { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -71,8 +93,8 @@
 
 <div class="header-row">
   <div>
-    <h1>EIA Jet Fuel Live Dashboard</h1>
-    <div class="subtitle">U.S. Gulf Coast Spot Price &amp; Commercial Supply — last 13 weeks</div>
+    <h1>U.S. Jet Fuel Dashboard</h1>
+    <div class="subtitle">EIA live spot price &amp; supply + BTS airline fuel cost data</div>
   </div>
   <div>
     <span id="lastUpdated">Not loaded</span>
@@ -107,6 +129,49 @@
 <div class="chart-full">
   <h3>Latest Week: Commercial Supply by Region (MBBL/Day)</h3>
   <canvas id="regionChart" height="90"></canvas>
+</div>
+
+<!-- ── BTS Section ─────────────────────────────────────────────────────── -->
+<hr class="section-divider" data-label="BTS AIRLINE FUEL DATA — JAN–MAR 2026">
+
+<div class="kpi-row" id="btsKpiRow"></div>
+
+<div class="charts-row">
+  <div class="chart-box">
+    <h3>Average Price Paid per Gallon (All Airlines)</h3>
+    <canvas id="btsPriceChart" height="180"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>Total Fuel Cost ($B)</h3>
+    <canvas id="btsCostChart" height="180"></canvas>
+  </div>
+</div>
+
+<div class="charts-row">
+  <div class="chart-box">
+    <h3>Total Gallons Consumed (Billions)</h3>
+    <canvas id="btsGallonsChart" height="180"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>Domestic vs International Cost Split ($B)</h3>
+    <canvas id="btsSplitChart" height="180"></canvas>
+  </div>
+</div>
+
+<div class="chart-full">
+  <h3>Scheduled vs Non-Scheduled Price per Gallon</h3>
+  <canvas id="btsSchedChart" height="80"></canvas>
+</div>
+
+<div class="chart-full">
+  <h3>Detail Table — Total System</h3>
+  <table class="bts-table">
+    <thead>
+      <tr><th>Month</th><th>Category</th><th>Total Cost</th><th>Gallons</th><th>Avg $/GAL</th></tr>
+    </thead>
+    <tbody id="btsTableBody"></tbody>
+  </table>
+  <p style="color:#555;font-size:0.75rem;margin-top:12px">Source: BTS Form 41 — covers major, national &amp; large regional U.S. carriers (99.9% of consumption)</p>
 </div>
 
 <script>
@@ -352,6 +417,9 @@ function renderDashboard(priceJson, supplyJson) {
     options: chartDefaults
   });
 
+  // ── Update BTS gap card with live EIA price ──
+  initBTS(latestPrice);
+
   // ── Regional bar chart ──
   destroyChart(regionChartInst);
   regionChartInst = new Chart(document.getElementById('regionChart'), {
@@ -372,8 +440,161 @@ function renderDashboard(priceJson, supplyJson) {
   });
 }
 
+// ── BTS static data ───────────────────────────────────────────────────────
+const BTS_MONTHS = ['Jan-2026', 'Feb-2026', 'Mar-2026'];
+const BTS = {
+  avgPrice:      [2.36, 2.40, 3.12],
+  totalCostB:    [3.687726064, 3.501419668, 5.450213696],
+  totalGallonsB: [1.561663033, 1.458163918, 1.747375507],
+  domCostB:      [2.290521312, 2.230647413, 3.551860997],
+  intlCostB:     [1.397204752, 1.270772255, 1.898352699],
+  schedPrice:    [2.35, 2.39, 3.13],
+  nonSchedPrice: [2.45, 2.53, 2.99],
+  table: [
+    { month: 'Jan-2026', cat: 'Scheduled Service',     cost: '$3,391,616,539', gal: '1,440,616,272', price: '$2.35' },
+    { month: 'Jan-2026', cat: 'Non-Scheduled Service', cost: '$296,109,525',   gal: '121,046,761',   price: '$2.45' },
+    { month: 'Jan-2026', cat: 'Total System',          cost: '$3,687,726,064', gal: '1,561,663,033', price: '$2.36' },
+    { month: 'Feb-2026', cat: 'Scheduled Service',     cost: '$3,232,874,465', gal: '1,351,896,615', price: '$2.39' },
+    { month: 'Feb-2026', cat: 'Non-Scheduled Service', cost: '$268,545,203',   gal: '106,267,303',   price: '$2.53' },
+    { month: 'Feb-2026', cat: 'Total System',          cost: '$3,501,419,668', gal: '1,458,163,918', price: '$2.40' },
+    { month: 'Mar-2026', cat: 'Scheduled Service',     cost: '$5,055,708,732', gal: '1,615,336,554', price: '$3.13' },
+    { month: 'Mar-2026', cat: 'Non-Scheduled Service', cost: '$394,504,964',   gal: '132,038,953',   price: '$2.99' },
+    { month: 'Mar-2026', cat: 'Total System',          cost: '$5,450,213,696', gal: '1,747,375,507', price: '$3.12' },
+  ]
+};
+
+let btsPriceChartInst = null, btsCostChartInst = null;
+let btsGallonsChartInst = null, btsSplitChartInst = null, btsSchedChartInst = null;
+
+const btsChartDefaults = {
+  ...chartDefaults,
+  scales: {
+    x: { ticks: { color: '#888', font: { size: 11 } }, grid: { color: '#222' } },
+    y: { ticks: { color: '#888', font: { size: 11 } }, grid: { color: '#222' } }
+  }
+};
+
+function initBTS(eiaLatestPrice) {
+  const latestBTS = BTS.avgPrice[BTS.avgPrice.length - 1];
+  const gap = eiaLatestPrice != null ? eiaLatestPrice - latestBTS : null;
+  const pctChange = ((BTS.avgPrice[2] - BTS.avgPrice[0]) / BTS.avgPrice[0] * 100).toFixed(1);
+
+  // KPI cards
+  document.getElementById('btsKpiRow').innerHTML = `
+    <div class="kpi bts">
+      <div class="kpi-label">Mar 2026 Avg Price</div>
+      <div class="kpi-value">$${BTS.avgPrice[2].toFixed(2)}</div>
+      <div class="kpi-sub">▲ ${pctChange}% since Jan ($${BTS.avgPrice[0].toFixed(2)})</div>
+    </div>
+    <div class="kpi bts">
+      <div class="kpi-label">Mar 2026 Total Cost</div>
+      <div class="kpi-value">$${BTS.totalCostB[2].toFixed(2)}B</div>
+      <div class="kpi-sub">▲ 55.7% vs Feb ($${BTS.totalCostB[1].toFixed(2)}B)</div>
+    </div>
+    <div class="kpi bts">
+      <div class="kpi-label">Mar 2026 Gallons</div>
+      <div class="kpi-value">${BTS.totalGallonsB[2].toFixed(2)}B</div>
+      <div class="kpi-sub">▲ 19.8% vs Feb (${BTS.totalGallonsB[1].toFixed(2)}B gal)</div>
+    </div>
+    ${gap != null ? `
+    <div class="kpi ${gap >= 1.0 ? 'risk-high' : gap >= 0.5 ? 'risk-mod' : 'risk-ok'}">
+      <div class="kpi-label">EIA Spot vs BTS Mar</div>
+      <div class="kpi-value">+$${gap.toFixed(2)}</div>
+      <div class="kpi-sub">Airlines paid $${latestBTS.toFixed(2)}, spot now $${eiaLatestPrice.toFixed(2)}</div>
+    </div>` : ''}
+  `;
+
+  // Price chart
+  destroyChart(btsPriceChartInst);
+  btsPriceChartInst = new Chart(document.getElementById('btsPriceChart'), {
+    type: 'line',
+    data: {
+      labels: BTS_MONTHS,
+      datasets: [
+        {
+          label: 'Avg Price Paid ($/GAL)',
+          data: BTS.avgPrice,
+          borderColor: '#ffaa00', backgroundColor: 'rgba(255,170,0,0.08)',
+          tension: 0.3, pointRadius: 6,
+          pointBackgroundColor: BTS.avgPrice.map(p => p >= 3.00 ? '#ff4444' : '#ffaa00')
+        },
+        {
+          label: 'Airline Risk Threshold ($3.00)',
+          data: BTS_MONTHS.map(() => 3.00),
+          borderColor: '#ff4444', borderDash: [6, 3], borderWidth: 2, pointRadius: 0
+        }
+      ]
+    },
+    options: {
+      ...btsChartDefaults,
+      scales: { ...btsChartDefaults.scales, y: { ...btsChartDefaults.scales.y, ticks: { color: '#888', callback: v => '$' + v.toFixed(2) }, min: 2.0 } }
+    }
+  });
+
+  // Cost chart
+  destroyChart(btsCostChartInst);
+  btsCostChartInst = new Chart(document.getElementById('btsCostChart'), {
+    type: 'bar',
+    data: {
+      labels: BTS_MONTHS,
+      datasets: [{ label: 'Total Cost ($B)', data: BTS.totalCostB, backgroundColor: ['#44ff88', '#44ff88', '#ff4444'], borderRadius: 4 }]
+    },
+    options: { ...btsChartDefaults, scales: { ...btsChartDefaults.scales, y: { ...btsChartDefaults.scales.y, ticks: { color: '#888', callback: v => '$' + v.toFixed(2) + 'B' } } } }
+  });
+
+  // Gallons chart
+  destroyChart(btsGallonsChartInst);
+  btsGallonsChartInst = new Chart(document.getElementById('btsGallonsChart'), {
+    type: 'bar',
+    data: {
+      labels: BTS_MONTHS,
+      datasets: [{ label: 'Gallons (Billions)', data: BTS.totalGallonsB, backgroundColor: '#ffaa00', borderRadius: 4 }]
+    },
+    options: { ...btsChartDefaults, scales: { ...btsChartDefaults.scales, y: { ...btsChartDefaults.scales.y, ticks: { color: '#888', callback: v => v.toFixed(2) + 'B' } } } }
+  });
+
+  // Domestic vs International split
+  destroyChart(btsSplitChartInst);
+  btsSplitChartInst = new Chart(document.getElementById('btsSplitChart'), {
+    type: 'bar',
+    data: {
+      labels: BTS_MONTHS,
+      datasets: [
+        { label: 'Domestic ($B)', data: BTS.domCostB, backgroundColor: '#00d4ff', borderRadius: 4 },
+        { label: 'International ($B)', data: BTS.intlCostB, backgroundColor: '#a855f7', borderRadius: 4 }
+      ]
+    },
+    options: { ...btsChartDefaults, scales: { ...btsChartDefaults.scales, y: { ...btsChartDefaults.scales.y, ticks: { color: '#888', callback: v => '$' + v.toFixed(2) + 'B' } } } }
+  });
+
+  // Scheduled vs Non-Scheduled
+  destroyChart(btsSchedChartInst);
+  btsSchedChartInst = new Chart(document.getElementById('btsSchedChart'), {
+    type: 'line',
+    data: {
+      labels: BTS_MONTHS,
+      datasets: [
+        { label: 'Scheduled ($/GAL)', data: BTS.schedPrice, borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.08)', tension: 0.3, pointRadius: 5 },
+        { label: 'Non-Scheduled ($/GAL)', data: BTS.nonSchedPrice, borderColor: '#ffaa00', backgroundColor: 'rgba(255,170,0,0.08)', tension: 0.3, pointRadius: 5 }
+      ]
+    },
+    options: { ...btsChartDefaults, scales: { ...btsChartDefaults.scales, y: { ...btsChartDefaults.scales.y, ticks: { color: '#888', callback: v => '$' + v.toFixed(2) }, min: 2.0 } } }
+  });
+
+  // Detail table
+  const tbody = document.getElementById('btsTableBody');
+  tbody.innerHTML = '';
+  BTS.table.forEach(r => {
+    const tr = document.createElement('tr');
+    if (r.cat === 'Total System') tr.className = 'total';
+    tr.innerHTML = `<td>${r.month}</td><td>${r.cat}</td><td>${r.cost}</td><td>${r.gal}</td><td>${r.price}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
+  initBTS(null);
   if (!getKey()) {
     document.getElementById('keyBanner').style.display = 'block';
     document.getElementById('kpiRow').innerHTML = '';
