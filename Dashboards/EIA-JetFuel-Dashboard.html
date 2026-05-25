@@ -195,7 +195,7 @@
   </div>
 
   <div class="chart-full">
-    <h3>EU-5 Aviation Bunkers Comparison — EL / DE / FR / ES / IT (Thousand Tonnes, last 12 months)</h3>
+    <h3>EU-5 Aviation Bunkers Comparison — EL / DE / FR / ES / IT (Thousand Tonnes, last 3 months)</h3>
     <canvas id="esCompChart" height="90"></canvas>
   </div>
 
@@ -673,9 +673,9 @@ function findStockCode(dimCats, candidates) {
 async function loadEurostat() {
   try {
     const [supplyResp, stocksResp, compResp] = await Promise.all([
-      fetch(`${ES_BASE}/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&siec=O4661&lastTimePeriod=24`).then(r => r.json()),
-      fetch(`${ES_BASE}/nrg_stk_oilm?lang=EN&format=JSON&geo=EL&siec=O4661&lastTimePeriod=24`).then(r => r.json()),
-      fetch(`${ES_BASE}/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&geo=DE&geo=FR&geo=ES&geo=IT&siec=O4661&nrg_bal=AVBUNK&lastTimePeriod=12`).then(r => r.json())
+      fetch(`${ES_BASE}/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&siec=O4661&lastTimePeriod=3`).then(r => r.json()),
+      fetch(`${ES_BASE}/nrg_stk_oilm?lang=EN&format=JSON&geo=EL&siec=O4661&lastTimePeriod=3`).then(r => r.json()),
+      fetch(`${ES_BASE}/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&geo=DE&geo=FR&geo=ES&geo=IT&siec=O4661&nrg_bal=AVBUNK&lastTimePeriod=3`).then(r => r.json())
     ]);
 
     renderEurostat(supplyResp, stocksResp, compResp);
