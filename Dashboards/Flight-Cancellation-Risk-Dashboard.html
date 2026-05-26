@@ -954,7 +954,6 @@ async function fetchBestTime(privateKey, force) {
   if (!forecast) {
     setSignal('sigBestTime', 'load', 'Fetching from BestTime…');
     try {
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(BESTTIME_BASE + '/forecasts')}`;
       const body = new URLSearchParams({
         api_key_private: privateKey,
         venue_name:    'Acropolis',
@@ -962,14 +961,18 @@ async function fetchBestTime(privateKey, force) {
       });
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);
-      const res = await fetch(proxyUrl, {
+      const res = await fetch(BESTTIME_BASE + '/forecasts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: body.toString(),
         signal: controller.signal
       });
       clearTimeout(timeout);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        let detail = '';
+        try { const t = await res.text(); detail = t.slice(0, 200); } catch (_) {}
+        throw new Error(`HTTP ${res.status}${detail ? ' — ' + detail : ''}`);
+      }
       const json = await res.json();
       if (json.status !== 'OK') throw new Error(json.message || 'BestTime API error');
       forecast = json;
