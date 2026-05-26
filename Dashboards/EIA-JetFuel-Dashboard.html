@@ -886,17 +886,12 @@ async function fetchBestTime(privateKey, force) {
   if (!forecast) {
     document.getElementById('btStatus').textContent = 'Fetching from BestTime…';
     try {
-      const body = new URLSearchParams({
-        api_key_private: privateKey,
-        venue_name: 'Acropolis',
-        venue_address: 'Athens, Greece'
-      });
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);
       const res = await fetch(BT_BASE + '/forecasts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: body.toString(),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ api_key_private: privateKey, venue_name: 'Acropolis', venue_address: 'Athens, Greece' }),
         signal: controller.signal
       });
       clearTimeout(timeout);
