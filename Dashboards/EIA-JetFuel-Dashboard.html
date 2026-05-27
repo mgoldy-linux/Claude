@@ -244,6 +244,23 @@
   Source: OpenSky Network REST API · Anonymous requests may be rate-limited · Use credentials for higher limits · routed via corsproxy.io
 </p>
 
+<!-- ── Wikipedia Pageviews Section ──────────────────────────────────────── -->
+<hr class="section-divider" data-label="WIKIPEDIA PAGEVIEWS — TOURIST INTEREST PROXY">
+
+<div class="charts-row">
+  <div class="chart-box">
+    <h3>Acropolis of Athens — Daily Wikipedia Pageviews (Last 30 Days)</h3>
+    <div class="map-placeholder" id="wikiPlaceholder">Loading Wikipedia pageviews…</div>
+    <canvas id="wikiChart" style="display:none" height="180"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>Pageview Stats</h3>
+    <div id="wikiStats" style="color:#555;font-size:0.85rem;padding:20px 0;line-height:2">Loading…</div>
+  </div>
+</div>
+<p style="color:#555;font-size:0.75rem;margin-bottom:24px">
+  Source: Wikimedia REST API · en.wikipedia.org · Acropolis of Athens article · daily pageviews · no API key required · leading indicator of tourist interest
+</p>
 
 <script>
 const EIA_BASE = 'https://api.eia.gov/v2';
@@ -935,6 +952,78 @@ async function loadFlights() {
       : `Failed — check credentials or try again · ${updated}`;
 }
 
+// ── Wikipedia Pageviews ───────────────────────────────────────────────────
+const WIKI_URL = 'https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/Acropolis_of_Athens/daily';
+let wikiChartInst = null;
+
+function wikiDateStr(d) { return d.toISOString().slice(0,10).replace(/-/g,''); }
+
+async function fetchWikiPageviews() {
+  const end = new Date(); end.setDate(end.getDate() - 1);
+  const start = new Date(end); start.setDate(start.getDate() - 29);
+  try {
+    const res = await fetch(`${WIKI_URL}/${wikiDateStr(start)}/${wikiDateStr(end)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const items = (await res.json()).items || [];
+    const labels = items.map(d => `${d.timestamp.slice(4,6)}/${d.timestamp.slice(6,8)}`);
+    const views  = items.map(d => d.views);
+    const avg30  = Math.round(views.reduce((a,b) => a+b, 0) / views.length);
+    const avg7   = Math.round(views.slice(-7).reduce((a,b) => a+b, 0) / 7);
+    const latest = views[views.length - 1];
+    const trend  = avg7 > avg30 * 1.15 ? '▲ Above baseline' : avg7 < avg30 * 0.85 ? '▼ Below baseline' : '→ Near baseline';
+    const trendColor = avg7 > avg30 * 1.15 ? '#ff8800' : avg7 < avg30 * 0.85 ? '#44ff88' : '#aaa';
+
+    // Rolling 7-day average line
+    const rolling7 = views.map((_, i) => {
+      if (i < 6) return null;
+      return Math.round(views.slice(i-6, i+1).reduce((a,b) => a+b, 0) / 7);
+    });
+
+    document.getElementById('wikiPlaceholder').style.display = 'none';
+    document.getElementById('wikiChart').style.display = 'block';
+    destroyChart(wikiChartInst);
+    wikiChartInst = new Chart(document.getElementById('wikiChart'), {
+      data: {
+        labels,
+        datasets: [
+          {
+            type: 'bar',
+            label: 'Daily views',
+            data: views,
+            backgroundColor: 'rgba(170,68,255,0.45)',
+            borderColor: 'rgba(170,68,255,0.8)',
+            borderWidth: 1,
+            order: 2
+          },
+          {
+            type: 'line',
+            label: '7-day avg',
+            data: rolling7,
+            borderColor: '#ffffff',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.4,
+            order: 1
+          }
+        ]
+      },
+      options: {
+        ...chartDefaults,
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => (v/1000).toFixed(0)+'k' } } }
+      }
+    });
+
+    document.getElementById('wikiStats').innerHTML =
+      `<span style="color:#eee;font-size:1.1rem;font-weight:bold">${latest.toLocaleString()}</span> <span style="color:#666">views yesterday</span><br>` +
+      `<span style="color:#eee">${avg7.toLocaleString()}</span> <span style="color:#666">7-day avg</span><br>` +
+      `<span style="color:#eee">${avg30.toLocaleString()}</span> <span style="color:#666">30-day avg</span><br>` +
+      `<span style="color:${trendColor}">${trend}</span>`;
+  } catch (e) {
+    document.getElementById('wikiPlaceholder').textContent = 'Wikipedia fetch failed: ' + e.message;
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   const savedUser = localStorage.getItem('oskyUser');
@@ -944,6 +1033,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   initBTS(null);
   loadEurostat();
+  fetchWikiPageviews();
   if (!getKey()) {
     document.getElementById('keyBanner').style.display = 'block';
     document.getElementById('kpiRow').innerHTML = '';

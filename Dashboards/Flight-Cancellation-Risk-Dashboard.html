@@ -30,7 +30,7 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 .risk-badge  { font-size: 22px; font-weight: bold; min-width: 40px; text-align: center; }
 .risk-detail { font-size: 13px; line-height: 1.5; }
 
-.kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 18px; }
+.kpi-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-bottom: 18px; }
 .kpi { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 14px; text-align: center; }
 .kpi .label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
 .kpi .value { font-size: 22px; font-weight: bold; color: #00d4ff; }
@@ -40,7 +40,7 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 .down { color: #44ff88; }
 .warn { color: #ff8800; }
 
-.signal-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 18px; }
+.signal-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-bottom: 18px; }
 .signal { border-radius: 6px; padding: 10px 12px; font-size: 12px; border: 1px solid transparent; }
 .signal .sig-title { font-weight: bold; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 3px; }
 .signal .sig-value { font-size: 12px; }
@@ -82,6 +82,7 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 @media (max-width: 1300px) and (min-width: 901px) {
   .kpi-row, .signal-row { grid-template-columns: repeat(4, 1fr); }
   .method-grid { grid-template-columns: repeat(3, 1fr); }
+  .method-grid { grid-template-columns: repeat(3, 1fr); }
 }
 </style>
 </head>
@@ -107,7 +108,7 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 <!-- Risk Banner -->
 <div class="risk-banner sig-load" id="riskBanner">
   <div class="risk-badge" id="riskBadge">—</div>
-  <div class="risk-detail" id="riskDetail">Loading data from EIA, Eurostat, and OpenSky…</div>
+  <div class="risk-detail" id="riskDetail">Loading data from EIA, Eurostat, OpenSky, and Wikipedia…</div>
 </div>
 
 <!-- KPI Row -->
@@ -148,6 +149,12 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
     <div class="change" id="kpiFlightsTBSChange">&nbsp;</div>
     <div class="sub">OpenSky · AEE over Tbilisi</div>
   </div>
+  <div class="kpi">
+    <div class="label">Tourist Interest</div>
+    <div class="value" id="kpiWiki">—</div>
+    <div class="change" id="kpiWikiChange">&nbsp;</div>
+    <div class="sub">Wikipedia · Acropolis · 7-day avg</div>
+  </div>
 </div>
 
 <!-- Signal Status Row -->
@@ -174,6 +181,10 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
   </div>
   <div class="signal sig-load" id="sigOpenSkyTBS">
     <div class="sig-title">TBS Live Flights</div>
+    <div class="sig-value">Loading…</div>
+  </div>
+  <div class="signal sig-load" id="sigWiki">
+    <div class="sig-title">Tourist Interest</div>
     <div class="sig-value">Loading…</div>
   </div>
 </div>
@@ -257,6 +268,20 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
     <div id="tbsMap" style="display:none"></div>
   </div>
 </div>
+<!-- Wikipedia Pageviews Chart -->
+<div class="charts-2col">
+  <div class="chart-box">
+    <h3>Acropolis of Athens — Wikipedia Pageviews (Last 30 Days)</h3>
+    <p class="chart-sub">Wikimedia REST API · bars = daily views · white line = 7-day rolling avg · leading indicator of tourist demand</p>
+    <div class="chart-loading" id="loadWiki">Loading…</div>
+    <canvas id="chartWiki" style="display:none"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>Tourist Interest Summary</h3>
+    <div id="wikiSummary" style="color:#555;font-size:0.85rem;padding:20px 0;line-height:2.2">Loading…</div>
+  </div>
+</div>
+
 <div style="margin-bottom:16px"></div>
 
 <!-- Risk Methodology -->
@@ -288,14 +313,20 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
       Within 20% = NORMAL (0pts)<br>
       <em>Greece vs peers context</em>
     </div>
+    <div class="method-item">
+      <strong>Tourist Interest Signal (0–1 pt)</strong>
+      Wikipedia 7-day avg &ge;15% above 30-day baseline = ELEVATED (1pt)<br>
+      Within 15% = NORMAL (0pts)<br>
+      <em>Leading indicator — Acropolis pageviews spike before peak travel season</em>
+    </div>
   </div>
   <div style="margin-top:10px; font-size:11px; color:#555">
-    Total 0–5 pts &rarr; Low (0) · Moderate (1) · Elevated (2) · High (3–4) · Critical (5)
+    Total 0–6 pts &rarr; Low (0) · Moderate (1) · Elevated (2) · High (3–4) · Critical (5–6)
   </div>
 </div>
 
 <div class="footer">
-  Data sources: EIA Open Data API (global price/supply reference) · Eurostat API nrg_cb_oilm (Greece &amp; EU fuel data) · OpenSky Network REST API (ATH &amp; TBS live flights)
+  Data sources: EIA Open Data API (global price/supply reference) · Eurostat API nrg_cb_oilm (Greece &amp; EU fuel data) · OpenSky Network REST API (ATH &amp; TBS live flights) · Wikimedia REST API (Acropolis pageviews · tourist interest proxy)
 </div>
 
 <script>
@@ -306,6 +337,7 @@ const EUROSTAT_GREECE_STK= 'https://ec.europa.eu/eurostat/api/dissemination/stat
 const EUROSTAT_EU        = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&geo=DE&geo=FR&geo=ES&geo=IT&siec=O4661&nrg_bal=INTAVI_E&lastTimePeriod=3';
 const OPENSKY_PARAMS_ATH = 'states/all?lamin=37.75&lomin=23.60&lamax=38.15&lomax=24.30';
 const OPENSKY_PARAMS_TBS = 'states/all?lamin=41.40&lomin=44.50&lamax=42.00&lomax=45.30';
+const WIKI_URL = 'https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/Acropolis_of_Athens/daily';
 // Airport coordinates
 const ATH_LAT = 37.9364, ATH_LON = 23.9445;
 const TBS_LAT = 41.6692, TBS_LON = 44.9547;
@@ -320,7 +352,7 @@ const CD = {
 };
 
 // ─── Risk state ───────────────────────────────────────────────────────────────
-const signals = { eiaPrice: null, eiaSupply: null, greeceUse: null, euComp: null };
+const signals = { eiaPrice: null, eiaSupply: null, greeceUse: null, euComp: null, wiki: null };
 let charts = {};
 let leafletMap = null, leafletMapTBS = null;
 
@@ -353,7 +385,8 @@ async function refresh() {
     fetchEurostatEU(),
     fetchEurostatGreeceStocks(),
     fetchOpenSky(oskyU, oskyP),
-    fetchOpenSkyTBS(oskyU, oskyP)
+    fetchOpenSkyTBS(oskyU, oskyP),
+    fetchWikiPageviews()
   ]);
 
   computeAndRenderRisk();
@@ -868,13 +901,100 @@ async function fetchOpenSkyTBS(user, pass) {
   }
 }
 
+// ─── Wikipedia Pageviews ──────────────────────────────────────────────────────
+function wikiDateStr(d) { return d.toISOString().slice(0,10).replace(/-/g,''); }
+
+async function fetchWikiPageviews() {
+  const end = new Date(); end.setDate(end.getDate() - 1);
+  const start = new Date(end); start.setDate(start.getDate() - 29);
+  try {
+    setSignal('sigWiki', 'load', 'Loading Wikipedia data…');
+    const res = await fetch(`${WIKI_URL}/${wikiDateStr(start)}/${wikiDateStr(end)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const items = (await res.json()).items || [];
+    const labels = items.map(d => `${d.timestamp.slice(4,6)}/${d.timestamp.slice(6,8)}`);
+    const views  = items.map(d => d.views);
+    const avg30  = Math.round(views.reduce((a,b) => a+b, 0) / views.length);
+    const avg7   = Math.round(views.slice(-7).reduce((a,b) => a+b, 0) / 7);
+    const latest = views[views.length - 1];
+
+    // Rolling 7-day avg line
+    const rolling7 = views.map((_, i) =>
+      i < 6 ? null : Math.round(views.slice(i-6, i+1).reduce((a,b) => a+b, 0) / 7)
+    );
+
+    // Signal: 7-day avg ≥15% above 30-day baseline = elevated tourist interest
+    const elevated = avg7 >= avg30 * 1.15;
+    signals.wiki = elevated ? 1 : 0;
+
+    // KPI
+    document.getElementById('kpiWiki').textContent = (avg7/1000).toFixed(1) + 'k';
+    const wikiChg = document.getElementById('kpiWikiChange');
+    const pct = Math.round((avg7 / avg30 - 1) * 100);
+    wikiChg.textContent = (pct >= 0 ? '+' : '') + pct + '% vs 30-day avg';
+    wikiChg.className = 'change ' + (pct >= 15 ? 'up' : pct <= -15 ? 'down' : '');
+
+    // Signal
+    if (elevated) setSignal('sigWiki', 'warn', `7-day avg ${avg7.toLocaleString()} views · +${pct}% above baseline — ELEVATED tourist interest`);
+    else          setSignal('sigWiki', 'ok',   `7-day avg ${avg7.toLocaleString()} views · ${pct >= 0 ? '+' : ''}${pct}% vs baseline — NORMAL`);
+
+    // Chart
+    showChart('Wiki');
+    destroyChart('chartWiki');
+    charts.wiki = new Chart(document.getElementById('chartWiki'), {
+      data: {
+        labels,
+        datasets: [
+          {
+            type: 'bar',
+            label: 'Daily views',
+            data: views,
+            backgroundColor: views.map(v => v >= avg30 * 1.15 ? 'rgba(255,136,0,0.5)' : 'rgba(170,68,255,0.45)'),
+            borderColor: 'transparent',
+            order: 2
+          },
+          {
+            type: 'line',
+            label: '7-day avg',
+            data: rolling7,
+            borderColor: '#ffffff',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.4,
+            order: 1
+          }
+        ]
+      },
+      options: {
+        ...CD,
+        scales: { ...CD.scales, y: { ...CD.scales.y, ticks: { ...CD.scales.y.ticks, callback: v => (v/1000).toFixed(0)+'k' } } }
+      }
+    });
+
+    // Summary panel
+    const trendColor = elevated ? '#ff8800' : avg7 < avg30 * 0.85 ? '#44ff88' : '#aaa';
+    const trendLabel = elevated ? '▲ Elevated — tourist season building' : avg7 < avg30 * 0.85 ? '▼ Below baseline — off-season' : '→ Near baseline — shoulder season';
+    document.getElementById('wikiSummary').innerHTML =
+      `<span style="color:#eee;font-size:1.1rem;font-weight:bold">${latest.toLocaleString()}</span> <span style="color:#666">views yesterday</span><br>` +
+      `<span style="color:#eee">${avg7.toLocaleString()}</span> <span style="color:#666">7-day avg</span><br>` +
+      `<span style="color:#eee">${avg30.toLocaleString()}</span> <span style="color:#666">30-day avg</span><br>` +
+      `<span style="color:${trendColor}">${trendLabel}</span>`;
+  } catch (e) {
+    setSignal('sigWiki', 'load', 'Wikipedia fetch failed: ' + e.message);
+    signals.wiki = null;
+    document.getElementById('loadWiki').textContent = 'Failed: ' + e.message;
+  }
+}
+
 // ─── Risk Computation ─────────────────────────────────────────────────────────
 function computeAndRenderRisk() {
   const score =
     (signals.eiaPrice  ?? 0) +
     (signals.eiaSupply ?? 0) +
     (signals.greeceUse ?? 0) +
-    (signals.euComp    ?? 0);
+    (signals.euComp    ?? 0) +
+    (signals.wiki      ?? 0);
 
   const levels = [
     { min:0, label:'LOW',      cls:'low',  emoji:'✅' },
@@ -891,6 +1011,7 @@ function computeAndRenderRisk() {
   if ((signals.eiaSupply??0)>=1) active.push('U.S. supply below 10-week average');
   if ((signals.greeceUse??0)>=1) active.push('Greece aviation use >15% below seasonal norm');
   if ((signals.euComp??0)>=1)    active.push('Greece >20% below EU-4 peer average');
+  if ((signals.wiki??0)>=1)      active.push('Tourist interest ≥15% above baseline (Acropolis Wikipedia views)');
 
   const banner = document.getElementById('riskBanner');
   banner.className = 'risk-banner ' + level.cls;
