@@ -19,8 +19,6 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 .key-input.narrow { width: 160px; }
 .btn { background: #0f3460; border: 1px solid #00d4ff; border-radius: 5px; color: #00d4ff; cursor: pointer; font-size: 12px; padding: 7px 14px; }
 .btn:hover { background: #1a4a80; }
-.btn.crowd-btn { border-color: #aa44ff; color: #aa44ff; }
-.btn.crowd-btn:hover { background: #2a1a4a; }
 .last-updated { color: #555; font-size: 11px; }
 
 .risk-banner { border-radius: 8px; padding: 12px 18px; margin-bottom: 18px; font-size: 14px; display: flex; align-items: center; gap: 12px; }
@@ -32,19 +30,17 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 .risk-badge  { font-size: 22px; font-weight: bold; min-width: 40px; text-align: center; }
 .risk-detail { font-size: 13px; line-height: 1.5; }
 
-.kpi-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-bottom: 18px; }
+.kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 18px; }
 .kpi { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 14px; text-align: center; }
-.kpi.crowd-kpi { border-color: #3a1a5a; }
 .kpi .label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
 .kpi .value { font-size: 22px; font-weight: bold; color: #00d4ff; }
-.kpi.crowd-kpi .value { color: #aa44ff; }
 .kpi .change { font-size: 11px; margin-top: 4px; }
 .kpi .sub { font-size: 11px; color: #666; margin-top: 2px; }
 .up   { color: #ff4444; }
 .down { color: #44ff88; }
 .warn { color: #ff8800; }
 
-.signal-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-bottom: 18px; }
+.signal-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 18px; }
 .signal { border-radius: 6px; padding: 10px 12px; font-size: 12px; border: 1px solid transparent; }
 .signal .sig-title { font-weight: bold; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 3px; }
 .signal .sig-value { font-size: 12px; }
@@ -56,14 +52,10 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 .sig-risk .sig-title { color: #ff4444; }
 .sig-load { background: #12182e; border-color: #0f3460; }
 .sig-load .sig-title { color: #aaa; }
-.sig-crowd { background: #1a0a2e; border-color: #aa44ff; }
-.sig-crowd .sig-title { color: #aa44ff; }
 
 .charts-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
 .chart-box { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 18px; }
-.chart-box.crowd-box { border-color: #3a1a5a; }
 .chart-box h3 { color: #00d4ff; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
-.chart-box.crowd-box h3 { color: #aa44ff; }
 .chart-box .chart-sub { color: #666; font-size: 10px; margin-top: -10px; margin-bottom: 12px; }
 .chart-loading { color: #555; font-size: 13px; text-align: center; padding: 40px 0; }
 
@@ -73,7 +65,6 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 #athMap, #tbsMap { height: 340px; border-radius: 6px; }
 .opensky-status { color: #555; font-size: 13px; text-align: center; padding: 30px; border: 1px dashed #333; border-radius: 6px; }
 
-.crowd-cache-note { font-size: 10px; color: #555; margin-top: 6px; }
 
 .method-box { background: #12182e; border: 1px solid #0f3460; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
 .method-box h3 { color: #00d4ff; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
@@ -100,17 +91,15 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 <div class="header">
   <div class="header-left">
     <h1>Aegean Airlines · ATH & TBS Cancellation Risk Dashboard</h1>
-    <div class="subtitle">Live feeds: EIA (global price reference) · Eurostat (Greece fuel supply) · OpenSky (ATH · TBS live flights) · BestTime.app (Athens crowd pressure)</div>
+    <div class="subtitle">Live feeds: EIA (global price reference) · Eurostat (Greece fuel supply) · OpenSky (ATH · TBS live flights)</div>
   </div>
   <div class="header-right">
     <input id="eiaKey"   class="key-input" type="password" placeholder="EIA API Key (eia.gov/opendata)" title="Enter your EIA API key">
     <input id="oskyUser" class="key-input narrow" type="text"     placeholder="OpenSky username" title="OpenSky Network username">
     <input id="oskyPass" class="key-input narrow" type="password" placeholder="OpenSky password" title="OpenSky Network password">
-    <input id="btKey"    class="key-input narrow" type="password" placeholder="BestTime private key" title="BestTime.app API private key (besttime.app)">
     <button class="btn" onclick="refresh()">Refresh</button>
     <a href="Keys.html" class="btn" style="text-decoration:none">Manage Keys</a>
     <a href="index.html" class="btn" style="text-decoration:none">Home</a>
-    <button class="btn crowd-btn" onclick="refreshCrowds(true)">Refresh Crowds</button>
     <span class="last-updated" id="lastUpdated">Not loaded</span>
   </div>
 </div>
@@ -118,7 +107,7 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 <!-- Risk Banner -->
 <div class="risk-banner sig-load" id="riskBanner">
   <div class="risk-badge" id="riskBadge">—</div>
-  <div class="risk-detail" id="riskDetail">Loading data from EIA, Eurostat, OpenSky, and BestTime…</div>
+  <div class="risk-detail" id="riskDetail">Loading data from EIA, Eurostat, and OpenSky…</div>
 </div>
 
 <!-- KPI Row -->
@@ -159,12 +148,6 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
     <div class="change" id="kpiFlightsTBSChange">&nbsp;</div>
     <div class="sub">OpenSky · AEE over Tbilisi</div>
   </div>
-  <div class="kpi crowd-kpi">
-    <div class="label">Athens Crowd Level</div>
-    <div class="value" id="kpiCrowd">—</div>
-    <div class="change" id="kpiCrowdChange">&nbsp;</div>
-    <div class="sub">BestTime · Acropolis area · now</div>
-  </div>
 </div>
 
 <!-- Signal Status Row -->
@@ -191,10 +174,6 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
   </div>
   <div class="signal sig-load" id="sigOpenSkyTBS">
     <div class="sig-title">TBS Live Flights</div>
-    <div class="sig-value">Loading…</div>
-  </div>
-  <div class="signal sig-load" id="sigBestTime">
-    <div class="sig-title">ATH Crowd Pressure</div>
     <div class="sig-value">Loading…</div>
   </div>
 </div>
@@ -280,23 +259,6 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
 </div>
 <div style="margin-bottom:16px"></div>
 
-<!-- BestTime Crowd Charts -->
-<div class="charts-2col">
-  <div class="chart-box crowd-box">
-    <h3>Athens Crowd Pressure — Acropolis Area · Today Hourly Forecast</h3>
-    <p class="chart-sub">BestTime.app · historical crowd pattern · current hour highlighted red · 0–100% busy scale</p>
-    <div class="chart-loading" id="loadCrowd">Enter BestTime private key and click Refresh Crowds</div>
-    <canvas id="chartCrowd" style="display:none"></canvas>
-    <div class="crowd-cache-note" id="crowdCacheNote"></div>
-  </div>
-  <div class="chart-box crowd-box">
-    <h3>Athens Crowd Pressure — Acropolis Area · Full Week Heatmap</h3>
-    <p class="chart-sub">BestTime.app · Mon–Sun · all 24 hours · darker = busier · white line = today</p>
-    <div class="chart-loading" id="loadCrowdWeek">Enter BestTime private key and click Refresh Crowds</div>
-    <canvas id="chartCrowdWeek" style="display:none"></canvas>
-  </div>
-</div>
-
 <!-- Risk Methodology -->
 <div class="method-box">
   <h3>Risk Scoring Methodology — Aegean Airlines / ATH Focus</h3>
@@ -326,20 +288,14 @@ body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding
       Within 20% = NORMAL (0pts)<br>
       <em>Greece vs peers context</em>
     </div>
-    <div class="method-item">
-      <strong>ATH Crowd Signal (0–1 pt)</strong>
-      Acropolis &ge;70% busy = ELEVATED demand (1pt)<br>
-      &lt;70% = NORMAL (0pts)<br>
-      <em>High tourist pressure amplifies fuel risk — BestTime.app historical pattern</em>
-    </div>
   </div>
   <div style="margin-top:10px; font-size:11px; color:#555">
-    Total 0–6 pts &rarr; Low (0) · Moderate (1) · Elevated (2) · High (3–4) · Critical (5–6)
+    Total 0–5 pts &rarr; Low (0) · Moderate (1) · Elevated (2) · High (3–4) · Critical (5)
   </div>
 </div>
 
 <div class="footer">
-  Data sources: EIA Open Data API (global price/supply reference) · Eurostat API nrg_cb_oilm (Greece &amp; EU fuel data) · OpenSky Network REST API (ATH live flights) · BestTime.app API (Athens crowd pressure · Acropolis area)
+  Data sources: EIA Open Data API (global price/supply reference) · Eurostat API nrg_cb_oilm (Greece &amp; EU fuel data) · OpenSky Network REST API (ATH &amp; TBS live flights)
 </div>
 
 <script>
@@ -350,10 +306,6 @@ const EUROSTAT_GREECE_STK= 'https://ec.europa.eu/eurostat/api/dissemination/stat
 const EUROSTAT_EU        = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_cb_oilm?lang=EN&format=JSON&geo=EL&geo=DE&geo=FR&geo=ES&geo=IT&siec=O4661&nrg_bal=INTAVI_E&lastTimePeriod=3';
 const OPENSKY_PARAMS_ATH = 'states/all?lamin=37.75&lomin=23.60&lamax=38.15&lomax=24.30';
 const OPENSKY_PARAMS_TBS = 'states/all?lamin=41.40&lomin=44.50&lamax=42.00&lomax=45.30';
-const BESTTIME_BASE      = 'https://besttime.app/api/v1';
-const BESTTIME_CACHE_KEY = 'btForecastCache';
-const BESTTIME_CACHE_HOURS = 24;
-
 // Airport coordinates
 const ATH_LAT = 37.9364, ATH_LON = 23.9445;
 const TBS_LAT = 41.6692, TBS_LON = 44.9547;
@@ -368,7 +320,7 @@ const CD = {
 };
 
 // ─── Risk state ───────────────────────────────────────────────────────────────
-const signals = { eiaPrice: null, eiaSupply: null, greeceUse: null, euComp: null, crowd: null };
+const signals = { eiaPrice: null, eiaSupply: null, greeceUse: null, euComp: null };
 let charts = {};
 let leafletMap = null, leafletMapTBS = null;
 
@@ -382,8 +334,6 @@ window.addEventListener('DOMContentLoaded', () => {
   const oskyP = localStorage.getItem('oskyPass');
   if (oskyU) document.getElementById('oskyUser').value = oskyU;
   if (oskyP) document.getElementById('oskyPass').value = oskyP;
-  const btK = localStorage.getItem('btKey');
-  if (btK) document.getElementById('btKey').value = btK;
   refresh();
 });
 
@@ -391,11 +341,9 @@ async function refresh() {
   const key   = document.getElementById('eiaKey').value.trim();
   const oskyU = document.getElementById('oskyUser').value.trim();
   const oskyP = document.getElementById('oskyPass').value.trim();
-  const btK   = document.getElementById('btKey').value.trim();
   if (key)   localStorage.setItem('eiaKey', key);
   if (oskyU) localStorage.setItem('oskyUser',  oskyU);
   if (oskyP) localStorage.setItem('oskyPass',  oskyP);
-  if (btK)   localStorage.setItem('btKey',     btK);
   document.getElementById('lastUpdated').textContent = 'Refreshing…';
 
   await Promise.allSettled([
@@ -405,18 +353,9 @@ async function refresh() {
     fetchEurostatEU(),
     fetchEurostatGreeceStocks(),
     fetchOpenSky(oskyU, oskyP),
-    fetchOpenSkyTBS(oskyU, oskyP),
-    refreshCrowds(false)
+    fetchOpenSkyTBS(oskyU, oskyP)
   ]);
 
-  computeAndRenderRisk();
-  document.getElementById('lastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString();
-}
-
-// refreshCrowds: force=true burns a credit and re-fetches; force=false uses cache if fresh
-async function refreshCrowds(force) {
-  const btK = document.getElementById('btKey').value.trim() || localStorage.getItem('btKey') || '';
-  await fetchBestTime(btK, force);
   computeAndRenderRisk();
   document.getElementById('lastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString();
 }
@@ -929,187 +868,13 @@ async function fetchOpenSkyTBS(user, pass) {
   }
 }
 
-// ─── BestTime.app: Athens Crowd Pressure ──────────────────────────────────────
-// BestTime day_int: 0=Monday … 6=Sunday (differs from JS getDay() 0=Sunday)
-async function fetchBestTime(privateKey, force) {
-  if (!privateKey) {
-    setSignal('sigBestTime', 'load', 'No BestTime key — enter above');
-    document.getElementById('loadCrowd').textContent     = 'Enter BestTime private key and click Refresh Crowds';
-    document.getElementById('loadCrowdWeek').textContent = 'Enter BestTime private key and click Refresh Crowds';
-    signals.crowd = null;
-    return;
-  }
-
-  // Check 24-hour cache unless force refresh
-  let forecast = null;
-  const cached = localStorage.getItem(BESTTIME_CACHE_KEY);
-  if (!force && cached) {
-    try {
-      const parsed = JSON.parse(cached);
-      const ageHours = (Date.now() - parsed.timestamp) / 3_600_000;
-      if (ageHours < BESTTIME_CACHE_HOURS) forecast = parsed.data;
-    } catch (_) {}
-  }
-
-  if (!forecast) {
-    setSignal('sigBestTime', 'load', 'Fetching from BestTime…');
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
-      const res = await fetch(`https://corsproxy.io/?${BESTTIME_BASE}/forecasts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ api_key_private: privateKey, venue_name: 'Acropolis', venue_address: 'Athens, Greece' }),
-        signal: controller.signal
-      });
-      clearTimeout(timeout);
-      if (!res.ok) {
-        let detail = '';
-        try { const t = await res.text(); detail = t.slice(0, 200); } catch (_) {}
-        throw new Error(`HTTP ${res.status}${detail ? ' — ' + detail : ''}`);
-      }
-      const json = await res.json();
-      if (json.status !== 'OK') throw new Error(json.message || 'BestTime API error');
-      forecast = json;
-      localStorage.setItem(BESTTIME_CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data: forecast }));
-    } catch (e) {
-      const msg = e.name === 'AbortError' ? 'Request timed out' : e.message;
-      setSignal('sigBestTime', 'load', 'BestTime fetch failed: ' + msg);
-      document.getElementById('loadCrowd').textContent     = 'BestTime fetch failed: ' + msg;
-      document.getElementById('loadCrowdWeek').textContent = 'BestTime fetch failed: ' + msg;
-      signals.crowd = null;
-      return;
-    }
-  }
-
-  // Derive today's day_int in BestTime format (0=Mon … 6=Sun)
-  const jsDay     = new Date().getDay();                    // 0=Sun, 1=Mon …
-  const btToday   = jsDay === 0 ? 6 : jsDay - 1;           // convert to BestTime
-  const currHour  = new Date().getHours();
-  const dayNames  = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-  const hours     = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2,'0')}:00`);
-
-  const analysis  = forecast.analysis || [];
-  const todayData = analysis.find(d => d.day_info.day_int === btToday);
-
-  if (!todayData) {
-    setSignal('sigBestTime', 'load', 'No forecast data returned');
-    signals.crowd = null;
-    return;
-  }
-
-  const todayRaw      = todayData.day_raw;
-  const currentBusy   = todayRaw[currHour] ?? 0;
-  const peakBusy      = Math.max(...todayRaw);
-  const venueName     = forecast.venue_info?.venue_name || 'Acropolis';
-  const cachedNote    = forecast._fromCache ? ' (24h cache)' : '';
-
-  // KPI
-  document.getElementById('kpiCrowd').textContent      = currentBusy + '%';
-  const crowdChg = document.getElementById('kpiCrowdChange');
-  crowdChg.textContent  = `Peak today: ${peakBusy}%`;
-  crowdChg.className    = 'change ' + (currentBusy >= 70 ? 'up' : currentBusy >= 50 ? 'warn' : 'down');
-
-  // Cache note
-  const cacheNote = document.getElementById('crowdCacheNote');
-  if (cached && !force) {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(BESTTIME_CACHE_KEY));
-      const ageMin = Math.round((Date.now() - parsed.timestamp) / 60_000);
-      cacheNote.textContent = `Using cached forecast · ${ageMin} min old · "Refresh Crowds" to update (uses 1 API credit)`;
-    } catch (_) { cacheNote.textContent = ''; }
-  } else {
-    cacheNote.textContent = `Live forecast fetched · next auto-refresh in 24h · "Refresh Crowds" to force update`;
-  }
-
-  // Signal
-  if (currentBusy >= 70) {
-    signals.crowd = 1;
-    setSignal('sigBestTime', 'crowd', `${venueName} ${currentBusy}% busy now · peak ${peakBusy}% — HIGH tourist pressure`);
-  } else if (currentBusy >= 50) {
-    signals.crowd = 0;
-    setSignal('sigBestTime', 'warn', `${venueName} ${currentBusy}% busy now · peak ${peakBusy}% — MODERATE`);
-  } else {
-    signals.crowd = 0;
-    setSignal('sigBestTime', 'ok', `${venueName} ${currentBusy}% busy now · peak ${peakBusy}% — NORMAL`);
-  }
-
-  // Today's hourly bar chart
-  showChart('Crowd');
-  destroyChart('chartCrowd');
-  charts.crowd = new Chart(document.getElementById('chartCrowd'), {
-    type: 'bar',
-    data: {
-      labels: hours,
-      datasets: [{
-        label: `${dayNames[btToday]} — ${venueName} (% busy)`,
-        data: todayRaw,
-        backgroundColor: todayRaw.map((v, i) =>
-          i === currHour  ? '#ff4444' :
-          v >= 70         ? 'rgba(255,68,68,0.55)' :
-          v >= 50         ? 'rgba(255,136,0,0.55)' :
-                            'rgba(170,68,255,0.45)'
-        ),
-        borderColor: todayRaw.map((_, i) => i === currHour ? '#ff4444' : 'transparent'),
-        borderWidth: 2
-      }]
-    },
-    options: {
-      ...CD,
-      plugins: {
-        ...CD.plugins,
-        annotation: {},
-        tooltip: { callbacks: { label: ctx => ` ${ctx.raw}% busy${ctx.dataIndex === currHour ? ' ← NOW' : ''}` } }
-      },
-      scales: {
-        ...CD.scales,
-        y: { ...CD.scales.y, min: 0, max: 100, title: { display: true, text: '% Busy', color: '#aaa', font: { size: 10 } } }
-      }
-    }
-  });
-
-  // Full-week stacked bar chart (one dataset per day)
-  const weekPalette = [
-    'rgba(170,68,255,0.7)', 'rgba(0,212,255,0.7)', 'rgba(68,255,136,0.7)',
-    'rgba(255,170,0,0.7)',  'rgba(255,100,68,0.7)', 'rgba(100,180,255,0.7)',
-    'rgba(255,68,170,0.7)'
-  ];
-  const weekDatasets = analysis
-    .slice()
-    .sort((a, b) => a.day_info.day_int - b.day_info.day_int)
-    .map((d, i) => ({
-      label: dayNames[d.day_info.day_int],
-      data: d.day_raw,
-      borderColor: d.day_info.day_int === btToday ? '#ffffff' : weekPalette[i % weekPalette.length],
-      backgroundColor: 'transparent',
-      borderWidth: d.day_info.day_int === btToday ? 2.5 : 1,
-      pointRadius: 0,
-      tension: 0.3
-    }));
-
-  showChart('CrowdWeek');
-  destroyChart('chartCrowdWeek');
-  charts.crowdWeek = new Chart(document.getElementById('chartCrowdWeek'), {
-    type: 'line',
-    data: { labels: hours, datasets: weekDatasets },
-    options: {
-      ...CD,
-      scales: {
-        ...CD.scales,
-        y: { ...CD.scales.y, min: 0, max: 100, title: { display: true, text: '% Busy', color: '#aaa', font: { size: 10 } } }
-      }
-    }
-  });
-}
-
 // ─── Risk Computation ─────────────────────────────────────────────────────────
 function computeAndRenderRisk() {
   const score =
     (signals.eiaPrice  ?? 0) +
     (signals.eiaSupply ?? 0) +
     (signals.greeceUse ?? 0) +
-    (signals.euComp    ?? 0) +
-    (signals.crowd     ?? 0);
+    (signals.euComp    ?? 0);
 
   const levels = [
     { min:0, label:'LOW',      cls:'low',  emoji:'✅' },
@@ -1126,7 +891,6 @@ function computeAndRenderRisk() {
   if ((signals.eiaSupply??0)>=1) active.push('U.S. supply below 10-week average');
   if ((signals.greeceUse??0)>=1) active.push('Greece aviation use >15% below seasonal norm');
   if ((signals.euComp??0)>=1)    active.push('Greece >20% below EU-4 peer average');
-  if ((signals.crowd??0)>=1)     active.push('Athens tourist pressure ≥70% (Acropolis area)');
 
   const banner = document.getElementById('riskBanner');
   banner.className = 'risk-banner ' + level.cls;

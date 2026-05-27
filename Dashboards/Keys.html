@@ -16,7 +16,6 @@
       margin-bottom: 16px; border-left: 4px solid #00d4ff;
     }
     .key-card.opensky { border-left-color: #44ff88; }
-    .key-card.besttime { border-left-color: #aa44ff; }
     .key-card.eia { border-left-color: #00d4ff; }
 
     .card-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
@@ -41,7 +40,6 @@
     }
     .field-row input:focus { outline: none; border-color: #00d4ff; }
     .field-row input.opensky:focus { border-color: #44ff88; }
-    .field-row input.besttime:focus { border-color: #aa44ff; }
     .show-btn {
       background: none; border: 1px solid #333; color: #666; padding: 6px 10px;
       border-radius: 4px; cursor: pointer; font-size: 0.75rem; white-space: nowrap;
@@ -128,24 +126,6 @@
   </div>
 </div>
 
-<!-- BestTime -->
-<div class="key-card besttime">
-  <div class="card-header">
-    <div class="card-title">BestTime Private Key <span>BestTime.app</span></div>
-    <div class="card-status" id="statusBT">Checking…</div>
-  </div>
-  <p class="card-desc">
-    Used for Athens crowd pressure data (Acropolis area). Each forecast fetch costs 1 API credit — dashboards
-    cache results for 24 hours. Free trial available at <a href="https://besttime.app" target="_blank">besttime.app</a>.
-    Use the <strong>private</strong> key (not the public key).
-  </p>
-  <div class="used-in">Used in: <span>EIA Jet Fuel Dashboard</span><span>Flight Cancellation Risk Dashboard</span></div>
-  <div class="field-row">
-    <div class="field-label">Private Key</div>
-    <input type="password" id="btKey" class="besttime" placeholder="Paste your BestTime private key here" autocomplete="off">
-    <button class="show-btn" onclick="toggleShow('btKey', this)">Show</button>
-  </div>
-</div>
 
 <div class="actions">
   <button class="btn-save" onclick="saveAll()">Save All Keys</button>
@@ -164,11 +144,11 @@
   <div class="dash-links">
     <a class="dash-link" href="EIA-JetFuel-Dashboard.html">
       <div class="dl-title">EIA Jet Fuel Dashboard</div>
-      <div class="dl-keys">Uses: EIA key · OpenSky · BestTime · Eurostat (no key)</div>
+      <div class="dl-keys">Uses: EIA key · OpenSky · Eurostat (no key)</div>
     </a>
     <a class="dash-link" href="Flight-Cancellation-Risk-Dashboard.html">
       <div class="dl-title">Flight Cancellation Risk Dashboard</div>
-      <div class="dl-keys">Uses: EIA key · OpenSky · BestTime · Eurostat (no key)</div>
+      <div class="dl-keys">Uses: EIA key · OpenSky · Eurostat (no key)</div>
     </a>
   </div>
 </div>
@@ -178,7 +158,6 @@ const KEYS = [
   { id: 'eiaKey',   lsKey: 'eiaKey',   statusId: 'statusEIA',  label: 'EIA key' },
   { id: 'oskyUser', lsKey: 'oskyUser', statusId: 'statusOSky', label: 'OpenSky username' },
   { id: 'oskyPass', lsKey: 'oskyPass', statusId: null,         label: null },
-  { id: 'btKey',    lsKey: 'btKey',    statusId: 'statusBT',   label: 'BestTime key' },
 ];
 
 function updateStatus(statusId, saved) {
@@ -203,7 +182,6 @@ function loadFromStorage() {
   });
   updateStatus('statusEIA',  !!localStorage.getItem('eiaKey'));
   updateStatus('statusOSky', false); // handled specially inside
-  updateStatus('statusBT',   !!localStorage.getItem('btKey'));
 }
 
 function saveAll() {
@@ -213,7 +191,6 @@ function saveAll() {
   });
   updateStatus('statusEIA',  !!localStorage.getItem('eiaKey'));
   updateStatus('statusOSky', false);
-  updateStatus('statusBT',   !!localStorage.getItem('btKey'));
   const s = document.getElementById('saveStatus');
   s.style.display = 'inline';
   setTimeout(() => { s.style.display = 'none'; }, 3000);
@@ -221,11 +198,10 @@ function saveAll() {
 
 function clearAll() {
   if (!confirm('Clear all saved keys from browser storage?')) return;
-  ['eiaKey', 'oskyUser', 'oskyPass', 'btKey'].forEach(k => localStorage.removeItem(k));
+  ['eiaKey', 'oskyUser', 'oskyPass'].forEach(k => localStorage.removeItem(k));
   KEYS.forEach(k => { document.getElementById(k.id).value = ''; });
   updateStatus('statusEIA',  false);
   updateStatus('statusOSky', false);
-  updateStatus('statusBT',   false);
 }
 
 function toggleShow(inputId, btn) {

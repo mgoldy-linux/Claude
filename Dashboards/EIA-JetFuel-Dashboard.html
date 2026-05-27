@@ -244,31 +244,6 @@
   Source: OpenSky Network REST API · Anonymous requests may be rate-limited · Use credentials for higher limits · routed via corsproxy.io
 </p>
 
-<!-- ── BestTime Section ───────────────────────────────────────────────── -->
-<hr class="section-divider" data-label="BESTTIME — ATHENS CROWD PRESSURE">
-
-<div class="osky-creds">
-  <input type="password" id="btKey" placeholder="BestTime private key (besttime.app)">
-  <button class="btn btn-sm" onclick="loadCrowds(false)">Load Crowds</button>
-  <button class="btn btn-sm" onclick="loadCrowds(true)" style="border-color:#aa44ff;color:#aa44ff">Refresh Crowds</button>
-  <span class="osky-status" id="btStatus">Enter BestTime private key · Load Crowds uses cached data · Refresh Crowds costs 1 API credit</span>
-</div>
-
-<div class="charts-row">
-  <div class="chart-box">
-    <h3>Acropolis Area — Today Hourly Forecast (% Busy)</h3>
-    <div class="map-placeholder" id="btPlaceholderDay">Click "Load Crowds" to fetch forecast</div>
-    <canvas id="btChartDay" style="display:none" height="180"></canvas>
-  </div>
-  <div class="chart-box">
-    <h3>Acropolis Area — Full Week Overlay (% Busy · today in white)</h3>
-    <div class="map-placeholder" id="btPlaceholderWeek">Click "Load Crowds" to fetch forecast</div>
-    <canvas id="btChartWeek" style="display:none" height="180"></canvas>
-  </div>
-</div>
-<p style="color:#555;font-size:0.75rem;margin-bottom:24px">
-  Source: BestTime.app API · Historical crowd pattern · Acropolis area, Athens · 24h localStorage cache · free trial at besttime.app
-</p>
 
 <script>
 const EIA_BASE = 'https://api.eia.gov/v2';
@@ -856,145 +831,6 @@ function renderEurostat(supplyResp, stocksResp, compResp) {
   });
 }
 
-// ── BestTime ──────────────────────────────────────────────────────────────
-const BT_BASE      = 'https://besttime.app/api/v1';
-const BT_CACHE_KEY = 'btForecastCache';
-const BT_CACHE_HRS = 24;
-let btDayChartInst = null, btWeekChartInst = null;
-
-async function loadCrowds(force) {
-  const key = document.getElementById('btKey').value.trim();
-  if (key) localStorage.setItem('btKey', key);
-  await fetchBestTime(key || localStorage.getItem('btKey') || '', force);
-}
-
-async function fetchBestTime(privateKey, force) {
-  if (!privateKey) {
-    document.getElementById('btStatus').textContent = 'Enter BestTime private key above';
-    return;
-  }
-
-  let forecast = null;
-  const cached = localStorage.getItem(BT_CACHE_KEY);
-  if (!force && cached) {
-    try {
-      const parsed = JSON.parse(cached);
-      if ((Date.now() - parsed.timestamp) / 3_600_000 < BT_CACHE_HRS) forecast = parsed.data;
-    } catch (_) {}
-  }
-
-  if (!forecast) {
-    document.getElementById('btStatus').textContent = 'Fetching from BestTime…';
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
-      const res = await fetch(`https://corsproxy.io/?${BT_BASE}/forecasts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ api_key_private: privateKey, venue_name: 'Acropolis', venue_address: 'Athens, Greece' }),
-        signal: controller.signal
-      });
-      clearTimeout(timeout);
-      if (!res.ok) {
-        let detail = '';
-        try { const t = await res.text(); detail = t.slice(0, 200); } catch (_) {}
-        throw new Error(`HTTP ${res.status}${detail ? ' — ' + detail : ''}`);
-      }
-      const json = await res.json();
-      if (json.status !== 'OK') throw new Error(json.message || 'BestTime API error');
-      forecast = json;
-      localStorage.setItem(BT_CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data: forecast }));
-    } catch (e) {
-      const msg = e.name === 'AbortError' ? 'Timed out' : e.message;
-      document.getElementById('btStatus').textContent = 'BestTime fetch failed: ' + msg;
-      document.getElementById('btPlaceholderDay').textContent  = 'Failed: ' + msg;
-      document.getElementById('btPlaceholderWeek').textContent = 'Failed: ' + msg;
-      return;
-    }
-  }
-
-  const jsDay    = new Date().getDay();
-  const btToday  = jsDay === 0 ? 6 : jsDay - 1;
-  const currHour = new Date().getHours();
-  const dayNames = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-  const hours    = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2,'0')}:00`);
-
-  const analysis  = forecast.analysis || [];
-  const todayData = analysis.find(d => d.day_info.day_int === btToday);
-  if (!todayData) { document.getElementById('btStatus').textContent = 'No forecast data for today'; return; }
-
-  const todayRaw    = todayData.day_raw;
-  const currentBusy = todayRaw[currHour] ?? 0;
-  const peakBusy    = Math.max(...todayRaw);
-  const venueName   = forecast.venue_info?.venue_name || 'Acropolis';
-  let cacheAge = null;
-  if (cached && !force) {
-    try { cacheAge = Math.round((Date.now() - JSON.parse(cached).timestamp) / 60_000); } catch (_) {}
-  }
-
-  document.getElementById('btStatus').textContent =
-    `${venueName} · Now: ${currentBusy}% busy · Peak today: ${peakBusy}% · ` +
-    (cacheAge != null ? `Cached ${cacheAge} min ago — "Refresh Crowds" forces new fetch (1 credit)` : 'Live fetch completed');
-
-  // Today hourly bar chart
-  document.getElementById('btPlaceholderDay').style.display = 'none';
-  document.getElementById('btChartDay').style.display = 'block';
-  destroyChart(btDayChartInst);
-  btDayChartInst = new Chart(document.getElementById('btChartDay'), {
-    type: 'bar',
-    data: {
-      labels: hours,
-      datasets: [{
-        label: `${dayNames[btToday]} — ${venueName} (% busy)`,
-        data: todayRaw,
-        backgroundColor: todayRaw.map((v, i) =>
-          i === currHour ? '#ff4444' :
-          v >= 70        ? 'rgba(255,68,68,0.55)' :
-          v >= 50        ? 'rgba(255,170,0,0.55)' :
-                           'rgba(170,68,255,0.45)'
-        ),
-        borderColor:  todayRaw.map((_, i) => i === currHour ? '#ff4444' : 'transparent'),
-        borderWidth: 2
-      }]
-    },
-    options: {
-      ...chartDefaults,
-      plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: ctx => ` ${ctx.raw}% busy${ctx.dataIndex === currHour ? ' ← NOW' : ''}` } } },
-      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: 0, max: 100, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + '%' } } }
-    }
-  });
-
-  // Full-week overlay line chart
-  document.getElementById('btPlaceholderWeek').style.display = 'none';
-  document.getElementById('btChartWeek').style.display = 'block';
-  const weekPalette = [
-    'rgba(170,68,255,0.8)', 'rgba(0,212,255,0.8)', 'rgba(68,255,136,0.8)',
-    'rgba(255,170,0,0.8)',  'rgba(255,100,68,0.8)', 'rgba(100,180,255,0.8)',
-    'rgba(255,68,170,0.8)'
-  ];
-  const weekDatasets = analysis
-    .slice().sort((a, b) => a.day_info.day_int - b.day_info.day_int)
-    .map((d, i) => ({
-      label: dayNames[d.day_info.day_int],
-      data: d.day_raw,
-      borderColor: d.day_info.day_int === btToday ? '#ffffff' : weekPalette[i % weekPalette.length],
-      backgroundColor: 'transparent',
-      borderWidth: d.day_info.day_int === btToday ? 2.5 : 1,
-      pointRadius: 0,
-      tension: 0.3
-    }));
-
-  destroyChart(btWeekChartInst);
-  btWeekChartInst = new Chart(document.getElementById('btChartWeek'), {
-    type: 'line',
-    data: { labels: hours, datasets: weekDatasets },
-    options: {
-      ...chartDefaults,
-      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: 0, max: 100, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + '%' } } }
-    }
-  });
-}
-
 // ── OpenSky ───────────────────────────────────────────────────────────────
 const OSKY_ATH = 'states/all?lamin=37.75&lomin=23.60&lamax=38.15&lomax=24.30';
 const OSKY_TBS = 'states/all?lamin=41.40&lomin=44.50&lamax=42.00&lomax=45.30';
@@ -1103,10 +939,8 @@ async function loadFlights() {
 window.addEventListener('DOMContentLoaded', () => {
   const savedUser = localStorage.getItem('oskyUser');
   const savedPass = localStorage.getItem('oskyPass');
-  const savedBtKey = localStorage.getItem('btKey');
   if (savedUser)  document.getElementById('oskyUser').value = savedUser;
   if (savedPass)  document.getElementById('oskyPass').value = savedPass;
-  if (savedBtKey) document.getElementById('btKey').value = savedBtKey;
 
   initBTS(null);
   loadEurostat();
