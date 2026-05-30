@@ -20,7 +20,9 @@ namespace P21.Extensions.Examples
             "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
             "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
             // District and territories
-            "DC", "AS", "GU", "MP", "PR", "VI"
+            "DC", "AS", "GU", "MP", "PR", "VI",
+            // USPS military APO/FPO codes
+            "AA", "AE", "AP"
         };
 
         public override RuleResult Execute()
@@ -28,11 +30,20 @@ namespace P21.Extensions.Examples
             RuleResult result = new RuleResult();
             result.Success = true;
 
+            if (Data == null || Data.Fields == null)
+            {
+                result.Success = false;
+                result.Message = "No field data was provided to the ValidState rule.";
+                return result;
+            }
+
             try
             {
+                // Pass 1: validate all fields and collect every invalid value before reporting
+                var errors = new List<string>();
                 foreach (DataField field in Data.Fields)
                 {
-                    if (field.ClassName == "global")
+                    if (string.Equals(field.ClassName, "global", StringComparison.OrdinalIgnoreCase))
                         continue;
 
                     string raw = (field.FieldValue ?? string.Empty).Trim();
@@ -40,25 +51,42 @@ namespace P21.Extensions.Examples
                     if (string.IsNullOrEmpty(raw))
                         continue;
 
-                    string normalized = raw.ToUpper();
+                    if (!ValidStateCodes.Contains(raw))
+                        errors.Add(string.Format("'{0}' ({1})", raw, field.FieldName));
+                }
 
-                    if (!ValidStateCodes.Contains(normalized))
-                    {
-                        result.Success = false;
-                        result.Message = string.Format(
-                            "'{0}' is not a valid 2-letter state code. Please enter a standard US state or territory abbreviation (e.g. IL, TX, CA).",
-                            raw);
-                        return result;
-                    }
+                if (errors.Count > 0)
+                {
+                    result.Success = false;
+                    result.Message = string.Format(
+                        "Invalid state code{0}: {1}. Please use a standard 2-letter US state or territory abbreviation (e.g. IL, TX, CA).",
+                        errors.Count > 1 ? "s" : "",
+                        string.Join(", ", errors));
+                    return result;
+                }
 
-                    // Write the normalized (uppercased) value back so casing is always consistent
-                    field.FieldValue = normalized;
+                // Pass 2: all fields are valid — write normalized (uppercase) values back
+                foreach (DataField field in Data.Fields)
+                {
+                    if (string.Equals(field.ClassName, "global", StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    string raw = (field.FieldValue ?? string.Empty).Trim();
+
+                    if (string.IsNullOrEmpty(raw))
+                        continue;
+
+                    if (!field.ReadOnly)
+                        field.FieldValue = raw.ToUpper();
                 }
             }
             catch (Exception e)
             {
+                Log.AddAndPersist(string.Format(
+                    "[ValidState] Unhandled exception in Execute: {0}\nStackTrace: {1}",
+                    e.Message, e.StackTrace));
                 result.Success = false;
-                result.Message = e.Message;
+                result.Message = "An unexpected error occurred in the ValidState rule. Please contact your system administrator.";
             }
 
             return result;
