@@ -1,0 +1,163 @@
+{
+  "info": {
+    "name": "FlightAware AeroAPI",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://aeroapi.flightaware.com/aeroapi" },
+    { "key": "faKey",   "value": "" }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      { "key": "key",   "value": "x-apikey",  "type": "string" },
+      { "key": "value", "value": "{{faKey}}",  "type": "string" },
+      { "key": "in",    "value": "header",     "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "AA 326 — Upcoming Flights",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var template=`",
+              "<html><head>",
+              "    <style>",
+              "        body{font-family:Arial,sans-serif;background:#1a1a2e;color:#eee;margin:0;padding:0}",
+              "        #header{background:#16213e;padding:12px 16px;border-bottom:1px solid #2a1a00}",
+              "        h2{color:#ff6600;font-size:16px;margin:0 0 2px 0}",
+              "        .meta{color:#aaa;font-size:11px}",
+              "        .stats{display:flex;gap:16px;padding:10px 16px;background:#12182e;border-bottom:1px solid #2a1a00}",
+              "        .stat{text-align:center}",
+              "        .stat .val{font-size:22px;font-weight:bold;color:#ff6600}",
+              "        .stat .lbl{font-size:10px;color:#aaa;text-transform:uppercase}",
+              "        table{width:100%;border-collapse:collapse}",
+              "        th{background:#16213e;color:#ff6600;font-size:11px;text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid #2a1a00}",
+              "        td{padding:8px 12px;border-bottom:1px solid #1a2040;font-size:13px}",
+              "        tr:hover td{background:#16213e}",
+              "        .lgav{color:#00ff88;font-weight:bold}",
+              "        .active{color:#00ff88}",
+              "        .sched{color:#00d4ff}",
+              "        .none{padding:24px;color:#ff8800;text-align:center}",
+              "    <\\/style>",
+              "<\\/head><body>",
+              "<div id='header'>",
+              "    <h2>AA 326 — Upcoming & Recent Flights<\\/h2>",
+              "    <div class='meta'>FlightAware AeroAPI · GET \\/flights\\/AA326<\\/div>",
+              "<\\/div>",
+              "<div class='stats'>",
+              "    <div class='stat'><div class='val'>{{{total}}}<\\/div><div class='lbl'>Flights<\\/div><\\/div>",
+              "    <div class='stat'><div class='val'>{{{lgavCount}}}<\\/div><div class='lbl'>To Athens (ATH)<\\/div><\\/div>",
+              "<\\/div>",
+              "<div id='content'>{{{tableHtml}}}<\\/div>",
+              "<\\/body><\\/html>`;",
+              "var resp=pm.response.json();var flights=resp.flights||[];",
+              "var lgav=flights.filter(function(f){return f.destination&&(f.destination.code_icao==='LGAV'||f.destination.code==='ATH');});",
+              "var rows=flights.map(function(f){",
+              "    var sOut=f.scheduled_out?new Date(f.scheduled_out):null;",
+              "    var sIn=f.scheduled_in?new Date(f.scheduled_in):null;",
+              "    var orig=f.origin?(f.origin.code||'?'):'?';",
+              "    var dest=f.destination?(f.destination.code||'?'):'?';",
+              "    var destCls=(dest==='ATH'||dest==='LGAV')?'lgav':'';",
+              "    var status=f.status||'Scheduled';",
+              "    var sCls=status.toLowerCase().indexOf('active')>=0||status.toLowerCase().indexOf('route')>=0?'active':'sched';",
+              "    return '<tr><td>'+orig+'<\\/td><td class=\"'+destCls+'\">'+dest+'<\\/td><td>'+(sOut?sOut.toISOString().slice(0,16).replace('T',' ')+' UTC':'—')+'<\\/td><td>'+(sIn?sIn.toISOString().slice(0,16).replace('T',' ')+' UTC':'—')+'<\\/td><td class=\"'+sCls+'\">'+status+'<\\/td><\\/tr>';",
+              "});",
+              "var tableHtml=flights.length===0?'<div class=\"none\">No flights found — check your API key and that AA326 is a valid ident<\\/div>':'<table><thead><tr><th>From<\\/th><th>To<\\/th><th>Sched Depart (UTC)<\\/th><th>Sched Arrive (UTC)<\\/th><th>Status<\\/th><\\/tr><\\/thead><tbody>'+rows.join('')+'<\\/tbody><\\/table>';",
+              "pm.visualizer.set(template,{total:flights.length,lgavCount:lgav.length,tableHtml:tableHtml});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/flights/AA326"
+      }
+    },
+    {
+      "name": "AA 326 History — Last 30 Days",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var now=new Date();",
+              "var d30=new Date(now.getTime()-30*24*60*60*1000);",
+              "pm.variables.set('fa30Start',d30.toISOString().slice(0,19)+'Z');",
+              "pm.variables.set('fa30End',now.toISOString().slice(0,19)+'Z');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var template=`",
+              "<html><head>",
+              "    <style>",
+              "        body{font-family:Arial,sans-serif;background:#1a1a2e;color:#eee;margin:0;padding:0}",
+              "        #header{background:#16213e;padding:12px 16px;border-bottom:1px solid #2a1a00}",
+              "        h2{color:#ff6600;font-size:16px;margin:0 0 2px 0}",
+              "        .meta{color:#aaa;font-size:11px}",
+              "        .stats{display:flex;gap:16px;padding:10px 16px;background:#12182e;border-bottom:1px solid #2a1a00}",
+              "        .stat{text-align:center}",
+              "        .stat .val{font-size:22px;font-weight:bold;color:#ff6600}",
+              "        .stat .lbl{font-size:10px;color:#aaa;text-transform:uppercase}",
+              "        table{width:100%;border-collapse:collapse}",
+              "        th{background:#16213e;color:#ff6600;font-size:11px;text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid #2a1a00}",
+              "        td{padding:8px 12px;border-bottom:1px solid #1a2040;font-size:13px}",
+              "        tr:hover td{background:#16213e}",
+              "        .lgav{color:#00ff88;font-weight:bold}",
+              "        .early{color:#00ff88}",
+              "        .late{color:#ff4444}",
+              "        .ontime{color:#00d4ff}",
+              "        .none{padding:24px;color:#ff8800;text-align:center}",
+              "    <\\/style>",
+              "<\\/head><body>",
+              "<div id='header'>",
+              "    <h2>AA 326 — Flight History (Last 30 Days)<\\/h2>",
+              "    <div class='meta'>FlightAware AeroAPI · GET \\/flights\\/AA326\\/history · {{{window}}}<\\/div>",
+              "<\\/div>",
+              "<div class='stats'>",
+              "    <div class='stat'><div class='val'>{{{total}}}<\\/div><div class='lbl'>Flights Found<\\/div><\\/div>",
+              "    <div class='stat'><div class='val'>{{{lgavCount}}}<\\/div><div class='lbl'>To Athens (LGAV)<\\/div><\\/div>",
+              "<\\/div>",
+              "<div id='content'>{{{tableHtml}}}<\\/div>",
+              "<\\/body><\\/html>`;",
+              "var resp=pm.response.json();var flights=resp.flights||[];",
+              "var lgav=flights.filter(function(f){return f.destination&&(f.destination.code_icao==='LGAV'||f.destination.code==='ATH');});",
+              "var display=lgav.length>0?lgav:flights;",
+              "var rows=display.map(function(f){",
+              "    var sIn=f.scheduled_in?new Date(f.scheduled_in):null;",
+              "    var aIn=f.actual_in?new Date(f.actual_in):null;",
+              "    var delay='—';var delayCls='';",
+              "    if(sIn&&aIn){var diff=Math.round((aIn-sIn)/60000);delay=(diff>0?'+':'')+diff+' min';delayCls=diff<=0?'early':diff<=15?'ontime':'late';}",
+              "    var orig=f.origin?(f.origin.code||'?'):'?';",
+              "    var dest=f.destination?(f.destination.code||'?'):'?';",
+              "    var destCls=(dest==='ATH'||dest==='LGAV')?'lgav':'';",
+              "    var dateStr=sIn?sIn.toISOString().slice(0,10):'?';",
+              "    var schedStr=sIn?sIn.toUTCString().slice(17,22)+' UTC':'—';",
+              "    var actualStr=aIn?aIn.toUTCString().slice(17,22)+' UTC':'—';",
+              "    return '<tr><td>'+dateStr+'<\\/td><td>'+orig+'<\\/td><td class=\"'+destCls+'\">'+dest+'<\\/td><td>'+schedStr+'<\\/td><td>'+actualStr+'<\\/td><td class=\"'+delayCls+'\">'+delay+'<\\/td><td>'+(f.status||'—')+'<\\/td><\\/tr>';",
+              "});",
+              "var tableHtml=display.length===0?'<div class=\"none\">No history found — confirm AA326 serves this route and your plan includes historical data<\\/div>':'<table><thead><tr><th>Date<\\/th><th>From<\\/th><th>To<\\/th><th>Sched In<\\/th><th>Actual In<\\/th><th>Delay<\\/th><th>Status<\\/th><\\/tr><\\/thead><tbody>'+rows.join('')+'<\\/tbody><\\/table>';",
+              "var bStr=pm.variables.get('fa30Start')?pm.variables.get('fa30Start').slice(0,10):'?';",
+              "var eStr=pm.variables.get('fa30End')?pm.variables.get('fa30End').slice(0,10):'?';",
+              "pm.visualizer.set(template,{total:flights.length,lgavCount:lgav.length,window:bStr+' \\u2192 '+eStr,tableHtml:tableHtml});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/flights/AA326/history?max_pages=3&start={{fa30Start}}&end={{fa30End}}"
+      }
+    }
+  ]
+}

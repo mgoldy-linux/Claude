@@ -371,6 +371,267 @@
         "method": "GET",
         "url": "{{baseUrl}}/states/all?lamin=41.40&lomin=44.50&lamax=42.00&lomax=45.30"
       }
+    },
+    {
+      "name": "AA 326 — Athens Arrivals (30-Day History)",
+      "item": [
+        {
+          "name": "Week 1 — Last 7 Days",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var now=Math.floor(Date.now()/1000);",
+                  "pm.variables.set('aa326Begin',now-7*86400);",
+                  "pm.variables.set('aa326End',now);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var template=`",
+                  "<html><head>",
+                  "    <style>",
+                  "        body{font-family:Arial,sans-serif;background:#1a1a2e;color:#eee;margin:0;padding:0}",
+                  "        #header{background:#16213e;padding:12px 16px;border-bottom:1px solid #0f3460}",
+                  "        h2{color:#00d4ff;font-size:16px;margin:0 0 2px 0}",
+                  "        .meta{color:#aaa;font-size:11px}",
+                  "        .stats{display:flex;gap:16px;padding:10px 16px;background:#12182e;border-bottom:1px solid #0f3460}",
+                  "        .stat{text-align:center}",
+                  "        .stat .val{font-size:22px;font-weight:bold;color:#00d4ff}",
+                  "        .stat .lbl{font-size:10px;color:#aaa;text-transform:uppercase}",
+                  "        table{width:100%;border-collapse:collapse}",
+                  "        th{background:#16213e;color:#00d4ff;font-size:11px;text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid #0f3460}",
+                  "        td{padding:8px 12px;border-bottom:1px solid #1a2040;font-size:13px}",
+                  "        tr:hover td{background:#16213e}",
+                  "        .cs{color:#00ff88;font-weight:bold}",
+                  "        .none{padding:24px;color:#ff8800;text-align:center}",
+                  "    <\\/style>",
+                  "<\\/head><body>",
+                  "<div id='header'>",
+                  "    <h2>AA 326 Arrivals — Athens International (ATH · LGAV)<\\/h2>",
+                  "    <div class='meta'>OpenSky /flights/arrival · callsign AAL326 · {{{window}}}<\\/div>",
+                  "<\\/div>",
+                  "<div class='stats'>",
+                  "    <div class='stat'><div class='val'>{{{aa326Count}}}<\\/div><div class='lbl'>AA326 Found<\\/div><\\/div>",
+                  "    <div class='stat'><div class='val'>{{{totalCount}}}<\\/div><div class='lbl'>Total Arrivals in Window<\\/div><\\/div>",
+                  "<\\/div>",
+                  "<div id='content'>{{{tableHtml}}}<\\/div>",
+                  "<\\/body><\\/html>`;",
+                  "var resp=pm.response.json();var all=Array.isArray(resp)?resp:[];",
+                  "var aa326=all.filter(function(f){return(f.callsign||'').trim()==='AAL326';});",
+                  "var bStr=new Date(pm.variables.get('aa326Begin')*1000).toISOString().slice(0,10);",
+                  "var eStr=new Date(pm.variables.get('aa326End')*1000).toISOString().slice(0,10);",
+                  "var rows=aa326.map(function(f){var arr=new Date(f.lastSeen*1000);var dur=Math.round((f.lastSeen-f.firstSeen)/60);return '<tr><td class=\"cs\">'+arr.toISOString().slice(0,10)+'<\\/td><td>'+arr.toUTCString().slice(17,22)+' UTC<\\/td><td>'+(f.estDepartureAirport||'\\u2014')+'<\\/td><td>'+dur+' min<\\/td><td>'+f.icao24+'<\\/td><\\/tr>';});",
+                  "var tableHtml=aa326.length===0?'<div class=\"none\">No AA326 (AAL326) arrivals found in this window<\\/div>':'<table><thead><tr><th>Date<\\/th><th>Arrival (UTC)<\\/th><th>Departed From<\\/th><th>Duration<\\/th><th>ICAO24<\\/th><\\/tr><\\/thead><tbody>'+rows.join('')+'<\\/tbody><\\/table>';",
+                  "pm.visualizer.set(template,{aa326Count:aa326.length,totalCount:all.length,window:bStr+' \\u2192 '+eStr,tableHtml:tableHtml});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/flights/arrival?airport=LGAV&begin={{aa326Begin}}&end={{aa326End}}"
+          }
+        },
+        {
+          "name": "Week 2 — Days 8–14",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var now=Math.floor(Date.now()/1000);",
+                  "pm.variables.set('aa326Begin',now-14*86400);",
+                  "pm.variables.set('aa326End',now-7*86400);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var template=`",
+                  "<html><head>",
+                  "    <style>",
+                  "        body{font-family:Arial,sans-serif;background:#1a1a2e;color:#eee;margin:0;padding:0}",
+                  "        #header{background:#16213e;padding:12px 16px;border-bottom:1px solid #0f3460}",
+                  "        h2{color:#00d4ff;font-size:16px;margin:0 0 2px 0}",
+                  "        .meta{color:#aaa;font-size:11px}",
+                  "        .stats{display:flex;gap:16px;padding:10px 16px;background:#12182e;border-bottom:1px solid #0f3460}",
+                  "        .stat{text-align:center}",
+                  "        .stat .val{font-size:22px;font-weight:bold;color:#00d4ff}",
+                  "        .stat .lbl{font-size:10px;color:#aaa;text-transform:uppercase}",
+                  "        table{width:100%;border-collapse:collapse}",
+                  "        th{background:#16213e;color:#00d4ff;font-size:11px;text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid #0f3460}",
+                  "        td{padding:8px 12px;border-bottom:1px solid #1a2040;font-size:13px}",
+                  "        tr:hover td{background:#16213e}",
+                  "        .cs{color:#00ff88;font-weight:bold}",
+                  "        .none{padding:24px;color:#ff8800;text-align:center}",
+                  "    <\\/style>",
+                  "<\\/head><body>",
+                  "<div id='header'>",
+                  "    <h2>AA 326 Arrivals — Athens International (ATH · LGAV)<\\/h2>",
+                  "    <div class='meta'>OpenSky /flights/arrival · callsign AAL326 · {{{window}}}<\\/div>",
+                  "<\\/div>",
+                  "<div class='stats'>",
+                  "    <div class='stat'><div class='val'>{{{aa326Count}}}<\\/div><div class='lbl'>AA326 Found<\\/div><\\/div>",
+                  "    <div class='stat'><div class='val'>{{{totalCount}}}<\\/div><div class='lbl'>Total Arrivals in Window<\\/div><\\/div>",
+                  "<\\/div>",
+                  "<div id='content'>{{{tableHtml}}}<\\/div>",
+                  "<\\/body><\\/html>`;",
+                  "var resp=pm.response.json();var all=Array.isArray(resp)?resp:[];",
+                  "var aa326=all.filter(function(f){return(f.callsign||'').trim()==='AAL326';});",
+                  "var bStr=new Date(pm.variables.get('aa326Begin')*1000).toISOString().slice(0,10);",
+                  "var eStr=new Date(pm.variables.get('aa326End')*1000).toISOString().slice(0,10);",
+                  "var rows=aa326.map(function(f){var arr=new Date(f.lastSeen*1000);var dur=Math.round((f.lastSeen-f.firstSeen)/60);return '<tr><td class=\"cs\">'+arr.toISOString().slice(0,10)+'<\\/td><td>'+arr.toUTCString().slice(17,22)+' UTC<\\/td><td>'+(f.estDepartureAirport||'\\u2014')+'<\\/td><td>'+dur+' min<\\/td><td>'+f.icao24+'<\\/td><\\/tr>';});",
+                  "var tableHtml=aa326.length===0?'<div class=\"none\">No AA326 (AAL326) arrivals found in this window<\\/div>':'<table><thead><tr><th>Date<\\/th><th>Arrival (UTC)<\\/th><th>Departed From<\\/th><th>Duration<\\/th><th>ICAO24<\\/th><\\/tr><\\/thead><tbody>'+rows.join('')+'<\\/tbody><\\/table>';",
+                  "pm.visualizer.set(template,{aa326Count:aa326.length,totalCount:all.length,window:bStr+' \\u2192 '+eStr,tableHtml:tableHtml});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/flights/arrival?airport=LGAV&begin={{aa326Begin}}&end={{aa326End}}"
+          }
+        },
+        {
+          "name": "Week 3 — Days 15–21",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var now=Math.floor(Date.now()/1000);",
+                  "pm.variables.set('aa326Begin',now-21*86400);",
+                  "pm.variables.set('aa326End',now-14*86400);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var template=`",
+                  "<html><head>",
+                  "    <style>",
+                  "        body{font-family:Arial,sans-serif;background:#1a1a2e;color:#eee;margin:0;padding:0}",
+                  "        #header{background:#16213e;padding:12px 16px;border-bottom:1px solid #0f3460}",
+                  "        h2{color:#00d4ff;font-size:16px;margin:0 0 2px 0}",
+                  "        .meta{color:#aaa;font-size:11px}",
+                  "        .stats{display:flex;gap:16px;padding:10px 16px;background:#12182e;border-bottom:1px solid #0f3460}",
+                  "        .stat{text-align:center}",
+                  "        .stat .val{font-size:22px;font-weight:bold;color:#00d4ff}",
+                  "        .stat .lbl{font-size:10px;color:#aaa;text-transform:uppercase}",
+                  "        table{width:100%;border-collapse:collapse}",
+                  "        th{background:#16213e;color:#00d4ff;font-size:11px;text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid #0f3460}",
+                  "        td{padding:8px 12px;border-bottom:1px solid #1a2040;font-size:13px}",
+                  "        tr:hover td{background:#16213e}",
+                  "        .cs{color:#00ff88;font-weight:bold}",
+                  "        .none{padding:24px;color:#ff8800;text-align:center}",
+                  "    <\\/style>",
+                  "<\\/head><body>",
+                  "<div id='header'>",
+                  "    <h2>AA 326 Arrivals — Athens International (ATH · LGAV)<\\/h2>",
+                  "    <div class='meta'>OpenSky /flights/arrival · callsign AAL326 · {{{window}}}<\\/div>",
+                  "<\\/div>",
+                  "<div class='stats'>",
+                  "    <div class='stat'><div class='val'>{{{aa326Count}}}<\\/div><div class='lbl'>AA326 Found<\\/div><\\/div>",
+                  "    <div class='stat'><div class='val'>{{{totalCount}}}<\\/div><div class='lbl'>Total Arrivals in Window<\\/div><\\/div>",
+                  "<\\/div>",
+                  "<div id='content'>{{{tableHtml}}}<\\/div>",
+                  "<\\/body><\\/html>`;",
+                  "var resp=pm.response.json();var all=Array.isArray(resp)?resp:[];",
+                  "var aa326=all.filter(function(f){return(f.callsign||'').trim()==='AAL326';});",
+                  "var bStr=new Date(pm.variables.get('aa326Begin')*1000).toISOString().slice(0,10);",
+                  "var eStr=new Date(pm.variables.get('aa326End')*1000).toISOString().slice(0,10);",
+                  "var rows=aa326.map(function(f){var arr=new Date(f.lastSeen*1000);var dur=Math.round((f.lastSeen-f.firstSeen)/60);return '<tr><td class=\"cs\">'+arr.toISOString().slice(0,10)+'<\\/td><td>'+arr.toUTCString().slice(17,22)+' UTC<\\/td><td>'+(f.estDepartureAirport||'\\u2014')+'<\\/td><td>'+dur+' min<\\/td><td>'+f.icao24+'<\\/td><\\/tr>';});",
+                  "var tableHtml=aa326.length===0?'<div class=\"none\">No AA326 (AAL326) arrivals found in this window<\\/div>':'<table><thead><tr><th>Date<\\/th><th>Arrival (UTC)<\\/th><th>Departed From<\\/th><th>Duration<\\/th><th>ICAO24<\\/th><\\/tr><\\/thead><tbody>'+rows.join('')+'<\\/tbody><\\/table>';",
+                  "pm.visualizer.set(template,{aa326Count:aa326.length,totalCount:all.length,window:bStr+' \\u2192 '+eStr,tableHtml:tableHtml});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/flights/arrival?airport=LGAV&begin={{aa326Begin}}&end={{aa326End}}"
+          }
+        },
+        {
+          "name": "Week 4 — Days 22–28",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var now=Math.floor(Date.now()/1000);",
+                  "pm.variables.set('aa326Begin',now-28*86400);",
+                  "pm.variables.set('aa326End',now-21*86400);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var template=`",
+                  "<html><head>",
+                  "    <style>",
+                  "        body{font-family:Arial,sans-serif;background:#1a1a2e;color:#eee;margin:0;padding:0}",
+                  "        #header{background:#16213e;padding:12px 16px;border-bottom:1px solid #0f3460}",
+                  "        h2{color:#00d4ff;font-size:16px;margin:0 0 2px 0}",
+                  "        .meta{color:#aaa;font-size:11px}",
+                  "        .stats{display:flex;gap:16px;padding:10px 16px;background:#12182e;border-bottom:1px solid #0f3460}",
+                  "        .stat{text-align:center}",
+                  "        .stat .val{font-size:22px;font-weight:bold;color:#00d4ff}",
+                  "        .stat .lbl{font-size:10px;color:#aaa;text-transform:uppercase}",
+                  "        table{width:100%;border-collapse:collapse}",
+                  "        th{background:#16213e;color:#00d4ff;font-size:11px;text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid #0f3460}",
+                  "        td{padding:8px 12px;border-bottom:1px solid #1a2040;font-size:13px}",
+                  "        tr:hover td{background:#16213e}",
+                  "        .cs{color:#00ff88;font-weight:bold}",
+                  "        .none{padding:24px;color:#ff8800;text-align:center}",
+                  "    <\\/style>",
+                  "<\\/head><body>",
+                  "<div id='header'>",
+                  "    <h2>AA 326 Arrivals — Athens International (ATH · LGAV)<\\/h2>",
+                  "    <div class='meta'>OpenSky /flights/arrival · callsign AAL326 · {{{window}}}<\\/div>",
+                  "<\\/div>",
+                  "<div class='stats'>",
+                  "    <div class='stat'><div class='val'>{{{aa326Count}}}<\\/div><div class='lbl'>AA326 Found<\\/div><\\/div>",
+                  "    <div class='stat'><div class='val'>{{{totalCount}}}<\\/div><div class='lbl'>Total Arrivals in Window<\\/div><\\/div>",
+                  "<\\/div>",
+                  "<div id='content'>{{{tableHtml}}}<\\/div>",
+                  "<\\/body><\\/html>`;",
+                  "var resp=pm.response.json();var all=Array.isArray(resp)?resp:[];",
+                  "var aa326=all.filter(function(f){return(f.callsign||'').trim()==='AAL326';});",
+                  "var bStr=new Date(pm.variables.get('aa326Begin')*1000).toISOString().slice(0,10);",
+                  "var eStr=new Date(pm.variables.get('aa326End')*1000).toISOString().slice(0,10);",
+                  "var rows=aa326.map(function(f){var arr=new Date(f.lastSeen*1000);var dur=Math.round((f.lastSeen-f.firstSeen)/60);return '<tr><td class=\"cs\">'+arr.toISOString().slice(0,10)+'<\\/td><td>'+arr.toUTCString().slice(17,22)+' UTC<\\/td><td>'+(f.estDepartureAirport||'\\u2014')+'<\\/td><td>'+dur+' min<\\/td><td>'+f.icao24+'<\\/td><\\/tr>';});",
+                  "var tableHtml=aa326.length===0?'<div class=\"none\">No AA326 (AAL326) arrivals found in this window<\\/div>':'<table><thead><tr><th>Date<\\/th><th>Arrival (UTC)<\\/th><th>Departed From<\\/th><th>Duration<\\/th><th>ICAO24<\\/th><\\/tr><\\/thead><tbody>'+rows.join('')+'<\\/tbody><\\/table>';",
+                  "pm.visualizer.set(template,{aa326Count:aa326.length,totalCount:all.length,window:bStr+' \\u2192 '+eStr,tableHtml:tableHtml});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/flights/arrival?airport=LGAV&begin={{aa326Begin}}&end={{aa326End}}"
+          }
+        }
+      ]
     }
   ]
 }

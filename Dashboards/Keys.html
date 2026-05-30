@@ -15,8 +15,9 @@
       background: #1a1a2e; border-radius: 10px; padding: 22px 24px;
       margin-bottom: 16px; border-left: 4px solid #00d4ff;
     }
-    .key-card.opensky { border-left-color: #44ff88; }
-    .key-card.eia { border-left-color: #00d4ff; }
+    .key-card.opensky      { border-left-color: #44ff88; }
+    .key-card.eia          { border-left-color: #00d4ff; }
+    .key-card.flightaware  { border-left-color: #ff6600; }
 
     .card-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
     .card-title { font-size: 1rem; font-weight: bold; color: #eee; }
@@ -104,6 +105,25 @@
   </div>
 </div>
 
+<!-- FlightAware -->
+<div class="key-card flightaware">
+  <div class="card-header">
+    <div class="card-title">FlightAware API Key <span>AeroAPI v4</span></div>
+    <div class="card-status" id="statusFA">Checking…</div>
+  </div>
+  <p class="card-desc">
+    Used to query historical flight arrivals by specific flight number (e.g. AA 326 history at Athens).<br>
+    Paid plan required — ~$0.01–0.02 per query, $14.99/month minimum. Get yours at
+    <a href="https://www.flightaware.com/commercial/aeroapi/" target="_blank">flightaware.com/commercial/aeroapi</a>.
+  </p>
+  <div class="used-in">Used in: <span>Postman · FlightAware-AeroAPI collection</span></div>
+  <div class="field-row">
+    <div class="field-label">API Key</div>
+    <input type="password" id="faKey" placeholder="Paste your FlightAware AeroAPI key here" autocomplete="off">
+    <button class="show-btn" onclick="toggleShow('faKey', this)">Show</button>
+  </div>
+</div>
+
 <!-- OpenSky -->
 <div class="key-card opensky">
   <div class="card-header">
@@ -156,6 +176,7 @@
 <script>
 const KEYS = [
   { id: 'eiaKey',   lsKey: 'eiaKey',   statusId: 'statusEIA',  label: 'EIA key' },
+  { id: 'faKey',    lsKey: 'faKey',    statusId: 'statusFA',   label: 'FlightAware key' },
   { id: 'oskyUser', lsKey: 'oskyUser', statusId: 'statusOSky', label: 'OpenSky username' },
   { id: 'oskyPass', lsKey: 'oskyPass', statusId: null,         label: null },
 ];
@@ -181,6 +202,7 @@ function loadFromStorage() {
     if (val) document.getElementById(k.id).value = val;
   });
   updateStatus('statusEIA',  !!localStorage.getItem('eiaKey'));
+  updateStatus('statusFA',   !!localStorage.getItem('faKey'));
   updateStatus('statusOSky', false); // handled specially inside
 }
 
@@ -190,6 +212,7 @@ function saveAll() {
     if (val) localStorage.setItem(k.lsKey, val);
   });
   updateStatus('statusEIA',  !!localStorage.getItem('eiaKey'));
+  updateStatus('statusFA',   !!localStorage.getItem('faKey'));
   updateStatus('statusOSky', false);
   const s = document.getElementById('saveStatus');
   s.style.display = 'inline';
@@ -198,9 +221,10 @@ function saveAll() {
 
 function clearAll() {
   if (!confirm('Clear all saved keys from browser storage?')) return;
-  ['eiaKey', 'oskyUser', 'oskyPass'].forEach(k => localStorage.removeItem(k));
+  ['eiaKey', 'faKey', 'oskyUser', 'oskyPass'].forEach(k => localStorage.removeItem(k));
   KEYS.forEach(k => { document.getElementById(k.id).value = ''; });
   updateStatus('statusEIA',  false);
+  updateStatus('statusFA',   false);
   updateStatus('statusOSky', false);
 }
 
