@@ -127,6 +127,48 @@ function Get-GitBranch {
     return ""
 }
 
+function Get-DiskSpace {
+    <#
+    .SYNOPSIS
+        Shows free disk space for local drives
+    #>
+    param(
+        [string]$Drive = "C"
+    )
+
+    try {
+        $Drive = $Drive.TrimEnd(':')
+
+        $disk = Get-PSDrive -Name $Drive -ErrorAction SilentlyContinue
+
+        if (-not $disk) {
+            Write-Warning "Drive '$Drive' not found."
+            return
+        }
+
+        if ($disk.Provider.Name -ne 'FileSystem') {
+            Write-Warning "Drive '$Drive' is not a filesystem drive (provider: $($disk.Provider.Name))."
+            return
+        }
+
+        $totalGB = [math]::Round(($disk.Free + $disk.Used) / 1GB, 1)
+        $freeGB  = [math]::Round($disk.Free / 1GB, 1)
+        $usedGB  = [math]::Round($disk.Used / 1GB, 1)
+        $pctFree = if ($totalGB -gt 0) { [math]::Round(($disk.Free / ($disk.Free + $disk.Used)) * 100, 1) } else { 0 }
+
+        [PSCustomObject]@{
+            Drive   = "${Drive}:"
+            FreeGB  = $freeGB
+            UsedGB  = $usedGB
+            TotalGB = $totalGB
+            PctFree = $pctFree
+        }
+    }
+    catch {
+        Write-Warning "Get-DiskSpace failed for drive '$Drive': $_"
+    }
+}
+
 #endregion
 
 #region Custom Functions
