@@ -57,11 +57,25 @@ namespace P21.Extensions.Examples
 
                 if (errors.Count > 0)
                 {
-                    result.Success = false;
-                    result.Message = string.Format(
-                        "Invalid state code{0}: {1}. Please use a standard 2-letter US state or territory abbreviation (e.g. IL, TX, CA).",
+                    string body = string.Format(
+                        "Invalid state code{0}: {1}\n\nPlease use a standard 2-letter US state or territory abbreviation (e.g. IL, TX, CA).",
                         errors.Count > 1 ? "s" : "",
                         string.Join(", ", errors));
+
+                    result.Success = false;
+                    result.Message = body;
+
+                    if (IsInteractiveContext())
+                    {
+                        result.ShowResponse = true;
+                        result.ResponseAttributes = new ResponseAttributes(
+                            "Invalid State Code",
+                            body,
+                            null)
+                        {
+                            Buttons = new[] { new ResponseButton("OK", "OK", "OK") }
+                        };
+                    }
                     return result;
                 }
 
@@ -90,6 +104,23 @@ namespace P21.Extensions.Examples
             }
 
             return result;
+        }
+
+        private bool IsInteractiveContext()
+        {
+            // A populated trigger window name means the rule fired from a UI form
+            if (RuleState != null && !string.IsNullOrEmpty(RuleState.TriggerWindowName))
+                return true;
+
+            // Batch, API, and EDI contexts have no Win/Web client platform
+            if (Session != null)
+            {
+                string platform = Session.ClientPlatform ?? string.Empty;
+                return platform.IndexOf("Win", StringComparison.OrdinalIgnoreCase) >= 0
+                    || platform.IndexOf("Web", StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+
+            return false;
         }
 
         public override string GetName()
