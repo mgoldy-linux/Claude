@@ -597,6 +597,26 @@ function touch { New-Item -ItemType File -Path $args }
 
 #endregion
 
+#region Claude Repo Sync
+
+try {
+    $Script:ClaudeRepoPath = "C:\Claude"
+    if (Test-Path (Join-Path $Script:ClaudeRepoPath ".git")) {
+        Push-Location $Script:ClaudeRepoPath
+        $pullOutput = git pull 2>&1
+        Pop-Location
+
+        if ($pullOutput -notmatch "Already up to date") {
+            Write-Host "Claude repo updated: $pullOutput" -ForegroundColor Cyan
+        }
+    }
+}
+catch {
+    Write-Warning "Claude repo sync failed: $_"
+}
+
+#endregion
+
 #region Profile Load Complete
 
 $Script:ProfileLoadEnd = Get-Date
