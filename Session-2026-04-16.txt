@@ -1,0 +1,20 @@
+6/1/26   claude --resume "dbatools Fix / Compare-Folders Bug Fixes / Harvest-XE Run Counter"
+5/29/26  claude --resume "Confluence API"
+5/28/26  claude --resume "SA 45138 - add sales orders to portal BOP Critical or Backordered items"
+5/27/26  claude --resume "P21 Play Refresh"
+5/26/26  claude --resume "add price_page_description to low margin alert"
+5/22/26  claude --resume "SA 45138 - add sales orders to portal BOP Critical or Backordered items"
+5/21/26  claude --resume "scanner business rule"
+5/19/26  claude --resume "SA-45865 OE Order Note Save Error / apc_business_rule_extensions_xml varchar fix"
+5/19/26  claude --resume "P21 Visual Rules"  /resume 9503ef4a-dbc5-44bd-be11-d348fbefcac1
+5/15/26  claude --resume "Sales Order Repair Error 245 / Portal Open Orders KB Migration"
+5/12/26  claude --resume "users api"
+5/12/26  claude --resume "PowerShell Maintenance"
+5/11/26  claude --resume "postman"
+5/8/26   claude --resume "Business Rules Refresh"
+5/5/26   claude --resume "documents for testing"  /resume 6be0e40f-4518-4196-8cdd-b8d6ff5ed0ab
+5/4/26   claude --resume "Portal Cleanup Progress / Suppress Messages BR"
+5/1/26   claude --resume "P21Training DB Refresh"
+4/30/26  claude --resume "P21 Business Rules Nightly Email Agent"  /resume 8a17fbad-6fbb-4ceb-b6fe-cd7fa19044a8
+4/28/26  claude --resume "First PO Correction"
+4/26/26  claude --resume "cleanup portal BR SAL Orders Unapproved"
