@@ -12,7 +12,7 @@
 5/12/26  claude --resume "PowerShell Maintenance"
 5/11/26  claude --resume "postman"
 5/8/26   claude --resume "Business Rules Refresh"
-5/5/26   claude --resume "documents for testing"  /resume 6be0e40f-4518-4196-8cdd-b8d6ff5ed0ab
+5/5/26   claude --resume "Test-NetConnection hanging / network connectivity debugging"  /resume 6be0e40f-4518-4196-8cdd-b8d6ff5ed0ab
 5/4/26   claude --resume "Portal Cleanup Progress / Suppress Messages BR"
 5/1/26   claude --resume "P21Training DB Refresh"
 4/30/26  claude --resume "P21 Business Rules Nightly Email Agent"  /resume 8a17fbad-6fbb-4ceb-b6fe-cd7fa19044a8
