@@ -1,0 +1,60 @@
+===========================================================================
+Document Updates — Automated Sales Location Update & Message Suppression (P21)
+Version 1.1 — 2026-04-21
+Paste each section into the corresponding location in the Google Drive doc.
+===========================================================================
+
+
+--- CHANGE RECORD (add this row to the table) ---
+
+| 2026-04-21 | Mark Goldyn | 1.1 | Table-driven message suppression; updated rule names; added SQL objects and log review workflow |
+
+
+--- ASSUMPTION #3 (replace existing #3) ---
+
+3. Message suppression is managed through a database table (suppress_messages_p21_ud) in P21BusinessRules.
+   Each message is assigned an action of SUPPRESS (hide popup), ALLOW (show popup, no log), or ALERT
+   (show popup and write to message_log_p21_ud for end-of-day review). New unknown messages are logged
+   automatically and can be classified without redeploying the business rule.
+
+
+--- TECHNICAL CONSIDERATIONS (replace item 1; add items 4 and 5) ---
+
+1. Rule Interference: _t10_asi_oe_suppress_oe_msgs checks each message number against
+   suppress_messages_p21_ud before acting. Only messages explicitly set to SUPPRESS are hidden;
+   all others display normally or are logged for review.
+
+4. SQL Objects: Three objects in P21BusinessRules support message management:
+   suppress_messages_p21_ud (classification table), message_log_p21_ud (ALERT log with occurrence
+   counts), and usp_suppress_messages_p21_ud (stored procedure with ADD / REMOVE / LIST / CHECK /
+   LOG / CLEAR actions).
+
+5. Log Review Workflow: Unknown messages fire with action ALERT — the popup displays and the message
+   is written to message_log_p21_ud. Use Generate-Add-From-message_log_p21_ud.sql to generate EXEC ADD
+   statements, adjust the @message_action per message, and run the output to classify them. Run
+   EXEC usp_suppress_messages_p21_ud @action = 'CLEAR' after review to reset the log.
+
+
+--- DESIGN COMPONENTS — ORDER ENTRY RULES (replace both bullet points) ---
+
+• _t9_oe_order_sales_loc_id_up: Sets sales_loc_id from the ship_to table and displays custom result
+  messages for overdue invoices (>20 days), missing contacts, and multiple contracts.
+
+• _t10_asi_oe_suppress_oe_msgs: Checks each OE message number against suppress_messages_p21_ud.
+  SUPPRESS hides the popup; ALLOW passes it through; ALERT passes it through and logs it to
+  message_log_p21_ud for review.
+
+
+--- DESIGN COMPONENTS — SQL OBJECTS (add as new section after Order Entry Rules) ---
+
+SQL Objects (P21BusinessRules)
+
+• suppress_messages_p21_ud: Classification table. Columns: message_no, message_title,
+  message_action (SUPPRESS / ALLOW), suppression_reason, date_created, last_maintained_by.
+
+• message_log_p21_ud: ALERT log table. Columns: message_no, message_title, method_name,
+  user_text, occurrence_count, first_seen, last_seen.
+
+• usp_suppress_messages_p21_ud: Stored procedure. Actions: ADD (insert or update classification),
+  REMOVE (delete), LIST (return all), CHECK (return SUPPRESS / ALLOW / ALERT),
+  LOG (insert or increment occurrence count), CLEAR (truncate log after review).

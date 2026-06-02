@@ -1,0 +1,311 @@
+{
+    "Name": "Pricefamily",
+    "TransactionDefinition": {
+        "DataElementDefinitions": [
+            {
+                "Name": "FORM.form",
+                "BusinessObjectName": "price_family",
+                "KeyFields": [
+                    "price_family_id"
+                ],
+                "FieldDefinitions": [
+                    {
+                        "Name": "price_family_id",
+                        "DbColumnName": "price_family.price_family_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Price Family ID"
+                    },
+                    {
+                        "Name": "price_family_desc",
+                        "DbColumnName": "price_family.price_family_desc",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Price Family Description"
+                    },
+                    {
+                        "Name": "row_status_flag",
+                        "DbColumnName": "price_family.row_status_flag",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Active",
+                            "Inactive"
+                        ],
+                        "Required": false,
+                        "Label": "Status"
+                    }
+                ],
+                "Type": "Form"
+            },
+            {
+                "Name": "TP_RESTRICTEDCLASS.tp_restrictedclass",
+                "BusinessObjectName": "price_family_x_restricted_class",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "restricted_class_id",
+                        "DbColumnName": "restricted_class.class_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Class ID"
+                    },
+                    {
+                        "Name": "row_status_flag",
+                        "DbColumnName": "price_family_x_restricted_class.row_status_flag",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Delete",
+                            "Active",
+                            "Inactive"
+                        ],
+                        "Required": false,
+                        "Label": "Status"
+                    },
+                    {
+                        "Name": "restricted_class_description",
+                        "DbColumnName": "restricted_class.class_description",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Class Description"
+                    },
+                    {
+                        "Name": "compute_1",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    }
+                ],
+                "Type": "List"
+            },
+            {
+                "Name": "TP_REWARDSPROGRAM.tp_rewardsprogram",
+                "BusinessObjectName": "price_family_x_rewards_program",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "coop_dollar_accum_rate",
+                        "DbColumnName": "price_family_x_rewards_program.coop_dollar_accum_rate",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Price Family Co-op Accumulation Rate"
+                    },
+                    {
+                        "Name": "incentive_points_accum_rate",
+                        "DbColumnName": "price_family_x_rewards_program.incentive_points_accum_rate",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Price Family Incentive Points Accumulation Rate"
+                    },
+                    {
+                        "Name": "row_status_flag",
+                        "DbColumnName": "price_family_x_rewards_program.row_status_flag",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Delete",
+                            "Active",
+                            "Inactive"
+                        ],
+                        "Required": false,
+                        "Label": "Status"
+                    },
+                    {
+                        "Name": "rewards_program_id",
+                        "DbColumnName": "rewards_program.rewards_program_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Program ID"
+                    },
+                    {
+                        "Name": "rewards_program_desc",
+                        "DbColumnName": "rewards_program.rewards_program_desc",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Description"
+                    },
+                    {
+                        "Name": "cf_rfi",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "cf_program_coop_accum_dflt",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "cf_program_ip_accum_dflt",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "cf_dfflag",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    }
+                ],
+                "Type": "List"
+            }
+        ]
+    },
+    "Template": {
+        "TransactionSet": {
+            "Name": "Pricefamily",
+            "UseCodeValues": false,
+            "IgnoreDisabled": false,
+            "Transactions": [
+                {
+                    "Status": "New",
+                    "DataElements": [
+                        {
+                            "Name": "FORM.form",
+                            "BusinessObjectName": null,
+                            "Type": "Form",
+                            "Keys": [
+                                "price_family_id"
+                            ],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "price_family_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_family_desc",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "row_status_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "TP_RESTRICTEDCLASS.tp_restrictedclass",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "restricted_class_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "row_status_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "restricted_class_description",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "compute_1",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "TP_REWARDSPROGRAM.tp_rewardsprogram",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "coop_dollar_accum_rate",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "incentive_points_accum_rate",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "row_status_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "rewards_program_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "rewards_program_desc",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_rfi",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_program_coop_accum_dflt",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_program_ip_accum_dflt",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_dfflag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        }
+                    ],
+                    "Documents": null
+                }
+            ],
+            "Query": null,
+            "FieldMap": [],
+            "TransactionSplitMethod": 0
+        }
+    }
+}

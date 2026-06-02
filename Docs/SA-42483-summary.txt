@@ -1,0 +1,128 @@
+Subject: SA 42483 -- Customer Master Inquiry Causing P21 Freeze (30s-1min)
+
+================================================================
+REPORTED ISSUE
+================================================================
+
+SA 42483: Opening the Customer Master Inquiry in P21 was causing
+the application to stop responding for 30 seconds to one minute.
+Investigation identified the YTD Sales ribbon business rule as
+the source of the slowdown.
+
+================================================================
+ROOT CAUSE -- BLANK RIBBON & PERFORMANCE FREEZE
+================================================================
+
+The business rule was executing a SQL query against
+kb_sales_history_report_view -- a large custom view with complex
+joins across multiple tables -- on every customer record load.
+Two problems were found:
+
+  1. Incorrect year filter
+     The query compared a text field (year_for_period) to a
+     numeric value. SQL Server's implicit conversion failed
+     silently, returning zero rows. The ribbon displayed blank
+     while still consuming full query execution time.
+
+  2. Unoptimized custom view
+     kb_sales_history_report_view performs extensive joins and
+     calculations across the full invoice history on every call,
+     with no targeted filtering until after the heavy lifting
+     was done.
+
+Combined, these caused P21 to hang while the query ran to
+completion and returned nothing.
+
+================================================================
+C# CODE CHANGES
+================================================================
+
+The business rule code was modernized as part of this fix:
+
+  Class & namespace renamed
+    Before : kb_CustRM_getYTDSalesAbbr / kb_RibbonMetrics_r1
+    After  : asi_ribbon_cm_SYTD / asi_RibbonMetrics
+    Impact : Consistent naming convention
+
+  Field access method
+    Before : GetFieldByAlias("field") x7
+    After  : this.Data.Fields["field"] direct access
+    Impact : Faster, per project convention
+
+  Class name at runtime
+    Before : LINQ expression using Reflection x5
+    After  : nameof() compile-time constant
+    Impact : Eliminates reflection overhead, safer in async contexts
+
+  Number formatting
+    Before : kb_fn_number_shorten SQL scalar UDF
+    After  : FormatSalesAbbr() inline C# method
+    Impact : Eliminates UDF call, removes kb_ dependency
+
+  Instance field
+    Before : private string outputNumber (class level)
+    After  : Local variable inside method
+    Impact : Eliminates potential state issues if runtime reuses instance
+
+  Connection management
+    Before : kb_SQLHelper + manual connection.Close()
+    After  : P21 built-in P21SqlConnection
+    Impact : Removes redundant code, uses framework-managed connection
+
+  Error logging
+    Before : kb_SQLHelper.LogError() x3
+    After  : P21 built-in business rule logging
+    Impact : Removes kb_ dependency, uses supported framework
+
+  Error messages
+    Before : "contact Karen"
+    After  : "contact the Bus App Team"
+    Impact : Current contact information
+
+================================================================
+SQL QUERY CHANGES
+================================================================
+
+  kb_sales_history_report_view  →  p21_sales_history_view (P21 native)
+    Benefit : Lighter view, targeted filters applied early
+
+  kb_fn_number_shorten scalar UDF  →  Inline C# formatting
+    Benefit : Eliminates UDF, removes parallelism blocker
+
+  kb_SQLHelper connection/logging  →  P21 built-in rule framework
+    Benefit : Removes unnecessary overhead
+
+  kb_view_invoice_line_rewards  →  p21_view_rewards_program_values (P21 native)
+    Benefit : Supported P21 object, no custom maintenance required
+
+The new query applies customer and year filters early, scans
+significantly less data per ribbon load, and eliminates the
+scalar UDF call that was blocking query parallelism.
+
+================================================================
+ACCURACY VALIDATION
+================================================================
+
+The new query was validated against 200 randomly selected
+customers, comparing results to the previous implementation:
+
+  - 92-98% of customers: exact match, some variance is due different rounding methods.
+  - Remaining variance is less than 1% of revenue on affected customers
+  - Variance is documented, reviewed, and accepted by the Bus App Team
+
+================================================================
+ROLLBACK PLAN
+================================================================
+
+The original rule (kb_CustRM_getYTDSalesAbbr) remains disabled
+but intact and can be re-enabled immediately if needed. It will
+not be deleted until the new rule has been confirmed stable in
+production for a minimum of one week.
+
+================================================================
+
+Prepared by : Bus App Team
+Date        : 2026-03-27
+Ticket      : SA 42483
+
+================================================================

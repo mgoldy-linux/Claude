@@ -1,0 +1,2128 @@
+{
+    "Name": "SalesPricePage",
+    "TransactionDefinition": {
+        "DataElementDefinitions": [
+            {
+                "Name": "FORM.form",
+                "BusinessObjectName": "price_page",
+                "KeyFields": [
+                    "price_page_uid"
+                ],
+                "FieldDefinitions": [
+                    {
+                        "Name": "price_page_type_cd",
+                        "DbColumnName": "price_page.price_page_type_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Item",
+                            "Supplier / Discount Group",
+                            "Supplier / Product Group",
+                            "Supplier / Manufacturing Class",
+                            "Supplier",
+                            "Discount Group",
+                            "Product Group",
+                            "Customer Part Number",
+                            "Price Family",
+                            "Supplier/Price Family"
+                        ],
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "price_page_uid",
+                        "DbColumnName": "price_page.price_page_uid",
+                        "DataType": "Long",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Price Page ID"
+                    },
+                    {
+                        "Name": "calculator_type",
+                        "DbColumnName": "price_page.calculator_type",
+                        "DataType": "Char",
+                        "ValidValues": [
+                            "Both",
+                            "Cost"
+                        ],
+                        "Required": false,
+                        "Label": "Calculator Type"
+                    },
+                    {
+                        "Name": "description",
+                        "DbColumnName": "price_page.description",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Description"
+                    },
+                    {
+                        "Name": "effective_date",
+                        "DbColumnName": "price_page.effective_date",
+                        "DataType": "Datetime",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Effective Date"
+                    },
+                    {
+                        "Name": "expiration_date",
+                        "DbColumnName": "price_page.expiration_date",
+                        "DataType": "Datetime",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Expiration Date"
+                    },
+                    {
+                        "Name": "create_on_contract_page",
+                        "DbColumnName": "create_on_contract_page",
+                        "DataType": "Char",
+                        "ValidValues": [
+                            "ON",
+                            "OFF"
+                        ],
+                        "Required": false,
+                        "Label": "Create On Contract Price Page"
+                    },
+                    {
+                        "Name": "contract_number",
+                        "DbColumnName": "price_page.contract_number",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Contract Number"
+                    },
+                    {
+                        "Name": "pricing_method_cd",
+                        "DbColumnName": "price_page.pricing_method_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Source",
+                            "Price",
+                            "None"
+                        ],
+                        "Required": true,
+                        "Label": "Pricing Method"
+                    },
+                    {
+                        "Name": "currency_id",
+                        "DbColumnName": "price_page.currency_id",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "U.S. Dollars"
+                        ],
+                        "Required": false,
+                        "Label": "Sales Currency ID"
+                    },
+                    {
+                        "Name": "source_price_cd",
+                        "DbColumnName": "price_page.source_price_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Price 1",
+                            "Price 2",
+                            "Price 3",
+                            "Price 4",
+                            "Price 5",
+                            "Price 6",
+                            "Price 7",
+                            "Price 8",
+                            "Price 9",
+                            "Price 10",
+                            "Supplier List Price",
+                            "Primary Supplier Cost",
+                            "Standard Cost",
+                            "Average Cost",
+                            "Last Received PO Cost",
+                            "Next Due in PO Cost",
+                            "Other Cost",
+                            "Strategic List Price",
+                            "Strategic Cost"
+                        ],
+                        "Required": false,
+                        "Label": "Source Price"
+                    },
+                    {
+                        "Name": "price",
+                        "DbColumnName": "price_page.price",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Price"
+                    },
+                    {
+                        "Name": "totaling_method_cd",
+                        "DbColumnName": "price_page.totaling_method_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Item",
+                            "Supplier",
+                            "Discount Group",
+                            "Product Group",
+                            "Order",
+                            "Major Group"
+                        ],
+                        "Required": true,
+                        "Label": "Totaling Method"
+                    },
+                    {
+                        "Name": "totaling_basis_cd",
+                        "DbColumnName": "price_page.totaling_basis_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Price 1",
+                            "Price 2",
+                            "Price 3",
+                            "Price 4",
+                            "Price 5",
+                            "Price 6",
+                            "Price 7",
+                            "Price 8",
+                            "Price 9",
+                            "Price 10",
+                            "Supplier List Price",
+                            "Primary Supplier Cost",
+                            "Standard Cost",
+                            "Average Cost",
+                            "Last Received PO Cost",
+                            "Next Due in PO Cost",
+                            "Sales Unit",
+                            "Weight",
+                            "Piece",
+                            "UOM",
+                            "Other Cost"
+                        ],
+                        "Required": true,
+                        "Label": "Totaling Basis"
+                    },
+                    {
+                        "Name": "major_group_id",
+                        "DbColumnName": "price_page.major_group_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Major Group ID"
+                    },
+                    {
+                        "Name": "row_status_flag",
+                        "DbColumnName": "price_page.row_status_flag",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Delete",
+                            "Active"
+                        ],
+                        "Required": true,
+                        "Label": "Status"
+                    },
+                    {
+                        "Name": "company_id",
+                        "DbColumnName": "price_page.company_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Company ID"
+                    },
+                    {
+                        "Name": "item_id",
+                        "DbColumnName": "inv_mast.item_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Item"
+                    },
+                    {
+                        "Name": "supplier_id",
+                        "DbColumnName": "price_page.supplier_id",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Supplier"
+                    },
+                    {
+                        "Name": "discount_group_id",
+                        "DbColumnName": "price_page.discount_group_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Discount Group"
+                    },
+                    {
+                        "Name": "mfg_class_id",
+                        "DbColumnName": "price_page.mfg_class_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Manufacturing Class"
+                    },
+                    {
+                        "Name": "product_group_id",
+                        "DbColumnName": "price_page.product_group_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Product Group"
+                    },
+                    {
+                        "Name": "customer_id",
+                        "DbColumnName": "price_page.customer_id",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Customer ID"
+                    },
+                    {
+                        "Name": "customer_part_no",
+                        "DbColumnName": "price_page.customer_part_no",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Customer part number"
+                    },
+                    {
+                        "Name": "price_family_id",
+                        "DbColumnName": "price_family.price_family_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Price Family"
+                    },
+                    {
+                        "Name": "apply_pp_to_mro_cd",
+                        "DbColumnName": "price_page.apply_pp_to_mro_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Yes",
+                            "No",
+                            "Only"
+                        ],
+                        "Required": false,
+                        "Label": "Apply to Manufacturer Rep Orders"
+                    },
+                    {
+                        "Name": "strategic_price_applies_to_cd",
+                        "DbColumnName": "price_page.strategic_price_applies_to_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Core",
+                            "Non-Core"
+                        ],
+                        "Required": false,
+                        "Label": "Applies to"
+                    },
+                    {
+                        "Name": "no_charge_flag",
+                        "DbColumnName": "price_page.no_charge_flag",
+                        "DataType": "Char",
+                        "ValidValues": [
+                            "ON",
+                            "OFF"
+                        ],
+                        "Required": false,
+                        "Label": "No Charge"
+                    },
+                    {
+                        "Name": "rolled_item_pricing_type_cd",
+                        "DbColumnName": "price_page.rolled_item_pricing_type_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Full Roll",
+                            "Non-Roll",
+                            "Partial Roll"
+                        ],
+                        "Required": false,
+                        "Label": "Roll Pricing"
+                    },
+                    {
+                        "Name": "item_desc",
+                        "DbColumnName": "inv_mast.item_desc",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "cf_dfflag",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    }
+                ],
+                "Type": "Form"
+            },
+            {
+                "Name": "COSTS.costs",
+                "BusinessObjectName": "price_page",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "other_cost_type_cd",
+                        "DbColumnName": "price_page.other_cost_type_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Order",
+                            "Source",
+                            "Value",
+                            "None"
+                        ],
+                        "Required": false,
+                        "Label": "Type"
+                    },
+                    {
+                        "Name": "other_cost_value",
+                        "DbColumnName": "price_page.other_cost_value",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Value"
+                    },
+                    {
+                        "Name": "other_cost_source_cd",
+                        "DbColumnName": "price_page.other_cost_source_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Price 1",
+                            "Price 2",
+                            "Price 3",
+                            "Price 4",
+                            "Price 5",
+                            "Price 6",
+                            "Price 7",
+                            "Price 8",
+                            "Price 9",
+                            "Price 10",
+                            "Supplier List Price",
+                            "Primary Supplier Cost",
+                            "Standard Cost",
+                            "Average Cost",
+                            "Last Received PO Cost",
+                            "Next Due in PO Cost",
+                            "Other Cost",
+                            "Strategic List Price",
+                            "Strategic Cost"
+                        ],
+                        "Required": false,
+                        "Label": "Source"
+                    },
+                    {
+                        "Name": "cost_calculation_method_cd",
+                        "DbColumnName": "price_page.cost_calculation_method_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Difference",
+                            "Mark up",
+                            "Multiplier",
+                            "Percentage"
+                        ],
+                        "Required": false,
+                        "Label": "Calculation Method"
+                    },
+                    {
+                        "Name": "cost_calculation_value",
+                        "DbColumnName": "price_page.cost_calculation_value",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Calculation Value"
+                    },
+                    {
+                        "Name": "apply_freight_factor",
+                        "DbColumnName": "price_page.apply_freight_factor",
+                        "DataType": "Char",
+                        "ValidValues": [
+                            "ON",
+                            "OFF"
+                        ],
+                        "Required": false,
+                        "Label": "Apply Freight Factor"
+                    },
+                    {
+                        "Name": "freight_factor_source_cd",
+                        "DbColumnName": "price_page.freight_factor_source_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Price 1",
+                            "Price 2",
+                            "Price 3",
+                            "Price 4",
+                            "Price 5",
+                            "Price 6",
+                            "Price 7",
+                            "Price 8",
+                            "Price 9",
+                            "Price 10",
+                            "Supplier List Price",
+                            "Primary Supplier Cost",
+                            "Standard Cost",
+                            "Average Cost",
+                            "Last Received PO Cost",
+                            "Next Due in PO Cost",
+                            "Other Cost",
+                            "Strategic List Price",
+                            "Strategic Cost"
+                        ],
+                        "Required": false,
+                        "Label": "Freight Factor Source"
+                    },
+                    {
+                        "Name": "secondary_rebate_type_cd",
+                        "DbColumnName": "price_page_secondary_rebate.secondary_rebate_type_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "None",
+                            "Source",
+                            "Value"
+                        ],
+                        "Required": false,
+                        "Label": "Type"
+                    },
+                    {
+                        "Name": "commission_cost_type_cd",
+                        "DbColumnName": "price_page.commission_cost_type_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Order",
+                            "Source",
+                            "Value"
+                        ],
+                        "Required": false,
+                        "Label": "Type"
+                    },
+                    {
+                        "Name": "commission_cost_value",
+                        "DbColumnName": "price_page.commission_cost_value",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Value"
+                    },
+                    {
+                        "Name": "secondary_rebate_calc_meth_cd",
+                        "DbColumnName": "price_page_secondary_rebate.secondary_rebate_calc_meth_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Multiply",
+                            "Divide",
+                            "Add",
+                            "Subtract"
+                        ],
+                        "Required": false,
+                        "Label": "Calculation Method"
+                    },
+                    {
+                        "Name": "secondary_rebate_source_cd",
+                        "DbColumnName": "price_page_secondary_rebate.secondary_rebate_source_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Price 1",
+                            "Price 2",
+                            "Price 3",
+                            "Price 4",
+                            "Price 5",
+                            "Price 6",
+                            "Price 7",
+                            "Price 8",
+                            "Price 9",
+                            "Price 10",
+                            "Supplier List Price",
+                            "Primary Supplier Cost",
+                            "Standard Cost",
+                            "Average Cost",
+                            "Last Received PO Cost",
+                            "Next Due in PO Cost"
+                        ],
+                        "Required": false,
+                        "Label": "Source"
+                    },
+                    {
+                        "Name": "commission_cost_source_cd",
+                        "DbColumnName": "price_page.commission_cost_source_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Price 1",
+                            "Price 2",
+                            "Price 3",
+                            "Price 4",
+                            "Price 5",
+                            "Price 6",
+                            "Price 7",
+                            "Price 8",
+                            "Price 9",
+                            "Price 10",
+                            "Supplier List Price",
+                            "Primary Supplier Cost",
+                            "Standard Cost",
+                            "Average Cost",
+                            "Last Received PO Cost",
+                            "Next Due in PO Cost",
+                            "Other Cost",
+                            "Strategic List Price",
+                            "Strategic Cost",
+                            "Intercompany Source"
+                        ],
+                        "Required": false,
+                        "Label": "Source"
+                    },
+                    {
+                        "Name": "secondary_rebate_value",
+                        "DbColumnName": "price_page_secondary_rebate.secondary_rebate_value",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Value"
+                    },
+                    {
+                        "Name": "commission_cost_calc_method_cd",
+                        "DbColumnName": "price_page.commission_cost_calc_method_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Difference",
+                            "Mark up",
+                            "Multiplier",
+                            "Percentage"
+                        ],
+                        "Required": false,
+                        "Label": "Calculation Method"
+                    },
+                    {
+                        "Name": "commission_cost_calc_value",
+                        "DbColumnName": "price_page.commission_cost_calc_value",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Calculation Value"
+                    }
+                ],
+                "Type": "Form"
+            },
+            {
+                "Name": "PO COST MULTIPLIERS.price_page_po_cost_calc",
+                "BusinessObjectName": "price_page_po_cost_calc",
+                "KeyFields": [
+                    "customer_id"
+                ],
+                "FieldDefinitions": [
+                    {
+                        "Name": "company_id",
+                        "DbColumnName": "price_page_po_cost_calc.company_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Company ID"
+                    },
+                    {
+                        "Name": "customer_id",
+                        "DbColumnName": "price_page_po_cost_calc.customer_id",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Customer ID"
+                    },
+                    {
+                        "Name": "po_cost_multiplier",
+                        "DbColumnName": "price_page_po_cost_calc.po_cost_multiplier",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Multiplier"
+                    },
+                    {
+                        "Name": "contract_no",
+                        "DbColumnName": "price_page_po_cost_calc.contract_no",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "PO Contract Number"
+                    },
+                    {
+                        "Name": "customer_name",
+                        "DbColumnName": "customer.customer_name",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Customer Name"
+                    }
+                ],
+                "Type": "List"
+            },
+            {
+                "Name": "VALUES.values",
+                "BusinessObjectName": "price_page",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "calculation_method_cd",
+                        "DbColumnName": "price_page.calculation_method_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Difference",
+                            "Multiplier",
+                            "Mark up",
+                            "Percentage",
+                            "Fixed Price"
+                        ],
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "values_currency_id",
+                        "DbColumnName": "price_page.values_currency_id",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "U.S. Dollars"
+                        ],
+                        "Required": false,
+                        "Label": "Calculation Currency ID"
+                    },
+                    {
+                        "Name": "calculation_value1",
+                        "DbColumnName": "price_page.calculation_value1",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "break1",
+                        "DbColumnName": "price_page.break1",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "uom1",
+                        "DbColumnName": "price_page.uom1",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "UOM"
+                    },
+                    {
+                        "Name": "other_cost1",
+                        "DbColumnName": "price_page.other_cost1",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "calculation_value2",
+                        "DbColumnName": "price_page.calculation_value2",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "break2",
+                        "DbColumnName": "price_page.break2",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "uom2",
+                        "DbColumnName": "price_page.uom2",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "other_cost2",
+                        "DbColumnName": "price_page.other_cost2",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "calculation_value3",
+                        "DbColumnName": "price_page.calculation_value3",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "break3",
+                        "DbColumnName": "price_page.break3",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "uom3",
+                        "DbColumnName": "price_page.uom3",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "other_cost3",
+                        "DbColumnName": "price_page.other_cost3",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "calculation_value4",
+                        "DbColumnName": "price_page.calculation_value4",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "break4",
+                        "DbColumnName": "price_page.break4",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "uom4",
+                        "DbColumnName": "price_page.uom4",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "other_cost4",
+                        "DbColumnName": "price_page.other_cost4",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "calculation_value5",
+                        "DbColumnName": "price_page.calculation_value5",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "break5",
+                        "DbColumnName": "price_page.break5",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "uom5",
+                        "DbColumnName": "price_page.uom5",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "other_cost5",
+                        "DbColumnName": "price_page.other_cost5",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "calculation_value6",
+                        "DbColumnName": "price_page.calculation_value6",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "break6",
+                        "DbColumnName": "price_page.break6",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "uom6",
+                        "DbColumnName": "price_page.uom6",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "other_cost6",
+                        "DbColumnName": "price_page.other_cost6",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "calculation_value7",
+                        "DbColumnName": "price_page.calculation_value7",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "break7",
+                        "DbColumnName": "price_page.break7",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "uom7",
+                        "DbColumnName": "price_page.uom7",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "other_cost7",
+                        "DbColumnName": "price_page.other_cost7",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "calculation_value8",
+                        "DbColumnName": "price_page.calculation_value8",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "break8",
+                        "DbColumnName": "price_page.break8",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "uom8",
+                        "DbColumnName": "price_page.uom8",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "other_cost8",
+                        "DbColumnName": "price_page.other_cost8",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "calculation_value9",
+                        "DbColumnName": "price_page.calculation_value9",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "break9",
+                        "DbColumnName": "price_page.break9",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "uom9",
+                        "DbColumnName": "price_page.uom9",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "other_cost9",
+                        "DbColumnName": "price_page.other_cost9",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "calculation_value10",
+                        "DbColumnName": "price_page.calculation_value10",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "break10",
+                        "DbColumnName": "price_page.break10",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "uom10",
+                        "DbColumnName": "price_page.uom10",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "other_cost10",
+                        "DbColumnName": "price_page.other_cost10",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "calculation_value11",
+                        "DbColumnName": "price_page.calculation_value11",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "break11",
+                        "DbColumnName": "price_page.break11",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "uom11",
+                        "DbColumnName": "price_page.uom11",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "other_cost11",
+                        "DbColumnName": "price_page.other_cost11",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "calculation_value12",
+                        "DbColumnName": "price_page.calculation_value12",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "break12",
+                        "DbColumnName": "price_page.break12",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "uom12",
+                        "DbColumnName": "price_page.uom12",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "other_cost12",
+                        "DbColumnName": "price_page.other_cost12",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "calculation_value13",
+                        "DbColumnName": "price_page.calculation_value13",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "break13",
+                        "DbColumnName": "price_page.break13",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "uom13",
+                        "DbColumnName": "price_page.uom13",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "other_cost13",
+                        "DbColumnName": "price_page.other_cost13",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "calculation_value14",
+                        "DbColumnName": "price_page.calculation_value14",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "break14",
+                        "DbColumnName": "price_page.break14",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "uom14",
+                        "DbColumnName": "price_page.uom14",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "other_cost14",
+                        "DbColumnName": "price_page.other_cost14",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "calculation_value15",
+                        "DbColumnName": "price_page.calculation_value15",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "other_cost15",
+                        "DbColumnName": "price_page.other_cost15",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "cf_dfflag",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    }
+                ],
+                "Type": "Form"
+            },
+            {
+                "Name": "USED BY.price_book_x_page",
+                "BusinessObjectName": "price_book",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "price_library_price_library_id",
+                        "DbColumnName": "price_library.price_library_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Library ID"
+                    },
+                    {
+                        "Name": "price_library_description",
+                        "DbColumnName": "price_library.description",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Library Description"
+                    },
+                    {
+                        "Name": "price_book_price_book_id",
+                        "DbColumnName": "price_book.price_book_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Book ID"
+                    },
+                    {
+                        "Name": "price_book_description",
+                        "DbColumnName": "price_book.description",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Book Description"
+                    },
+                    {
+                        "Name": "price_book_row_status_flag",
+                        "DbColumnName": "price_book.row_status_flag",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Active",
+                            "Cancel",
+                            "Complete",
+                            "Delete",
+                            "Email - Send",
+                            "Email Pending",
+                            "Inactive",
+                            "N/A",
+                            "Open",
+                            "Print Pending",
+                            "Reversed",
+                            "Unapproved"
+                        ],
+                        "Required": false,
+                        "Label": "Status"
+                    }
+                ],
+                "Type": "List"
+            },
+            {
+                "Name": "TIMESTAMPPRICE_PAGE.timestampprice_page",
+                "BusinessObjectName": "",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "date_created",
+                        "DbColumnName": "",
+                        "DataType": "Datetime",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Date Created"
+                    },
+                    {
+                        "Name": "date_last_modified",
+                        "DbColumnName": "",
+                        "DataType": "Datetime",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Date Last Modified"
+                    },
+                    {
+                        "Name": "created_by",
+                        "DbColumnName": "",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Created By"
+                    },
+                    {
+                        "Name": "last_maintained_by",
+                        "DbColumnName": "",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Last Maintained By"
+                    }
+                ],
+                "Type": "Form"
+            },
+            {
+                "Name": "TIMESTAMPPRICE_PAGE.timestampprice_page_dw_audittrail",
+                "BusinessObjectName": "p21_view_audit_trail",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "item_id",
+                        "DbColumnName": "item_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Item ID"
+                    },
+                    {
+                        "Name": "line_no",
+                        "DbColumnName": "line_no",
+                        "DataType": "Long",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Line No"
+                    },
+                    {
+                        "Name": "column_description",
+                        "DbColumnName": "column_description",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Column Changed"
+                    },
+                    {
+                        "Name": "old_value",
+                        "DbColumnName": "old_value",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Old Value"
+                    },
+                    {
+                        "Name": "new_value",
+                        "DbColumnName": "new_value",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "New Value"
+                    },
+                    {
+                        "Name": "date_created",
+                        "DbColumnName": "date_created",
+                        "DataType": "Datetime",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Date Created"
+                    },
+                    {
+                        "Name": "created_by",
+                        "DbColumnName": "created_by",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Created By"
+                    },
+                    {
+                        "Name": "cf_display_key",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "cf_sub_line_no",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "cf_line_no_visible",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "cf_item_id_visible",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    }
+                ],
+                "Type": "List"
+            }
+        ]
+    },
+    "Template": {
+        "TransactionSet": {
+            "Name": "SalesPricePage",
+            "UseCodeValues": false,
+            "IgnoreDisabled": false,
+            "Transactions": [
+                {
+                    "Status": "New",
+                    "DataElements": [
+                        {
+                            "Name": "FORM.form",
+                            "BusinessObjectName": null,
+                            "Type": "Form",
+                            "Keys": [
+                                "price_page_uid"
+                            ],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "price_page_type_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_page_uid",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "calculator_type",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "description",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "effective_date",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "expiration_date",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "create_on_contract_page",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "contract_number",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "pricing_method_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "currency_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "source_price_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "totaling_method_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "totaling_basis_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "major_group_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "row_status_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "company_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "item_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "supplier_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "discount_group_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "mfg_class_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "product_group_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "customer_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "customer_part_no",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_family_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "apply_pp_to_mro_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "strategic_price_applies_to_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "no_charge_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "rolled_item_pricing_type_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "item_desc",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_dfflag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "COSTS.costs",
+                            "BusinessObjectName": null,
+                            "Type": "Form",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "other_cost_type_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost_value",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost_source_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cost_calculation_method_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cost_calculation_value",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "apply_freight_factor",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "freight_factor_source_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_rebate_type_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "commission_cost_type_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "commission_cost_value",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_rebate_calc_meth_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_rebate_source_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "commission_cost_source_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_rebate_value",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "commission_cost_calc_method_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "commission_cost_calc_value",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "PO COST MULTIPLIERS.price_page_po_cost_calc",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [
+                                "customer_id"
+                            ],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "company_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "customer_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "po_cost_multiplier",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "contract_no",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "customer_name",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "VALUES.values",
+                            "BusinessObjectName": null,
+                            "Type": "Form",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "calculation_method_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "values_currency_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "calculation_value1",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "break1",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "uom1",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost1",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "calculation_value2",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "break2",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "uom2",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost2",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "calculation_value3",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "break3",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "uom3",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost3",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "calculation_value4",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "break4",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "uom4",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost4",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "calculation_value5",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "break5",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "uom5",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost5",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "calculation_value6",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "break6",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "uom6",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost6",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "calculation_value7",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "break7",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "uom7",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost7",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "calculation_value8",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "break8",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "uom8",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost8",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "calculation_value9",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "break9",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "uom9",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost9",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "calculation_value10",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "break10",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "uom10",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost10",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "calculation_value11",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "break11",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "uom11",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost11",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "calculation_value12",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "break12",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "uom12",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost12",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "calculation_value13",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "break13",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "uom13",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost13",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "calculation_value14",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "break14",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "uom14",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost14",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "calculation_value15",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "other_cost15",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_dfflag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "USED BY.price_book_x_page",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "price_library_price_library_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_library_description",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_book_price_book_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_book_description",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_book_row_status_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "TIMESTAMPPRICE_PAGE.timestampprice_page",
+                            "BusinessObjectName": null,
+                            "Type": "Form",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "date_created",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "date_last_modified",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "created_by",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "last_maintained_by",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "TIMESTAMPPRICE_PAGE.timestampprice_page_dw_audittrail",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "item_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "line_no",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "column_description",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "old_value",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "new_value",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "date_created",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "created_by",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_display_key",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_sub_line_no",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_line_no_visible",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_item_id_visible",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        }
+                    ],
+                    "Documents": null
+                }
+            ],
+            "Query": null,
+            "FieldMap": [],
+            "TransactionSplitMethod": 0
+        }
+    }
+}

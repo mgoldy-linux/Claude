@@ -1,19 +1,35 @@
-6/1/26   claude --resume "dbatools Fix / Compare-Folders Bug Fixes / Harvest-XE Run Counter"
+6/2/26 claude --resume bb0573cd-98f9-4654-b1c0-4ebf1020545c "2026-06-02 BRR Refresh Fixes" / --resume "SQL Update oe_hdr last modified date"
+6/1/26 claude --resume "dbatools Fix / Compare-Folders Bug Fixes / Harvest-XE Run Counter"  /resume e866aa88-bbee-4c3d-b209-8192d77148a1  | claude --resume "excel wireless transaction report" claude --resume 51988261-7e6e-40f2-b019-11d761065fec - why user define tables
 5/29/26  claude --resume "Confluence API"
+5/29/26  claude --resume "Session management questions"  /resume 6c32fd26-1c2e-4633-b195-2779de278b07
 5/28/26  claude --resume "SA 45138 - add sales orders to portal BOP Critical or Backordered items"
-5/27/26  claude --resume "P21 Play Refresh"
-5/26/26  claude --resume "add price_page_description to low margin alert"
-5/22/26  claude --resume "SA 45138 - add sales orders to portal BOP Critical or Backordered items"
-5/21/26  claude --resume "scanner business rule"
-5/19/26  claude --resume "SA-45865 OE Order Note Save Error / apc_business_rule_extensions_xml varchar fix"
+5/27/26  claude --resume "P21 Play Refresh"  /resume 610b4e5b-e1bd-4d52-95be-53ae334646f1
+5/27/26  claude --resume "P21 Play Refresh prep"  /resume e6439a12-bf3a-4c0a-8810-5f070a93dc96
+5/27/26  claude --resume "apc_business_rule_extensions_xml permissions"  /resume afc1ced9-1c52-4c96-88ad-3125fb6aa4d0
+5/26/26  claude --resume "add price_page_description to low margin alert"  /resume 3b62a530-c06a-481e-aaa6-f6286e2d41a2
+5/22/26  claude --resume "SA 45138 - add sales orders to portal BOP Critical or Backordered items"  /resume 788bbaef-1641-4d7c-bd96-13c2d460d16f
+5/22/26  claude --resume "_asi Daily Sales Order Repair - true root cause"  /resume d2119c16-8b1f-4241-9c86-ee9ff739bf93
+5/21/26  claude --resume "scanner business rule"  /resume 9227ae6c-f294-413a-9f59-38db8aae1910
+5/19/26  claude --resume "SA-45865 OE Order Note Save Error / apc_business_rule_extensions_xml varchar fix"  /resume 0b5c9f30-10d2-4d57-8de2-53310b09c9b0
 5/19/26  claude --resume "P21 Visual Rules"  /resume 9503ef4a-dbc5-44bd-be11-d348fbefcac1
-5/15/26  claude --resume "Sales Order Repair Error 245 / Portal Open Orders KB Migration"
+5/19/26  claude --resume "P21 Visual Rules (2nd session)"  /resume 6ad59b8a-630b-4527-abe4-d35d2b6e83db
+5/15/26  claude --resume "Sales Order Repair Error 245 / Portal Open Orders KB Migration"  /resume 96e6490b-cd42-40cc-bd12-fc7f3c494c29
+5/14/26  claude --resume "Check-Job-History Windows job setup"  /resume da66a474-3e76-4174-ae60-bdc80bab235a
+5/13/26  claude --resume "PowerShell Maintenance"  /resume 3de65c3b-b7d2-4ecb-801b-48dee72b70c5
 5/12/26  claude --resume "users api"
-5/12/26  claude --resume "PowerShell Maintenance"
-5/11/26  claude --resume "postman"
+5/12/26  claude --resume "Harvest-XE / VS Code Claude settings"  /resume 7f129b16-22dd-4caa-921c-eaf97a246e19
+5/12/26  claude --resume "PowerShell profile error"  /resume 5ddba583-e201-4b84-acc2-cad3fc6110bb
+5/11/26  claude --resume "postman"  /resume 674fc7c7-afa6-4f6e-9234-50819817471b
+5/11/26  claude --resume "Postman / HTTP/1.1 P21 API"  /resume bf82a0b3-baa6-417c-9731-7a9785434681
+5/11/26  claude --resume "Claude GitHub repo setup"  /resume 3d431cb1-6fe7-4209-869d-824439abbda8
 5/8/26   claude --resume "Business Rules Refresh"
+5/8/26   claude --resume "WWMS QC bin planning"  /resume 42696cb3-9991-4966-a356-471e59be0716
+5/8/26   claude --resume "SQL source_cd column debugging"  /resume 16198d28-9783-46c6-a624-fab34b43085b
+5/8/26   claude --resume "Compare-Folders-V2 script"  /resume b6355e7d-ef87-4283-a3aa-71c3bd023e18
+5/6/26   claude --resume "XML business rules summarization"  /resume 928c7307-d885-4d2e-9640-65925b933981
 5/5/26   claude --resume "Test-NetConnection hanging / network connectivity debugging"  /resume 6be0e40f-4518-4196-8cdd-b8d6ff5ed0ab
-5/4/26   claude --resume "Portal Cleanup Progress / Suppress Messages BR"
+5/4/26   claude --resume "Portal Cleanup Progress / Suppress Messages BR"  /resume b12f440e-8cd4-4776-90f6-80697ec8105b
+5/3/26   claude --resume "SQL query email formatting / suppress messages BR"  /resume 862f6a5e-6d69-4fca-9420-26a2d8a8c414
 5/1/26   claude --resume "P21Training DB Refresh"
 4/30/26  claude --resume "P21 Business Rules Nightly Email Agent"  /resume 8a17fbad-6fbb-4ceb-b6fe-cd7fa19044a8
 4/28/26  claude --resume "First PO Correction"

@@ -1,0 +1,791 @@
+{
+    "Name": "StrategicPricingLibrary",
+    "TransactionDefinition": {
+        "DataElementDefinitions": [
+            {
+                "Name": "FORM.form",
+                "BusinessObjectName": "price_library",
+                "KeyFields": [
+                    "price_library_id"
+                ],
+                "FieldDefinitions": [
+                    {
+                        "Name": "price_library_id",
+                        "DbColumnName": "price_library.price_library_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Price Library ID"
+                    },
+                    {
+                        "Name": "description",
+                        "DbColumnName": "price_library.description",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "type_cd",
+                        "DbColumnName": "price_library.type_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "First Of",
+                            "Highest Of",
+                            "Lowest Of",
+                            "Multiplier",
+                            "Newest Of",
+                            "Oldest Of"
+                        ],
+                        "Required": false,
+                        "Label": "Type"
+                    },
+                    {
+                        "Name": "source_price_cd",
+                        "DbColumnName": "price_library.source_price_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Average Cost",
+                            "Last Received PO Cost",
+                            "Next Due in PO Cost",
+                            "Other Cost",
+                            "Price 1",
+                            "Price 10",
+                            "Price 2",
+                            "Price 3",
+                            "Price 4",
+                            "Price 5",
+                            "Price 6",
+                            "Price 7",
+                            "Price 8",
+                            "Price 9",
+                            "Primary Supplier Cost",
+                            "Standard Cost",
+                            "Strategic Cost",
+                            "Strategic List Price",
+                            "Supplier List Price"
+                        ],
+                        "Required": false,
+                        "Label": "Source Price"
+                    },
+                    {
+                        "Name": "multiplier",
+                        "DbColumnName": "price_library.multiplier",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Multiplier"
+                    },
+                    {
+                        "Name": "row_status_flag",
+                        "DbColumnName": "price_library.row_status_flag",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Active",
+                            "Inactive",
+                            "Delete"
+                        ],
+                        "Required": false,
+                        "Label": "Row Status"
+                    },
+                    {
+                        "Name": "library_on_contract",
+                        "DbColumnName": "price_library.library_on_contract",
+                        "DataType": "Char",
+                        "ValidValues": [
+                            "ON",
+                            "OFF"
+                        ],
+                        "Required": false,
+                        "Label": "Library On Contract"
+                    },
+                    {
+                        "Name": "cf_dfflag",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    }
+                ],
+                "Type": "Form"
+            },
+            {
+                "Name": "LIST.list",
+                "BusinessObjectName": "price_library",
+                "KeyFields": [
+                    "price_library_id"
+                ],
+                "FieldDefinitions": [
+                    {
+                        "Name": "price_library_id",
+                        "DbColumnName": "price_library.price_library_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Price Library ID"
+                    },
+                    {
+                        "Name": "row_status_flag",
+                        "DbColumnName": "price_library.row_status_flag",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Active",
+                            "Inactive",
+                            "Delete"
+                        ],
+                        "Required": false,
+                        "Label": "Row Status Flag"
+                    },
+                    {
+                        "Name": "type_cd",
+                        "DbColumnName": "price_library.type_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "First Of",
+                            "Highest Of",
+                            "Lowest Of",
+                            "Multiplier",
+                            "Newest Of",
+                            "Oldest Of"
+                        ],
+                        "Required": false,
+                        "Label": "Type"
+                    },
+                    {
+                        "Name": "source_price_cd",
+                        "DbColumnName": "price_library.source_price_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Average Cost",
+                            "Last Received PO Cost",
+                            "Next Due in PO Cost",
+                            "Other Cost",
+                            "Price 1",
+                            "Price 10",
+                            "Price 2",
+                            "Price 3",
+                            "Price 4",
+                            "Price 5",
+                            "Price 6",
+                            "Price 7",
+                            "Price 8",
+                            "Price 9",
+                            "Primary Supplier Cost",
+                            "Standard Cost",
+                            "Strategic Cost",
+                            "Strategic List Price",
+                            "Supplier List Price"
+                        ],
+                        "Required": false,
+                        "Label": "Source Price"
+                    },
+                    {
+                        "Name": "multiplier",
+                        "DbColumnName": "price_library.multiplier",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Multiplier"
+                    },
+                    {
+                        "Name": "library_on_contract",
+                        "DbColumnName": "price_library.library_on_contract",
+                        "DataType": "Char",
+                        "ValidValues": [
+                            "ON",
+                            "OFF"
+                        ],
+                        "Required": false,
+                        "Label": "Library On Contract"
+                    },
+                    {
+                        "Name": "description",
+                        "DbColumnName": "price_library.description",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Price Library Description"
+                    },
+                    {
+                        "Name": "compute_1",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "cf_dfflag",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    }
+                ],
+                "Type": "List"
+            },
+            {
+                "Name": "CUSTOMERS.price_library_x_cust_x_cmpy",
+                "BusinessObjectName": "price_library_x_cust_x_cmpy",
+                "KeyFields": [
+                    "customer_id"
+                ],
+                "FieldDefinitions": [
+                    {
+                        "Name": "company_id",
+                        "DbColumnName": "customer.company_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Company ID"
+                    },
+                    {
+                        "Name": "customer_id",
+                        "DbColumnName": "customer.customer_id",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Customer ID"
+                    },
+                    {
+                        "Name": "custmer_name",
+                        "DbColumnName": "customer.customer_name",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Custmer Name"
+                    },
+                    {
+                        "Name": "price_library_id",
+                        "DbColumnName": "price_library.price_library_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Price Library ID"
+                    }
+                ],
+                "Type": "List"
+            },
+            {
+                "Name": "LIST_DETAIL.list_detail",
+                "BusinessObjectName": "price_book_x_library",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "sequence_number",
+                        "DbColumnName": "price_book_x_library.sequence_number",
+                        "DataType": "Long",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Sequence  ¤"
+                    },
+                    {
+                        "Name": "price_book_id",
+                        "DbColumnName": "price_book.price_book_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Book  ¤"
+                    },
+                    {
+                        "Name": "price_book_description",
+                        "DbColumnName": "price_book.description",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Book Description  ¤"
+                    },
+                    {
+                        "Name": "row_status_flag",
+                        "DbColumnName": "price_book_x_library.row_status_flag",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Delete",
+                            "Active"
+                        ],
+                        "Required": false,
+                        "Label": "Link Status"
+                    },
+                    {
+                        "Name": "price_book_row_status_flag",
+                        "DbColumnName": "price_book.row_status_flag",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Delete",
+                            "Active"
+                        ],
+                        "Required": false,
+                        "Label": "Book Status"
+                    },
+                    {
+                        "Name": "price_book_x_library_date_last_modified",
+                        "DbColumnName": "price_book_x_library.date_last_modified",
+                        "DataType": "Datetime",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Link Date Last Modified"
+                    },
+                    {
+                        "Name": "rowfocusindicatorcol",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    }
+                ],
+                "Type": "List"
+            },
+            {
+                "Name": "PRICE PAGE.pagelist",
+                "BusinessObjectName": "price_page_x_book",
+                "KeyFields": [
+                    "price_page_uid"
+                ],
+                "FieldDefinitions": [
+                    {
+                        "Name": "price_page_uid",
+                        "DbColumnName": "price_page_x_book.price_page_uid",
+                        "DataType": "Long",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Price Page ID"
+                    },
+                    {
+                        "Name": "price_page_description",
+                        "DbColumnName": "price_page.description",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Price Page Description"
+                    },
+                    {
+                        "Name": "row_status_flag",
+                        "DbColumnName": "price_page_x_book.row_status_flag",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Delete",
+                            "Active"
+                        ],
+                        "Required": false,
+                        "Label": "Link Status"
+                    },
+                    {
+                        "Name": "price_book_id",
+                        "DbColumnName": "price_book.price_book_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "price_library_id",
+                        "DbColumnName": "price_library.price_library_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "price_page_type_cd",
+                        "DbColumnName": "price_page.price_page_type_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Item",
+                            "Supplier / Discount Group",
+                            "Supplier / Product Group",
+                            "Supplier / Manufacturing Class",
+                            "Supplier",
+                            "Discount Group",
+                            "Product Group",
+                            "Customer Part Number",
+                            "Price Family",
+                            "Supplier/Price Family"
+                        ],
+                        "Required": false,
+                        "Label": "Price Page Type"
+                    },
+                    {
+                        "Name": "c_type_description",
+                        "DbColumnName": "c_type_description",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Type Description"
+                    },
+                    {
+                        "Name": "effective_date",
+                        "DbColumnName": "price_page.effective_date",
+                        "DataType": "Datetime",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Effective Date"
+                    },
+                    {
+                        "Name": "expiration_date",
+                        "DbColumnName": "price_page.expiration_date",
+                        "DataType": "Datetime",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Expiration Date"
+                    },
+                    {
+                        "Name": "price_page_row_status_flag",
+                        "DbColumnName": "price_page.row_status_flag",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Delete",
+                            "Active"
+                        ],
+                        "Required": false,
+                        "Label": "Status"
+                    },
+                    {
+                        "Name": "rowfocusindicatorcol",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    }
+                ],
+                "Type": "List"
+            },
+            {
+                "Name": "PRICE PAGE.pagelist_book",
+                "BusinessObjectName": "",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "price_book_id",
+                        "DbColumnName": "",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Book"
+                    },
+                    {
+                        "Name": "price_book_description",
+                        "DbColumnName": "",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    }
+                ],
+                "Type": "Form"
+            }
+        ]
+    },
+    "Template": {
+        "TransactionSet": {
+            "Name": "StrategicPricingLibrary",
+            "UseCodeValues": false,
+            "IgnoreDisabled": false,
+            "Transactions": [
+                {
+                    "Status": "New",
+                    "DataElements": [
+                        {
+                            "Name": "FORM.form",
+                            "BusinessObjectName": null,
+                            "Type": "Form",
+                            "Keys": [
+                                "price_library_id"
+                            ],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "price_library_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "description",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "type_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "source_price_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "multiplier",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "row_status_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "library_on_contract",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_dfflag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "LIST.list",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [
+                                "price_library_id"
+                            ],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "price_library_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "row_status_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "type_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "source_price_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "multiplier",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "library_on_contract",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "description",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "compute_1",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_dfflag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "CUSTOMERS.price_library_x_cust_x_cmpy",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [
+                                "customer_id"
+                            ],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "company_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "customer_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "custmer_name",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_library_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "LIST_DETAIL.list_detail",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "sequence_number",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_book_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_book_description",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "row_status_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_book_row_status_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_book_x_library_date_last_modified",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "rowfocusindicatorcol",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "PRICE PAGE.pagelist",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [
+                                "price_page_uid"
+                            ],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "price_page_uid",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_page_description",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "row_status_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_book_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_library_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_page_type_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "c_type_description",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "effective_date",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "expiration_date",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_page_row_status_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "rowfocusindicatorcol",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "PRICE PAGE.pagelist_book",
+                            "BusinessObjectName": null,
+                            "Type": "Form",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "price_book_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_book_description",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        }
+                    ],
+                    "Documents": null
+                }
+            ],
+            "Query": null,
+            "FieldMap": [],
+            "TransactionSplitMethod": 0
+        }
+    }
+}

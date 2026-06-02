@@ -1,0 +1,199 @@
+{
+    "Name": "PricingServiceValueList",
+    "TransactionDefinition": {
+        "DataElementDefinitions": [
+            {
+                "Name": "FORM.form",
+                "BusinessObjectName": "pricing_service_value",
+                "KeyFields": [
+                    "value_desc"
+                ],
+                "FieldDefinitions": [
+                    {
+                        "Name": "value_desc",
+                        "DbColumnName": "pricing_service_value.value_desc",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Value Description"
+                    },
+                    {
+                        "Name": "use_exact_match",
+                        "DbColumnName": "pricing_service_value.use_exact_match",
+                        "DataType": "Char",
+                        "ValidValues": [
+                            "Use Exact Match",
+                            "Use Partial Match",
+                            "Item Notepad Areas"
+                        ],
+                        "Required": true,
+                        "Label": "Value List Type"
+                    },
+                    {
+                        "Name": "delete_flag",
+                        "DbColumnName": "pricing_service_value.delete_flag",
+                        "DataType": "Char",
+                        "ValidValues": [
+                            "ON",
+                            "OFF"
+                        ],
+                        "Required": true,
+                        "Label": "Delete"
+                    },
+                    {
+                        "Name": "process_type",
+                        "DbColumnName": "pricing_service_value.process_type",
+                        "DataType": "Char",
+                        "ValidValues": [
+                            "Internal Use",
+                            "Pricing Service",
+                            "XML Conversion"
+                        ],
+                        "Required": false,
+                        "Label": "Process Type"
+                    }
+                ],
+                "Type": "Form"
+            },
+            {
+                "Name": "LIST.list",
+                "BusinessObjectName": "pricing_service_value_detail",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "rowfocusindicatorcol",
+                        "DbColumnName": "rowfocusindicatorcol",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "original_value",
+                        "DbColumnName": "pricing_service_value_detail.original_value",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Original Value ¤"
+                    },
+                    {
+                        "Name": "converted_value",
+                        "DbColumnName": "pricing_service_value_detail.converted_value",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Converted Value ¤"
+                    },
+                    {
+                        "Name": "records",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "pages",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    }
+                ],
+                "Type": "List"
+            }
+        ]
+    },
+    "Template": {
+        "TransactionSet": {
+            "Name": "PricingServiceValueList",
+            "UseCodeValues": false,
+            "IgnoreDisabled": false,
+            "Transactions": [
+                {
+                    "Status": "New",
+                    "DataElements": [
+                        {
+                            "Name": "FORM.form",
+                            "BusinessObjectName": null,
+                            "Type": "Form",
+                            "Keys": [
+                                "value_desc"
+                            ],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "value_desc",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "use_exact_match",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "delete_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "process_type",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "LIST.list",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "rowfocusindicatorcol",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "original_value",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "converted_value",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "records",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "pages",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        }
+                    ],
+                    "Documents": null
+                }
+            ],
+            "Query": null,
+            "FieldMap": [],
+            "TransactionSplitMethod": 0
+        }
+    }
+}

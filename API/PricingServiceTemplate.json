@@ -1,0 +1,1089 @@
+{
+    "Name": "PricingServiceTemplate",
+    "TransactionDefinition": {
+        "DataElementDefinitions": [
+            {
+                "Name": "TP_PRICINGTEMPLATE.pricingtemplate",
+                "BusinessObjectName": "pricing_template",
+                "KeyFields": [
+                    "pricing_template_id"
+                ],
+                "FieldDefinitions": [
+                    {
+                        "Name": "pricing_template_id",
+                        "DbColumnName": "pricing_template.pricing_template_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Template ID"
+                    },
+                    {
+                        "Name": "pricing_template_desc",
+                        "DbColumnName": "pricing_template.pricing_template_desc",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Description"
+                    },
+                    {
+                        "Name": "key_field_cd",
+                        "DbColumnName": "pricing_template.key_field_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Manufacturing Class",
+                            "Price Family",
+                            "Product Group",
+                            "Purchase Discount Group",
+                            "Sales Discount Group",
+                            "Supplier"
+                        ],
+                        "Required": false,
+                        "Label": "Primary Key Field"
+                    },
+                    {
+                        "Name": "secondary_key_field_cd",
+                        "DbColumnName": "pricing_template.secondary_key_field_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "None",
+                            "Manufacturing Class",
+                            "Price Family",
+                            "Product Group",
+                            "Purchase Discount Group",
+                            "Sales Discount Group",
+                            "Supplier"
+                        ],
+                        "Required": false,
+                        "Label": "Secondary Key Field"
+                    },
+                    {
+                        "Name": "row_status_flag",
+                        "DbColumnName": "pricing_template.row_status_flag",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Active",
+                            "Inactive"
+                        ],
+                        "Required": false,
+                        "Label": "Status"
+                    }
+                ],
+                "Type": "Form"
+            },
+            {
+                "Name": "TP_KEYFIELD.key_field",
+                "BusinessObjectName": "pricing_template_key_field",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "company_id",
+                        "DbColumnName": "pricing_template_key_field.company_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Company ID"
+                    },
+                    {
+                        "Name": "key_field_id",
+                        "DbColumnName": "pricing_template_key_field.key_field_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "lookupdisplay( key_field_cd )"
+                    },
+                    {
+                        "Name": "append_cd",
+                        "DbColumnName": "pricing_template_key_field.append_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "None",
+                            "Prefix",
+                            "Suffix"
+                        ],
+                        "Required": false,
+                        "Label": "Append"
+                    },
+                    {
+                        "Name": "number_of_characters",
+                        "DbColumnName": "pricing_template_key_field.number_of_characters",
+                        "DataType": "Long",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "# Of Characters"
+                    },
+                    {
+                        "Name": "item_prefix_suffix",
+                        "DbColumnName": "pricing_template_key_field.item_prefix_suffix",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Item ID Prefix/Suffix"
+                    },
+                    {
+                        "Name": "delete_flag",
+                        "DbColumnName": "delete_flag",
+                        "DataType": "Char",
+                        "ValidValues": [
+                            "ON",
+                            "OFF"
+                        ],
+                        "Required": false,
+                        "Label": "Delete"
+                    },
+                    {
+                        "Name": "secondary_key_field_id",
+                        "DbColumnName": "pricing_template_key_field.secondary_key_field_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "key_field_cd",
+                        "DbColumnName": "pricing_template.key_field_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Manufacturing Class",
+                            "Price Family",
+                            "Product Group",
+                            "Purchase Discount Group",
+                            "Sales Discount Group",
+                            "Supplier"
+                        ],
+                        "Required": false,
+                        "Label": "Key Field Cd"
+                    },
+                    {
+                        "Name": "secondary_key_field_cd",
+                        "DbColumnName": "pricing_template.secondary_key_field_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Secondary Key",
+                            "Manufacturing Class",
+                            "Price Family",
+                            "Product Group",
+                            "Purchase Discount Group",
+                            "Sales Discount Group",
+                            "Supplier"
+                        ],
+                        "Required": false,
+                        "Label": "Secondary Key Field Cd"
+                    },
+                    {
+                        "Name": "company_name",
+                        "DbColumnName": "company.company_name",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Company Name"
+                    },
+                    {
+                        "Name": "secondary_key_field_desc",
+                        "DbColumnName": "pricing_template_key_field.secondary_key_field_desc",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Description"
+                    },
+                    {
+                        "Name": "key_field_desc",
+                        "DbColumnName": "pricing_template_key_field.key_field_desc",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Supplier Name"
+                    },
+                    {
+                        "Name": "cf_space",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    }
+                ],
+                "Type": "List"
+            },
+            {
+                "Name": "TP_ITEMDEFAULTS.item_dflt_hdr",
+                "BusinessObjectName": "pricing_template_key_field",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "key_field_id",
+                        "DbColumnName": "pricing_template_key_field.key_field_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "key_field_desc",
+                        "DbColumnName": "pricing_template_key_field.key_field_desc",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "secondary_key_field_id",
+                        "DbColumnName": "pricing_template_key_field.secondary_key_field_id",
+                        "DataType": "Char",
+                        "ValidValues": [
+                            "NONE"
+                        ],
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "secondary_key_field_desc",
+                        "DbColumnName": "pricing_template_key_field.secondary_key_field_desc",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "key_field_cd",
+                        "DbColumnName": "pricing_template.key_field_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Manufacturing Class",
+                            "Price Family",
+                            "Product Group",
+                            "Purchase Discount Group",
+                            "Sales Discount Group",
+                            "Supplier"
+                        ],
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "secondary_key_field_cd",
+                        "DbColumnName": "pricing_template.secondary_key_field_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Secondary Key",
+                            "Manufacturing Class",
+                            "Price Family",
+                            "Product Group",
+                            "Purchase Discount Group",
+                            "Sales Discount Group",
+                            "Supplier"
+                        ],
+                        "Required": false,
+                        "Label": ""
+                    }
+                ],
+                "Type": "Form"
+            },
+            {
+                "Name": "TP_ITEMDEFAULTS.tp_itemdefaults_dw_0",
+                "BusinessObjectName": "pricing_template_item_dflt",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "column_id",
+                        "DbColumnName": "pricing_template_item_dflt.column_id",
+                        "DataType": "Decimal",
+                        "ValidValues": [
+                            "Base Unit",
+                            "BOL Class",
+                            "Class ID 1",
+                            "Class ID 2",
+                            "Class ID 3",
+                            "Class ID 4",
+                            "Class ID 5",
+                            "Commission Class",
+                            "Default Price Family ID",
+                            "Default Purchase Discount Group",
+                            "Default Sales Discount Group",
+                            "Division ID",
+                            "ECC Enabled",
+                            "Manufacturing Class ID",
+                            "Purchase Pricing Unit",
+                            "Purchase Pricing Unit Size",
+                            "Sales Currency ID",
+                            "Sales Pricing Unit",
+                            "Sales Pricing Unit Size",
+                            "Serialized",
+                            "Supplier ID",
+                            "Track Lots"
+                        ],
+                        "Required": false,
+                        "Label": "Column"
+                    },
+                    {
+                        "Name": "default_value",
+                        "DbColumnName": "pricing_template_item_dflt.default_value",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Default Value"
+                    },
+                    {
+                        "Name": "delete_flag",
+                        "DbColumnName": "delete_flag",
+                        "DataType": "Char",
+                        "ValidValues": [
+                            "ON",
+                            "OFF"
+                        ],
+                        "Required": false,
+                        "Label": "Delete"
+                    },
+                    {
+                        "Name": "cf_space",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    }
+                ],
+                "Type": "List"
+            },
+            {
+                "Name": "TP_LOCATIONLIST.locationlist",
+                "BusinessObjectName": "pricing_template_location",
+                "KeyFields": [
+                    "location_id"
+                ],
+                "FieldDefinitions": [
+                    {
+                        "Name": "location_id",
+                        "DbColumnName": "pricing_template_location.location_id",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Location ID ¤"
+                    },
+                    {
+                        "Name": "location_name",
+                        "DbColumnName": "location.location_name",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Location Name"
+                    },
+                    {
+                        "Name": "company_name",
+                        "DbColumnName": "company.company_name",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Company Name"
+                    },
+                    {
+                        "Name": "company_id",
+                        "DbColumnName": "location.company_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Company ID"
+                    },
+                    {
+                        "Name": "cf_space",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    }
+                ],
+                "Type": "List"
+            },
+            {
+                "Name": "TP_LOCATIONKEYFIELD.loc_x_key_field",
+                "BusinessObjectName": "pricing_template_location",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "key_field_cd",
+                        "DbColumnName": "pricing_template.key_field_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Manufacturing Class",
+                            "Price Family",
+                            "Product Group",
+                            "Purchase Discount Group",
+                            "Sales Discount Group",
+                            "Supplier"
+                        ],
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "secondary_key_field_cd",
+                        "DbColumnName": "pricing_template.secondary_key_field_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Secondary Key",
+                            "Manufacturing Class",
+                            "Price Family",
+                            "Product Group",
+                            "Purchase Discount Group",
+                            "Sales Discount Group",
+                            "Supplier"
+                        ],
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "location_id",
+                        "DbColumnName": "pricing_template_location.location_id",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Location ID"
+                    },
+                    {
+                        "Name": "location_name",
+                        "DbColumnName": "location.location_name",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Location Name"
+                    },
+                    {
+                        "Name": "key_field_id",
+                        "DbColumnName": "pricing_template_key_field.key_field_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "key_field_desc",
+                        "DbColumnName": "pricing_template_key_field.key_field_desc",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "secondary_key_field_id",
+                        "DbColumnName": "pricing_template_key_field.secondary_key_field_id",
+                        "DataType": "Char",
+                        "ValidValues": [
+                            "NONE"
+                        ],
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "secondary_key_field_desc",
+                        "DbColumnName": "pricing_template_key_field.secondary_key_field_desc",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "cf_keyfielddesc",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "compute_1",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "cf_space",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    }
+                ],
+                "Type": "List"
+            },
+            {
+                "Name": "TP_LOCATIONDEFAULTS.loc_dflt_hdr",
+                "BusinessObjectName": "pricing_template_location",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "location_name",
+                        "DbColumnName": "location.location_name",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "location_id",
+                        "DbColumnName": "pricing_template_location.location_id",
+                        "DataType": "Decimal",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Location ID"
+                    },
+                    {
+                        "Name": "key_field_cd",
+                        "DbColumnName": "pricing_template.key_field_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Manufacturing Class",
+                            "Price Family",
+                            "Product Group",
+                            "Purchase Discount Group",
+                            "Sales Discount Group",
+                            "Supplier"
+                        ],
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "key_field_id",
+                        "DbColumnName": "pricing_template_key_field.key_field_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "key_field_desc",
+                        "DbColumnName": "pricing_template_key_field.key_field_desc",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "secondary_key_field_cd",
+                        "DbColumnName": "pricing_template.secondary_key_field_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Secondary Key",
+                            "Manufacturing Class",
+                            "Price Family",
+                            "Product Group",
+                            "Purchase Discount Group",
+                            "Sales Discount Group",
+                            "Supplier"
+                        ],
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "secondary_key_field_id",
+                        "DbColumnName": "pricing_template_key_field.secondary_key_field_id",
+                        "DataType": "Char",
+                        "ValidValues": [
+                            "NONE"
+                        ],
+                        "Required": false,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "secondary_key_field_desc",
+                        "DbColumnName": "pricing_template_key_field.secondary_key_field_desc",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": ""
+                    }
+                ],
+                "Type": "Form"
+            },
+            {
+                "Name": "TP_LOCATIONDEFAULTS.tp_locationdefaults_dw_0",
+                "BusinessObjectName": "pricing_template_location_dflt",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "column_id",
+                        "DbColumnName": "pricing_template_location_dflt.column_id",
+                        "DataType": "Decimal",
+                        "ValidValues": [
+                            "1 Period",
+                            "2 Periods",
+                            "3+ Periods",
+                            "Average Lead Time",
+                            "Buy",
+                            "Cost Of Sales Account",
+                            "Create QA/QC Process Upon Receipt",
+                            "Critical Item",
+                            "Critical Item Deviation Mulitplier",
+                            "Critical Max Safety Stock Days",
+                            "Critical Min Safety Stock Days",
+                            "Customer Service Measure",
+                            "Default Product Group",
+                            "Deviation Lookback Periods",
+                            "GL Account/Asset Account",
+                            "Make",
+                            "Max Safety Stock Days",
+                            "Maximum/Order Quantity",
+                            "Min Safety Stock Days",
+                            "Minimum/Order Point",
+                            "Period First Stocked",
+                            "Pricing Service Option",
+                            "Primary Bin",
+                            "Product Group",
+                            "Protected Stock Quantity",
+                            "Replenishment Location",
+                            "Replenishment Method",
+                            "Revenue Account",
+                            "Route Code",
+                            "Safety Stock",
+                            "Safety Stock in Terms of",
+                            "Service Level Pct Goal",
+                            "Special Cost Multiplier",
+                            "Standard Cost Multiplier",
+                            "Stockable",
+                            "Supplier Cost Multiplier",
+                            "Tax Group ID",
+                            "Track Bins",
+                            "Year First Stocked"
+                        ],
+                        "Required": false,
+                        "Label": "Column"
+                    },
+                    {
+                        "Name": "default_value",
+                        "DbColumnName": "pricing_template_location_dflt.default_value",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Default Value"
+                    },
+                    {
+                        "Name": "delete_flag",
+                        "DbColumnName": "delete_flag",
+                        "DataType": "Char",
+                        "ValidValues": [
+                            "ON",
+                            "OFF"
+                        ],
+                        "Required": false,
+                        "Label": "Delete"
+                    },
+                    {
+                        "Name": "cf_space",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    }
+                ],
+                "Type": "List"
+            }
+        ]
+    },
+    "Template": {
+        "TransactionSet": {
+            "Name": "PricingServiceTemplate",
+            "UseCodeValues": false,
+            "IgnoreDisabled": false,
+            "Transactions": [
+                {
+                    "Status": "New",
+                    "DataElements": [
+                        {
+                            "Name": "TP_PRICINGTEMPLATE.pricingtemplate",
+                            "BusinessObjectName": null,
+                            "Type": "Form",
+                            "Keys": [
+                                "pricing_template_id"
+                            ],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "pricing_template_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "pricing_template_desc",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "key_field_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_key_field_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "row_status_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "TP_KEYFIELD.key_field",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "company_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "key_field_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "append_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "number_of_characters",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "item_prefix_suffix",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "delete_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_key_field_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "key_field_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_key_field_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "company_name",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_key_field_desc",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "key_field_desc",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_space",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "TP_ITEMDEFAULTS.item_dflt_hdr",
+                            "BusinessObjectName": null,
+                            "Type": "Form",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "key_field_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "key_field_desc",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_key_field_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_key_field_desc",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "key_field_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_key_field_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "TP_ITEMDEFAULTS.tp_itemdefaults_dw_0",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "column_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "default_value",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "delete_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_space",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "TP_LOCATIONLIST.locationlist",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [
+                                "location_id"
+                            ],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "location_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "location_name",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "company_name",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "company_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_space",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "TP_LOCATIONKEYFIELD.loc_x_key_field",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "key_field_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_key_field_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "location_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "location_name",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "key_field_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "key_field_desc",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_key_field_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_key_field_desc",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_keyfielddesc",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "compute_1",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_space",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "TP_LOCATIONDEFAULTS.loc_dflt_hdr",
+                            "BusinessObjectName": null,
+                            "Type": "Form",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "location_name",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "location_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "key_field_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "key_field_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "key_field_desc",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_key_field_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_key_field_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "secondary_key_field_desc",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "TP_LOCATIONDEFAULTS.tp_locationdefaults_dw_0",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "column_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "default_value",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "delete_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "cf_space",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        }
+                    ],
+                    "Documents": null
+                }
+            ],
+            "Query": null,
+            "FieldMap": [],
+            "TransactionSplitMethod": 0
+        }
+    }
+}

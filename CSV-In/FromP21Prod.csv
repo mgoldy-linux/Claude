@@ -1,0 +1,25 @@
+fcB2B DATA METRICS,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4
+,,,,
+,,July 2025 DATA,August 2025 DATA,September 2025 DATA
+850 - Purchase Orders You Received,,,,
+,# Received B2B/EDI,740,4343,50504
+,# Received keying order on Supplier Website,640,3932,46701
+,"# Received via Phone, Email, Fax, or hard copy",594,4008,44066
+,Total PO's Received,1974,12283,141271
+,% B2B,0.37487335359675783,0.35357811609541645,0.35749729243793843
+,% electronically,0.6990881458966566,0.6736953512985427,0.6880746933199312
+,% manually,0.3009118541033435,0.3263046487014573,0.3119253066800688
+,,,,
+,,,,
+810 - Invoices You Issued,,,,
+,# Issued B2B/EDI,1976,1971,1543
+,"# Issued via Hard Copy, Email, Fax or other",62451,58896,58022
+,Total Invoices Issued,64427,60867,59565
+,% B2B,0.030670371117699102,0.03238207895904185,0.025904474103920088
+,% manually,0.9693296288823009,0.9676179210409581,0.97409552589608
+,,,,
+SUPPLIER MONTHLY DATA - MAINTAINED SECURELY BY WFCA,,,,
+"DETAILED DATA NEVER PUBLISHED, ONLY SUMMARIZED TOTALS",,,,
+,,,,
+Manufacturers should send data based on all Orders received and Invoices sent.,,,,
+  Distributors should only report data for transactions between themselves and the retailer.,,,,

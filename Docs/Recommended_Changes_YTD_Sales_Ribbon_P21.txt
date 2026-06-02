@@ -1,0 +1,880 @@
+================================================================
+RECOMMENDED CHANGES: SALES YEAR TO DATE RIBBON TITLE
+PERFORMANCE ISSUES
+================================================================
+Date:      2026-03-27
+Prepared:  Bus App Team
+================================================================
+
+P21 SOURCE TABLE REFERENCE
+--------------------------
+Each custom object in this report is built on the following
+P21 tables and views:
+
+  Business Rule (C#)
+    YTD Sales Abbreviation Business Rule
+      queries: Sales History Report View (see below)
+
+  SQL Views
+    Sales History Report View
+      invoice_hdr, p21_view_invoice_line, oe_hdr, oe_line,
+      company, customer, address_history, currency_hdr,
+      location, supplier, inv_mast, inv_loc, price_page,
+      job_price_hdr, job_price_line, branch, product_group,
+      contacts, contacts_ud, inventory_supplier, oe_line_ud,
+      invoice_line_ud, p21_view_codes, p21_view_class,
+      p21_view_price_family  (51+ tables total)
+
+    Invoice Line Rewards View
+      p21_view_invoice_line, p21_view_oe_line,
+      p21_view_rewards_program_values, oe_line_ud,
+      invoice_line_ud
+
+    Direct Invoices Including Rebills View
+      pick ticket view, rebill invoices view
+      (two additional custom views not in scope of this review)
+
+  SQL Functions
+    Number Shortener Function
+      no P21 source tables -- purely custom formatting logic
+
+    Get Product Manager Function
+      p21_view_inv_mast, p21_view_inv_loc
+
+    Get Sales Manager Function
+      item_commission_class_ud, contacts_ud, contacts,
+      kb_table_sales_manager_values_all
+
+    Get Sales Manager Names Function
+      item_commission_class_ud, contacts_ud, contacts,
+      kb_table_sales_manager_values_all,
+      kb_table_sales_manager_values
+
+    Get Sales Rep Function  [INACTIVE]
+      asi_table_customer_comclass_salesrep
+
+================================================================
+
+OVERVIEW
+--------
+A review was conducted on all assets that make up the Sales
+YTD ribbon metric displayed on the P21 customer ribbon.
+Issues were found across all assets ranging from a critical
+bug causing blank results to performance and maintenance
+problems affecting every ribbon load.
+
+Assets reviewed:
+  1. YTD Sales Abbreviation Business Rule      (C# Business Rule)
+  2. Sales History Report View                 (SQL View)
+  3. Number Shortener Function                 (SQL Function)
+  4. Invoice Line Rewards View                 (SQL View - dependency)
+  5. Direct Invoices Including Rebills View    (SQL View - dependency)
+  6. Get Product Manager Function              (SQL Function - dependency)
+  7. Get Sales Manager Function                (SQL Function - dependency)
+  8. Get Sales Manager Names Function          (SQL Function - dependency)
+  9. Get Sales Rep Function                    (SQL Function - inactive)
+
+Root cause of blank YTD ribbon:
+  The business rule was comparing year_for_period (VARCHAR
+  column in invoice_hdr) to Year(GetDate()) which returns
+  INT. SQL Server's implicit conversion failed silently and
+  returned zero rows. Fixed by using
+  CAST(YEAR(GETDATE()) AS CHAR(4)) on the right-hand side.
+
+
+================================================================
+SECTION 1 -- YTD Sales Abbreviation Business Rule (C#)
+  Source: queries Sales History Report View
+         (built on invoice_hdr + 50 P21 tables)
+================================================================
+
+PURPOSE:
+  Retrieves the customer's YTD sales from the Sales History
+  Report View and returns it as a formatted string for the
+  ribbon display.
+
+ISSUES FOUND:
+
+  1. SQL Year Filter Type Mismatch  [CRITICAL - Bug Fix]
+     -------------------------------------------------------
+     The WHERE clause compared year_for_period (VARCHAR
+     column in invoice_hdr) to Year(GetDate()) which returns
+     INT. This caused the query to return no rows, leaving
+     the ribbon blank.
+
+     Before:
+       WHERE year_for_period = Year(GetDate())
+
+     After:
+       WHERE year_for_period = CAST(YEAR(GETDATE()) AS CHAR(4))
+
+  2. GetFieldByAlias Instead of Direct Field Access  [MEDIUM]
+     -------------------------------------------------------
+     Used GetFieldByAlias("cust_id") in 7 places. Project
+     convention is to use direct field access instead.
+
+     Before:
+       this.Data.Fields.GetFieldByAlias("cust_id").FieldValue
+
+     After:
+       this.Data.Fields["cust_id"].FieldValue
+
+  3. Class Name Derived via LINQ at Runtime -- 5x  [MEDIUM]
+     -------------------------------------------------------
+     A verbose LINQ expression was used 5 times to get the
+     class name. This is fragile in async contexts and
+     allocates a new char array on every call.
+
+     Before (repeated 5 times):
+       new string(MethodBase.GetCurrentMethod().DeclaringType
+         .Name.Where<char>(new Func<char,bool>(
+           char.IsLetterOrDigit)).ToArray<char>())
+
+     After (declared once):
+       string ruleName = nameof(YTDSalesAbbrBusinessRule);
+
+     Also allowed removal of using System.Reflection and
+     using System.Linq from the file.
+
+  4. outputNumber as Instance Field  [LOW - Code Quality]
+     -------------------------------------------------------
+     outputNumber was a private field on the class. It is
+     only used within a single Execute() call. Instance
+     fields can cause state issues if the runtime reuses
+     an instance.
+
+     Before:  private string outputNumber = string.Empty;
+     After:   local variable inside the else block
+
+  5. Redundant connection.Close() Inside using  [LOW]
+     -------------------------------------------------------
+     The using block already handles disposal. The explicit
+     close call was dead code and removed.
+
+  6. GetName() Using Same LINQ Expression  [LOW]
+     -------------------------------------------------------
+     GetName() used the same verbose runtime expression.
+     Replaced with compile-time nameof() equivalent.
+
+SUMMARY:
+  #   Issue                                   Severity
+  --  --------------------------------------  --------
+  1   SQL year filter type mismatch           Critical
+  2   GetFieldByAlias instead of direct       Medium
+  3   LINQ class name expression x5           Medium
+  4   outputNumber as instance field          Low
+  5   Redundant connection.Close()            Low
+  6   GetName() LINQ expression               Low
+
+
+================================================================
+SECTION 2 -- Sales History Report View
+  Source: invoice_hdr, p21_view_invoice_line, oe_hdr,
+          oe_line, company, customer, location, inv_mast,
+          contacts, product_group + 40 additional P21 tables
+================================================================
+
+PURPOSE:
+  Core reporting view joining 51+ P21 tables and returning
+  130+ columns. Used by this business rule and many SRD
+  portal reports across the organization.
+
+ISSUES FOUND:
+
+  1. Functions Wrapping JOIN Predicates  [HIGH - 20-40% gain]
+     -------------------------------------------------------
+     Three JOIN conditions used COALESCE or CONVERT functions
+     on the indexed column side. SQL Server cannot use indexes
+     when columns are wrapped in functions, forcing full table
+     scans on every query.
+
+     Affected joins:
+       - location table: COALESCE(invoice_hdr.sales_location_id,
+           oe_hdr.location_id, 0) = location.location_id
+       - contacts table (salesrep): contacts.id =
+           CONVERT(VARCHAR(16), COALESCE(...))
+       - product_group table: COALESCE(CASE...WHEN ''...END)
+           = product_group.product_group_id
+
+     Fix: Moved expressions to the right-hand side so the
+     indexed column is bare on the left side.
+
+  2. Duplicate CASE Logic Computed 3x Per Row  [HIGH - 20-30%]
+     -------------------------------------------------------
+     inflated_sales_price_home, sales_price_home, and
+     gross_profit_dollars each had nearly identical ~35-line
+     CASE blocks derived from p21_view_invoice_line columns.
+     The same calculation ran three times for every row.
+
+     Fix: Consolidated into a single CROSS APPLY block.
+     Logic is written once, computed once, referenced
+     three times.
+
+  3. Redundant Table Joins  [MEDIUM - 10-15% gain]
+     -------------------------------------------------------
+     job_price_line and job_price_hdr were joined twice --
+     once un-aliased and once with _a/_b aliases. The SELECT
+     only referenced the aliased versions. The un-aliased
+     joins were completely unused.
+
+     Fix: Removed the un-aliased duplicate joins.
+
+  4. ISNULL Wrapping Column in WHERE  [MEDIUM - 5-10% gain]
+     -------------------------------------------------------
+     ISNULL() wrapping invoice_hdr.source_type_cd in the
+     WHERE clause prevents SQL Server from using an index
+     on that column.
+
+     Before:
+       ISNULL(invoice_hdr.source_type_cd, 0) <> 1661
+
+     After:
+       (invoice_hdr.source_type_cd IS NULL
+         OR invoice_hdr.source_type_cd <> 1661)
+
+  5. Division Without Zero Guards  [BUG RISK]
+     -------------------------------------------------------
+     Several calculations divided by
+     p21_view_invoice_line.pricing_unit_size or qty_shipped
+     with no zero check, risking divide-by-zero runtime errors.
+
+     Fix: Wrapped all divisors with NULLIF(..., 0) so
+     division returns NULL instead of throwing an error.
+
+  6. NULL-Unsafe String Concatenation  [BUG RISK]
+     -------------------------------------------------------
+     Contact name built from contacts.first_name,
+     contacts.mi, contacts.last_name using + operator.
+     In SQL Server, if any part is NULL the entire result
+     is NULL, causing blank contact names.
+
+     Before:
+       RTRIM(contacts.first_name + CASE WHEN contacts.mi
+         IS NULL THEN '' ELSE ' ' + contacts.mi END
+         + ' ' + contacts.last_name)
+
+     After:
+       RTRIM(CONCAT_WS(' ', contacts.first_name,
+         contacts.mi, contacts.last_name))
+
+  7. Redundant DISTINCT  [MINOR]
+     -------------------------------------------------------
+     SELECT DISTINCT invoice_no used in an inline subquery
+     where invoice_no was the only column and used only as
+     a join key. DISTINCT was unnecessary overhead.
+     Fix: Removed DISTINCT.
+
+  8. Inline Subqueries Converted to CTEs  [READABILITY]
+     -------------------------------------------------------
+     Four inline subqueries (against invoice_line,
+     p21_view_invoice_line, and direct invoice data) were
+     moved to named CTEs at the top for readability and
+     easier optimization by the query planner.
+
+SUMMARY:
+  #   Issue                                   Impact
+  --  --------------------------------------  --------
+  1   Functions in JOIN predicates            20-40%
+  2   Duplicate CASE logic 3x per row         20-30%
+  3   Redundant job_price joins               10-15%
+  4   ISNULL on invoice_hdr.source_type_cd    5-10%
+  5   Division without zero guards            Bug Risk
+  6   NULL-unsafe string concatenation        Bug Risk
+  7   Redundant DISTINCT                      <5%
+  8   Inline subqueries to CTEs              Readability
+
+  Estimated total improvement: 30-50% query time reduction
+
+  Optimized file: kb_sales_history_report_view-P21_optimized.sql
+  All changes tagged with -- PERF: comments for easy review.
+
+
+================================================================
+SECTION 3 -- Number Shortener Function
+  Source: no P21 tables -- purely custom formatting logic
+================================================================
+
+PURPOSE:
+  Converts a large number to a human-readable abbreviated
+  string (e.g., 1,250,000 -> $1.3mln). Called by the
+  business rule to format the YTD sales value for display.
+
+ISSUES FOUND:
+
+  1. FORMAT() Function Used Throughout  [HIGH - Performance]
+     -------------------------------------------------------
+     SQL Server's FORMAT() uses .NET CLR internally and is
+     10-50x slower than equivalent CONVERT/CAST operations.
+     This function calls FORMAT() up to 3 times per
+     invocation. Across many ribbon loads and report rows
+     this adds up significantly.
+
+     Before:
+       Format(Round(@conversion_number / 1000,1),'0.0k;-0.0k')
+
+     After:
+       CONVERT(VARCHAR(10), CAST(
+         Round(@conversion_number / 1000, 1)
+         AS DECIMAL(10,1))) + 'k'
+
+  2. FLOAT Input Type for Financial Data  [MEDIUM - Bug Risk]
+     -------------------------------------------------------
+     FLOAT uses binary floating-point which introduces
+     precision errors -- for example, 1000.50 may be stored
+     as 1000.4999999998. This can trigger the wrong format
+     tier or produce rounding artifacts in the display.
+
+     Before:  @conversion_number AS FLOAT
+     After:   @conversion_number AS DECIMAL(19, 4)
+
+  3. Broken Integer Detection  [MEDIUM - Bug]
+     -------------------------------------------------------
+     CONVERT(INT, @conversion_number) = @conversion_number
+     is used to detect whole numbers. INT has a max of ~2.1
+     billion -- any larger value causes an overflow error.
+     The code itself has a comment acknowledging the problem.
+
+     Before:
+       CASE WHEN CONVERT(INT, @conversion_number)
+         = @conversion_number THEN ...
+
+     After:
+       CASE WHEN @conversion_number % 1 = 0 THEN ...
+
+  4. @dollars Should Be BIT Not TINYINT  [LOW]
+     -------------------------------------------------------
+     The parameter is used as a boolean flag (on/off) but
+     typed as TINYINT, allowing values like 2 or 3 that
+     silently do nothing and could confuse callers.
+
+     Before:  @dollars AS TINYINT = NULL
+     After:   @dollars AS BIT = 0
+
+  5. No NULL Input Handling  [LOW]
+     -------------------------------------------------------
+     If @conversion_number is NULL the function returns NULL
+     silently. The ribbon would display blank rather than $0.
+
+     Fix: Add NULL guard at the top:
+       IF @conversion_number IS NULL
+         RETURN CASE WHEN @dollars = 1 THEN '$0' ELSE '0' END
+
+  6. Dead Commented-Out Code  [LOW - Cleanup]
+     -------------------------------------------------------
+     The ELSE branch contains a commented-out line that
+     duplicates the active code below it. Removed.
+
+SUMMARY:
+  #   Issue                                   Severity
+  --  --------------------------------------  --------
+  1   FORMAT() is 10-50x slower              High
+  2   FLOAT type precision errors             Medium
+  3   CONVERT(INT) overflows > 2.1 billion    Medium
+  4   @dollars should be BIT                  Low
+  5   No NULL input handling                  Low
+  6   Dead commented-out code                 Low
+
+  NOTE: The @dollars type change (TINYINT -> BIT) is a
+  breaking change if any callers pass values other than
+  0 or 1. Review call sites before deploying.
+
+
+================================================================
+SECTION 4 -- Invoice Line Rewards View
+  Source: p21_view_invoice_line, p21_view_oe_line,
+          p21_view_rewards_program_values,
+          oe_line_ud, invoice_line_ud
+================================================================
+
+PURPOSE:
+  Aggregates coop and incentive reward values per invoice
+  line from p21_view_rewards_program_values. Joined into
+  the Sales History Report View to adjust sales price
+  and cost calculations.
+
+ISSUES FOUND:
+
+  1. Division Without Zero Guard  [BUG RISK]
+     -------------------------------------------------------
+     p21_view_invoice_line.qty_shipped divided by
+     p21_view_oe_line.qty_ordered appears three times with
+     no zero check. If qty_ordered is zero the query throws
+     a divide-by-zero runtime error.
+
+     Before:
+       p21_view_invoice_line.qty_shipped
+         / inv_counter.qty_ordered
+
+     After:
+       p21_view_invoice_line.qty_shipped
+         / NULLIF(inv_counter.qty_ordered, 0)
+
+  2. WHERE Clause Duplicates SELECT CASE Logic  [MAINTENANCE]
+     -------------------------------------------------------
+     The WHERE clause repeats the same complex incentive
+     calculation derived from p21_view_rewards_program_values
+     and oe_line_ud that appears in the SELECT list. When
+     the SELECT logic changes the WHERE must be manually
+     kept in sync -- a likely source of future bugs.
+
+     Recommendation: Pre-compute the incentive value in a
+     CTE or CROSS APPLY and reference it in both SELECT
+     and WHERE rather than duplicating the expression.
+
+  3. Inconsistent NOLOCK Hints  [MINOR]
+     -------------------------------------------------------
+     oe_line_ud and invoice_line_ud have WITH(NOLOCK) but
+     the main FROM table p21_view_invoice_line does not.
+     Either apply consistently or remove where not needed.
+
+  4. HAVING Clause Business Rule Undocumented  [MAINTENANCE]
+     -------------------------------------------------------
+     The p21_view_oe_line subquery filters HAVING COUNT > 1,
+     meaning split-shipment orders only. This is meaningful
+     business logic but has no comment explaining why.
+
+     Recommendation: Add a comment:
+       -- Only include lines invoiced more than once
+       -- (split shipments) since qty_ordered splitting is
+       -- only relevant in that scenario.
+
+  5. Commented-Out Debug Columns  [CLEANUP]
+     -------------------------------------------------------
+     Three diagnostic columns are commented out
+     (invoice_count, order_no, oe_line_number from
+     p21_view_oe_line). Remove if no longer needed.
+
+SUMMARY:
+  #   Issue                                       Severity
+  --  ------------------------------------------  --------
+  1   Division by qty_ordered without NULLIF       Bug Risk
+  2   WHERE duplicates SELECT CASE logic           Maintenance
+  3   Inconsistent NOLOCK on p21_view_invoice_line Minor
+  4   HAVING business rule undocumented            Maintenance
+  5   Commented-out debug columns                  Cleanup
+
+
+================================================================
+SECTION 5 -- Direct Invoices Including Rebills View
+  Source: pick ticket view, rebill invoices view
+          (two additional custom views not in scope)
+================================================================
+
+PURPOSE:
+  Returns a list of invoice numbers for direct shipment
+  orders from pick ticket data, substituting the rebilled
+  invoice number where applicable. Used in the Sales History
+  Report View to flag direct invoices.
+
+ISSUES FOUND:
+
+  1. Potential Duplicate invoice_no Values  [BUG RISK]
+     -------------------------------------------------------
+     The view has no DISTINCT or GROUP BY. If a pick ticket
+     matches multiple rebill invoices, the same original
+     invoice_no will appear multiple times. The Sales History
+     Report View previously used SELECT DISTINCT on this
+     subquery (now removed per optimization), which was
+     masking this issue.
+
+     Recommendation: Add DISTINCT to the view's SELECT or
+     verify that the rebill invoices view guarantees one
+     rebill per original invoice.
+
+  2. VARCHAR(10) Truncation Risk  [BUG RISK]
+     -------------------------------------------------------
+     invoice_no is cast to VARCHAR(10). If invoice numbers
+     ever exceed 10 characters they will be silently
+     truncated, causing join mismatches with no error.
+
+     Before:  CONVERT(VARCHAR(10), CASE WHEN ... END)
+     After:   CONVERT(VARCHAR(16), CASE WHEN ... END)
+               (match the width used elsewhere in P21)
+
+  3. Two Additional Custom View Dependencies Not Reviewed
+     [INFORMATIONAL]
+     -------------------------------------------------------
+     This view depends on two additional custom views built
+     on P21 pick ticket and invoice rebill data. These were
+     not included in this review and should be assessed for
+     similar issues before deploying changes.
+
+  4. Commented-Out Columns  [CLEANUP]
+     -------------------------------------------------------
+     Four columns are commented out (pick_ticket_no,
+     invoice_no, invoice_line_uid, rebilled_invoices).
+     Remove if no longer needed.
+
+SUMMARY:
+  #   Issue                                       Severity
+  --  ------------------------------------------  --------
+  1   Potential duplicate invoice_no values        Bug Risk
+  2   VARCHAR(10) truncation on invoice_no         Bug Risk
+  3   Two unreviewed custom view dependencies      Informational
+  4   Commented-out columns                        Cleanup
+
+
+================================================================
+SECTION 6 -- Get Product Manager Function
+  Source: p21_view_inv_mast, p21_view_inv_loc
+================================================================
+
+PURPOSE:
+  Returns the product manager username for a given item
+  based on inv_mast.class_id1 and inv_loc.product_group_id.
+  Called once per row in the Sales History Report View
+  SELECT list.
+
+ISSUES FOUND:
+
+  1. Hardcoded Employee Usernames  [HIGH - Maintenance Risk]
+     -------------------------------------------------------
+     Employee IDs are hardcoded throughout the function
+     rather than being looked up from a P21 table. Every
+     org change -- new hire, departure, role change --
+     requires a code deployment. Based on the dated comments
+     in the file this has already happened many times.
+
+     Recommendation: Move assignments to a database lookup
+     table keyed on inv_mast.class_id1 and
+     inv_loc.product_group_id. The function becomes a simple
+     table lookup and org changes require only a data update.
+
+  2. Scalar UDF Called Per Row  [HIGH - Performance]
+     -------------------------------------------------------
+     This function is called in the SELECT list of the Sales
+     History Report View (one call per row against
+     p21_view_inv_mast and p21_view_inv_loc). Scalar UDFs
+     prevent parallel execution plans in SQL Server, forcing
+     the entire view query to run single-threaded. For large
+     result sets this can multiply query time by the number
+     of CPU cores available.
+
+     Recommendation: Convert to an inline table-valued
+     function (iTVF) joined via CROSS APPLY, or move the
+     logic into a JOIN against a lookup table.
+
+  3. p21_view_inv_loc location_id = 100 Hardcoded  [MEDIUM]
+     -------------------------------------------------------
+     The join to p21_view_inv_loc uses location_id = 100.
+     If this location changes or items are not stocked at
+     location 100, the function silently returns the wrong
+     manager or falls through to the default username.
+
+     Recommendation: Document why location 100 is used and
+     consider making it a parameter or configuration value.
+
+  4. Multiple Row Risk on p21_view_inv_loc -- No TOP 1
+     [MEDIUM - Bug Risk]
+     -------------------------------------------------------
+     The subquery has no TOP 1. If p21_view_inv_loc returns
+     more than one row for location 100 for a given item,
+     the function throws "subquery returned more than 1 row."
+
+     Fix: Add TOP 1 to the inner SELECT.
+
+  5. Extensive Commented-Out Code  [CLEANUP]
+     -------------------------------------------------------
+     Large blocks of commented-out historical logic make
+     the function difficult to read and maintain.
+
+SUMMARY:
+  #   Issue                                       Severity
+  --  ------------------------------------------  --------
+  1   Hardcoded employee usernames                 High (Maintenance)
+  2   Scalar UDF per row blocks parallelism        High (Performance)
+  3   p21_view_inv_loc location_id = 100 hardcoded Medium
+  4   No TOP 1 on p21_view_inv_loc lookup          Medium (Bug Risk)
+  5   Extensive commented-out code                 Cleanup
+
+
+================================================================
+SECTION 7 -- Get Sales Manager Function
+  Source: item_commission_class_ud, contacts_ud,
+          contacts, kb_table_sales_manager_values_all
+================================================================
+
+PURPOSE:
+  Returns the sales manager ID for a given salesrep and
+  commission class by looking up contacts_ud and
+  item_commission_class_ud. Used in the Sales History
+  Report View in a JOIN ON clause to find the manager's
+  contacts record.
+
+ISSUES FOUND:
+
+  1. Scalar UDF in JOIN ON Clause  [HIGH - Performance]
+     -------------------------------------------------------
+     This function is used as a JOIN condition in the
+     Sales History Report View:
+       ON contacts.id =
+         dbo.GetSalesManager(CONVERT(INT,...), ...)
+     Scalar UDFs in JOIN conditions execute once per row
+     and prevent parallel execution plans -- one of the
+     most impactful performance anti-patterns in SQL Server.
+
+     Recommendation: Pre-compute the manager ID in a CTE
+     or derived table, then join on the pre-computed value.
+
+  2. CONVERT Blocking Index Use on contacts_ud  [MEDIUM]
+     -------------------------------------------------------
+     Two lookups wrap the join key in CONVERT(VARCHAR(16)):
+       WHERE contacts_ud.id = CONVERT(VARCHAR(16), @salesrep_id)
+       WHERE contacts.id    = CONVERT(VARCHAR(16), @salesrep_id)
+     This prevents index seeks on contacts_ud.id and
+     contacts.id.
+
+     Fix: Store and pass @salesrep_id as VARCHAR(16) to
+     avoid the conversion, or verify the column types and
+     remove the cast if redundant.
+
+  3. Two Separate Subquery Lookups Per Call  [MEDIUM]
+     -------------------------------------------------------
+     The RETURN calls two independent subqueries --
+     one against kb_table_sales_manager_values_all and
+     one against contacts -- per invocation. Since this
+     runs once per row in the parent view, that is two
+     extra database reads per invoice line.
+
+     Recommendation: Combine into a single LEFT JOIN query
+     that checks both sources in one pass.
+
+  4. Duplicate Division Lookup Code  [MAINTENANCE]
+     -------------------------------------------------------
+     The CASE @division block (Flooring, Surfacing, Board,
+     Pad, Supplies) against item_commission_class_ud is
+     identical in both this function and the Get Sales
+     Manager Names function. Any change to division names
+     must be made in two places.
+
+     Recommendation: Extract to a shared helper function
+     or lookup table.
+
+SUMMARY:
+  #   Issue                                       Severity
+  --  ------------------------------------------  --------
+  1   Scalar UDF in JOIN ON clause                 High (Performance)
+  2   CONVERT on contacts_ud.id blocks index       Medium
+  3   Two subquery lookups per call                Medium
+  4   Duplicate division code with Names function  Maintenance
+
+
+================================================================
+SECTION 8 -- Get Sales Manager Names Function
+  Source: item_commission_class_ud, contacts_ud, contacts,
+          kb_table_sales_manager_values_all,
+          kb_table_sales_manager_values
+================================================================
+
+PURPOSE:
+  Returns a comma-separated string of all sales manager
+  names for a given salesrep and commission class by
+  aggregating across contacts and manager value tables.
+  Called once per row in the Sales History Report View
+  SELECT list.
+
+ISSUES FOUND:
+
+  1. Scalar UDF in SELECT List Blocks Parallelism  [HIGH]
+     -------------------------------------------------------
+     Same issue as the Get Product Manager function.
+     Called once per row in the Sales History Report View
+     SELECT list, forcing the entire query plan to run
+     single-threaded.
+
+     Recommendation: Convert to an inline table-valued
+     function (iTVF) joined via CROSS APPLY.
+
+  2. FOR XML PATH String Aggregation  [MEDIUM - Performance]
+     -------------------------------------------------------
+     The comma-separated name list from contacts uses the
+     old FOR XML PATH pattern. SQL Server 2017+ offers
+     STRING_AGG which is cleaner, faster, and easier
+     to maintain.
+
+     Before:
+       STUFF((SELECT ', ' + name FROM contacts ...
+         FOR XML PATH(''), TYPE).value('.','VARCHAR(MAX)'),
+         1, 2, '')
+
+     After:
+       STRING_AGG(name, ', ')
+         WITHIN GROUP (ORDER BY smv.sales_manager_value)
+
+  3. SUM(DISTINCT ...) Bitmask Pattern  [MEDIUM - Fragile]
+     -------------------------------------------------------
+     SUM(DISTINCT smv.sales_manager_value) is used to
+     compute a combined value across
+     kb_table_sales_manager_values. This is fragile --
+     if manager values are reassigned or overlap, the
+     result produces incorrect output silently.
+
+     Recommendation: Document the expected value range and
+     add a constraint or validation to prevent overlapping
+     values in kb_table_sales_manager_values.
+
+  4. CONVERT Blocking Index Use on contacts_ud  [MEDIUM]
+     -------------------------------------------------------
+     Same as Get Sales Manager function:
+       WHERE contacts_ud.id = CONVERT(VARCHAR(16), @salesrep_id)
+     Prevents index seek on contacts_ud.id.
+
+  5. Duplicate Division Lookup Code  [MAINTENANCE]
+     -------------------------------------------------------
+     The CASE @division block against
+     item_commission_class_ud is identical to the one in
+     Get Sales Manager function. See Section 7, Issue 4.
+
+  6. Additional Unreviewed Dependency  [INFORMATIONAL]
+     -------------------------------------------------------
+     Calls a contact name formatting function that was not
+     included in this review. Should be assessed separately.
+
+SUMMARY:
+  #   Issue                                       Severity
+  --  ------------------------------------------  --------
+  1   Scalar UDF in SELECT blocks parallelism      High (Performance)
+  2   FOR XML PATH -- use STRING_AGG instead       Medium
+  3   SUM(DISTINCT) bitmask is fragile             Medium
+  4   CONVERT on contacts_ud.id blocks index       Medium
+  5   Duplicate division code with Mgr function    Maintenance
+  6   Contact name function not reviewed           Informational
+
+
+================================================================
+SECTION 9 -- Get Sales Rep Function
+  Source: asi_table_customer_comclass_salesrep
+================================================================
+
+PURPOSE:
+  Returns the salesrep ID for a customer/commission class
+  combination by querying asi_table_customer_comclass_salesrep.
+  Currently NOT ACTIVE -- commented out in the Sales History
+  Report View.
+
+STATUS: NOT ACTIVE. No immediate action required.
+
+ISSUES FOUND:
+
+  1. Magic Number Error Codes  [LOW - Maintenance]
+     -------------------------------------------------------
+     The function returns 38888 for multiple-rep conflicts
+     and 1090 for unassigned reps. These values are not
+     documented in the active code section.
+
+     Recommendation: Add comments above the IF blocks:
+       -- 38888 = error sentinel: multiple conflicting reps
+       -- 1090  = unassigned rep placeholder
+
+  2. ~130 Lines of Commented-Out Old Logic  [CLEANUP]
+     -------------------------------------------------------
+     The previous version of the function (before the
+     Jan 2025 rewrite to use
+     asi_table_customer_comclass_salesrep) is entirely
+     commented out. This history is better kept in source
+     control. Recommendation: Remove commented-out code.
+
+SUMMARY:
+  #   Issue                                       Severity
+  --  ------------------------------------------  --------
+  1   Magic number error codes undocumented        Low
+  2   ~130 lines commented-out old logic           Cleanup
+
+
+================================================================
+CROSS-CUTTING CONCERNS
+================================================================
+
+  A. Scalar UDFs Preventing Parallel Execution  [HIGH]
+     -------------------------------------------------------
+     Three functions are called per row in the Sales History
+     Report View (which queries invoice_hdr and 50+ P21
+     tables):
+       - Get Product Manager   (SELECT list,
+           reads p21_view_inv_mast, p21_view_inv_loc)
+       - Get Sales Manager     (JOIN ON clause,
+           reads item_commission_class_ud, contacts_ud,
+           contacts, kb_table_sales_manager_values_all)
+       - Get Sales Manager Names (SELECT list,
+           reads same tables + kb_table_sales_manager_values)
+
+     Any single scalar UDF in a query forces the entire
+     execution plan to single-threaded. With three present,
+     the view cannot use parallelism regardless of how well
+     the rest of the query is optimized. On a server with
+     8+ cores this alone could mean the view runs 4-8x
+     slower than it should.
+
+     Recommended fix: Convert all three to inline
+     table-valued functions (iTVFs) joined via CROSS APPLY.
+
+  B. Hardcoded Usernames Not Driven by P21 Data  [HIGH]
+     -------------------------------------------------------
+     The Get Product Manager function hardcodes employee
+     IDs rather than looking them up from a P21 or custom
+     table. This has already required multiple manual code
+     updates (visible in the dated comments). A lookup
+     table approach keyed on inv_mast.class_id1 and
+     inv_loc.product_group_id would eliminate this.
+
+  C. Duplicate Division Lookup Logic  [MAINTENANCE]
+     -------------------------------------------------------
+     Get Sales Manager and Get Sales Manager Names share
+     an identical 25-line CASE block against
+     item_commission_class_ud (Flooring, Surfacing, Board,
+     Pad, Supplies). These should be consolidated to
+     prevent drift between the two functions.
+
+  D. Unreviewed Custom Dependencies  [INFORMATIONAL]
+     -------------------------------------------------------
+     The following custom objects were referenced but not
+     reviewed. They should be assessed for similar issues:
+       - Pick ticket view
+           (used by Direct Invoices Including Rebills View)
+       - Rebill invoices view
+           (used by Direct Invoices Including Rebills View)
+       - Contact name formatting function
+           (used by Get Sales Manager Names Function)
+
+
+================================================================
+NEXT STEPS
+================================================================
+
+  Priority  Action
+  --------  ----------------------------------------------------
+  1 (Done)  Fix year filter type mismatch in business rule
+              (invoice_hdr.year_for_period VARCHAR vs INT)
+  2         Add NULLIF zero guards to Invoice Line Rewards View
+              (p21_view_oe_line.qty_ordered divisions)
+  3         Add DISTINCT to Direct Invoices Including Rebills
+              View and widen invoice_no to VARCHAR(16)
+  4         Test optimized Sales History Report View in
+              non-production -- run SET STATISTICS TIME ON
+              and compare execution plans to original
+  5         Deploy optimized view once validated
+  6         Convert Get Product Manager, Get Sales Manager,
+              and Get Sales Manager Names from scalar UDFs
+              to inline table-valued functions (iTVF) --
+              this is the single highest remaining gain
+  7         Move product manager assignments out of code and
+              into a lookup table keyed on
+              inv_mast.class_id1 / inv_loc.product_group_id
+  8         Update Number Shortener Function per Section 3
+              -- test against known inputs before deploying
+  9         Review pick ticket view, rebill invoices view,
+              and contact name formatting function
+
+================================================================
+FILES PRODUCED
+================================================================
+
+  C:\Claude\kb_CustRM_getYTDSalesAbbr.cs
+    Updated business rule with all fixes applied
+
+  C:\Claude\kb_sales_history_report_view-P21_optimized.sql
+    Optimized view (changes tagged with -- PERF: comments)
+
+================================================================
+END OF REPORT
+================================================================

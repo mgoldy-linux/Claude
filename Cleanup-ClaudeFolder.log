@@ -1,0 +1,20 @@
+2026-04-27 08:29:19  MOVED  diag_message_box_p21_ud.sql  ->  C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents\SQL Server Management Studio\Scratch
+2026-04-27 08:29:19  MOVED  drop_diag_message_box_p21_ud.sql  ->  C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents\SQL Server Management Studio\Scratch
+2026-04-27 08:29:19  MOVED  grant_dbmail_p21_accounts.sql  ->  C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents\SQL Server Management Studio\Scratch
+2026-04-27 08:29:19  MOVED  grant_p21_diag_table.sql  ->  C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents\SQL Server Management Studio\Scratch
+2026-04-27 08:29:19  MOVED  P21_Update_CreditStatus_COD.sql  ->  C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents\SQL Server Management Studio\Scratch
+2026-04-27 08:29:19  MOVED  P21_Update_CreditStatus_PREPAY.sql  ->  C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents\SQL Server Management Studio\Scratch
+2026-04-27 08:29:19  MOVED  P21Play_Update_CreditStatus_COD.sql  ->  C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents\SQL Server Management Studio\Scratch
+2026-04-27 08:29:19  MOVED  P21Play_Update_CreditStatus_PREPAY.sql  ->  C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents\SQL Server Management Studio\Scratch
+2026-04-27 08:29:19  MOVED  P21Training_Update_CreditStatus_COD.sql  ->  C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents\SQL Server Management Studio\Restore-Folder
+2026-04-27 08:29:19  MOVED  P21Training_Update_CreditStatus_PREPAY.sql  ->  C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents\SQL Server Management Studio\Restore-Folder
+2026-04-27 08:29:19  MOVED  portal_br_sal_orders_unapproved_cleanup.sql  ->  C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents\SQL Server Management Studio\Scratch
+2026-04-27 08:29:19  MOVED  sql-extended-events-tips.sql  ->  C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents\SQL Server Management Studio\Scratch
+2026-04-27 08:29:19  MOVED  step2_create_message_log_p21_ud.sql  ->  C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents\SQL Server Management Studio\Scratch
+2026-04-27 08:29:19  MOVED  step3_usp_suppress_messages_p21_ud.sql  ->  C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents\SQL Server Management Studio\Scratch
+2026-04-27 08:29:19  MOVED  step3a_alter_suppress_messages_p21_ud.sql  ->  C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents\SQL Server Management Studio\Scratch
+2026-04-27 08:29:19  MOVED  diag-message_box_ud_insert.png  ->  C:\Claude\Images
+2026-04-27 08:29:19  MOVED  format-issues.png  ->  C:\Claude\Images
+2026-04-27 08:29:19  MOVED  P21BRR-SQL-API-user.png  ->  C:\Claude\Images
+2026-04-27 08:29:19  MOVED  Sql-db-mail-exe-error.png  ->  C:\Claude\Images
+2026-04-27 08:29:19  MOVED  whereiscopybutton.png  ->  C:\Claude\Images

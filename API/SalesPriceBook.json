@@ -1,0 +1,392 @@
+{
+    "Name": "SalesPriceBook",
+    "TransactionDefinition": {
+        "DataElementDefinitions": [
+            {
+                "Name": "FORM.form",
+                "BusinessObjectName": "price_book",
+                "KeyFields": [
+                    "price_book_id"
+                ],
+                "FieldDefinitions": [
+                    {
+                        "Name": "price_book_id",
+                        "DbColumnName": "price_book.price_book_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": "Price Book ID"
+                    },
+                    {
+                        "Name": "price_book_description",
+                        "DbColumnName": "price_book.description",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": true,
+                        "Label": ""
+                    },
+                    {
+                        "Name": "row_status_flag",
+                        "DbColumnName": "price_book.row_status_flag",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Delete",
+                            "Active"
+                        ],
+                        "Required": true,
+                        "Label": "Row Status"
+                    },
+                    {
+                        "Name": "ufc_price_book_ud_one_off",
+                        "DbColumnName": "ufc_price_book_ud.one_off",
+                        "DataType": "Char",
+                        "ValidValues": [
+                            "ON",
+                            "OFF"
+                        ],
+                        "Required": false,
+                        "Label": "One Off"
+                    },
+                    {
+                        "Name": "ufc_price_book_ud_tracked_price_level",
+                        "DbColumnName": "ufc_price_book_ud.tracked_price_level",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Tracked Price Level"
+                    },
+                    {
+                        "Name": "price_book_uid",
+                        "DbColumnName": "price_book.price_book_uid",
+                        "DataType": "Long",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Price Book UID"
+                    }
+                ],
+                "Type": "Form"
+            },
+            {
+                "Name": "USED BY.price_library_x_book",
+                "BusinessObjectName": "price_book_x_library",
+                "KeyFields": [],
+                "FieldDefinitions": [
+                    {
+                        "Name": "price_library_id",
+                        "DbColumnName": "price_library.price_library_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Library ID"
+                    },
+                    {
+                        "Name": "price_library_description",
+                        "DbColumnName": "price_library.description",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Library Description"
+                    },
+                    {
+                        "Name": "price_library_row_status_flag",
+                        "DbColumnName": "price_library.row_status_flag",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Active",
+                            "Cancel",
+                            "Complete",
+                            "Delete",
+                            "Email - Send",
+                            "Email Pending",
+                            "Inactive",
+                            "N/A",
+                            "Open",
+                            "Print Pending",
+                            "Reversed",
+                            "Unapproved"
+                        ],
+                        "Required": false,
+                        "Label": "Status"
+                    }
+                ],
+                "Type": "List"
+            },
+            {
+                "Name": "LIST.list_detail",
+                "BusinessObjectName": "price_page_x_book",
+                "KeyFields": [
+                    "price_page_uid"
+                ],
+                "FieldDefinitions": [
+                    {
+                        "Name": "price_page_uid",
+                        "DbColumnName": "price_page_x_book.price_page_uid",
+                        "DataType": "Long",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Price Page ID"
+                    },
+                    {
+                        "Name": "price_page_description",
+                        "DbColumnName": "price_page.description",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Price Page Description"
+                    },
+                    {
+                        "Name": "row_status_flag",
+                        "DbColumnName": "price_page_x_book.row_status_flag",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Delete",
+                            "Active"
+                        ],
+                        "Required": false,
+                        "Label": "Link Status"
+                    },
+                    {
+                        "Name": "price_book_id",
+                        "DbColumnName": "price_book.price_book_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "price_library_id",
+                        "DbColumnName": "price_library.price_library_id",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    },
+                    {
+                        "Name": "price_page_type_cd",
+                        "DbColumnName": "price_page.price_page_type_cd",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Item",
+                            "Supplier / Discount Group",
+                            "Supplier / Product Group",
+                            "Supplier / Manufacturing Class",
+                            "Supplier",
+                            "Discount Group",
+                            "Product Group",
+                            "Customer Part Number",
+                            "Price Family",
+                            "Supplier/Price Family"
+                        ],
+                        "Required": false,
+                        "Label": "Price Page Type"
+                    },
+                    {
+                        "Name": "c_type_description",
+                        "DbColumnName": "c_type_description",
+                        "DataType": "Char",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Type Description"
+                    },
+                    {
+                        "Name": "effective_date",
+                        "DbColumnName": "price_page.effective_date",
+                        "DataType": "Datetime",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Effective Date"
+                    },
+                    {
+                        "Name": "expiration_date",
+                        "DbColumnName": "price_page.expiration_date",
+                        "DataType": "Datetime",
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": "Expiration Date"
+                    },
+                    {
+                        "Name": "price_page_row_status_flag",
+                        "DbColumnName": "price_page.row_status_flag",
+                        "DataType": "Long",
+                        "ValidValues": [
+                            "Delete",
+                            "Active"
+                        ],
+                        "Required": false,
+                        "Label": "Status"
+                    },
+                    {
+                        "Name": "rowfocusindicatorcol",
+                        "DbColumnName": null,
+                        "DataType": null,
+                        "ValidValues": null,
+                        "Required": false,
+                        "Label": null
+                    }
+                ],
+                "Type": "List"
+            }
+        ]
+    },
+    "Template": {
+        "TransactionSet": {
+            "Name": "SalesPriceBook",
+            "UseCodeValues": false,
+            "IgnoreDisabled": false,
+            "Transactions": [
+                {
+                    "Status": "New",
+                    "DataElements": [
+                        {
+                            "Name": "FORM.form",
+                            "BusinessObjectName": null,
+                            "Type": "Form",
+                            "Keys": [
+                                "price_book_id"
+                            ],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "price_book_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_book_description",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "row_status_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "ufc_price_book_ud_one_off",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "ufc_price_book_ud_tracked_price_level",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_book_uid",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "USED BY.price_library_x_book",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "price_library_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_library_description",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_library_row_status_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        },
+                        {
+                            "Name": "LIST.list_detail",
+                            "BusinessObjectName": null,
+                            "Type": "List",
+                            "Keys": [
+                                "price_page_uid"
+                            ],
+                            "Rows": [
+                                {
+                                    "Edits": [
+                                        {
+                                            "Name": "price_page_uid",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_page_description",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "row_status_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_book_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_library_id",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_page_type_cd",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "c_type_description",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "effective_date",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "expiration_date",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "price_page_row_status_flag",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        },
+                                        {
+                                            "Name": "rowfocusindicatorcol",
+                                            "Value": "",
+                                            "IgnoreIfEmpty": true
+                                        }
+                                    ],
+                                    "RelativeDateEdits": []
+                                }
+                            ]
+                        }
+                    ],
+                    "Documents": null
+                }
+            ],
+            "Query": null,
+            "FieldMap": [],
+            "TransactionSplitMethod": 0
+        }
+    }
+}

@@ -1,0 +1,332 @@
+================================================================
+CHANGE LOG & TESTING PLAN
+asi_ribbon_cm_SYTD.cs
+================================================================
+Original file : kb_CustRM_getYTDSalesAbbr.cs
+New file      : asi_ribbon_cm_SYTD.cs
+Prepared by   : Bus App Team
+================================================================
+
+
+================================================================
+VERSION 1 -- 2026-03-27
+================================================================
+
+CHANGES MADE
+------------
+
+  1. Class renamed
+       Before : kb_CustRM_getYTDSalesAbbr
+       After  : asi_ribbon_cm_SYTD
+
+  2. Namespace renamed
+       Before : kb_RibbonMetrics_r1
+       After  : asi_RibbonMetrics
+       Note   : Project is C# 7.3 -- using block-scoped
+                namespace syntax (not file-scoped)
+
+  3. #nullable disable removed
+       Not required by project settings.
+
+  4. Removed unused imports
+       Removed : using System.Reflection
+       Removed : using System.Linq
+       Reason  : No longer needed after LINQ expression removed
+
+  5. GetFieldByAlias replaced with direct field access (x7)
+       Before : this.Data.Fields.GetFieldByAlias("cust_id").FieldValue
+       After  : this.Data.Fields["cust_id"].FieldValue
+       Reason  : Project convention; GetFieldByAlias is slower
+
+  6. LINQ class name expression replaced with nameof() (x5)
+       Before : new string(MethodBase.GetCurrentMethod()
+                  .DeclaringType.Name.Where<char>(
+                  new Func<char,bool>(char.IsLetterOrDigit))
+                  .ToArray<char>())
+       After  : nameof(asi_ribbon_cm_SYTD) declared once
+                as: string ruleName = nameof(asi_ribbon_cm_SYTD)
+       Reason  : Fragile in async contexts, allocates on every
+                 call, requires Reflection and Linq imports
+
+  7. outputNumber moved from instance field to local variable
+       Before : private string outputNumber = string.Empty;
+                (class level)
+       After  : string outputNumber = string.Empty;
+                (inside else block)
+       Reason  : Instance fields can cause state issues if
+                 runtime reuses the object instance
+
+  8. SQL year filter corrected -- ROOT CAUSE BUG FIX
+       Before : WHERE year_for_period = Year(GetDate())
+       After  : WHERE year_for_period = CAST(YEAR(GETDATE())
+                  AS CHAR(4))
+       Reason  : year_for_period in invoice_hdr is VARCHAR.
+                 Year(GetDate()) returns INT. Implicit type
+                 conversion failed silently returning zero rows,
+                 causing the ribbon to display blank.
+
+  9. Redundant connection.Close() removed
+       Before : if (connection.State != 0) connection.Close();
+       After  : removed
+       Reason  : The using block already handles disposal
+
+  10. GetName() updated
+       Before : returned LINQ expression
+       After  : return nameof(asi_ribbon_cm_SYTD)
+
+  11. Error messages updated
+       Before : "...please contact Karen..."
+       After  : "...please contact the Bus App Team..."
+
+
+  12. Removed kb_SQLHelper and all LogError calls
+       Before : kb_SQLHelper kbSqlHelper = new kb_SQLHelper()
+                kbSqlHelper.LogError(...) x3
+       After  : Removed entirely
+       Reason  : P21 built-in business rule logging used instead
+
+  13. Removed ruleName variable
+       Before : string ruleName = nameof(asi_ribbon_cm_SYTD)
+       After  : Removed
+       Reason  : Only used for LogError calls which were removed
+
+
+  14. Renamed field reference
+       Before : this.Data.Fields["cust_id"]
+       After  : this.Data.Fields["customer_id"]
+
+================================================================
+VERSION 2 -- 2026-03-27
+================================================================
+
+CHANGES MADE
+------------
+
+  15. SQL source replaced -- kb_sales_history_report_view removed
+        Before : FROM kb_sales_history_report_view
+                 WHERE year_for_period = CAST(YEAR(GETDATE()) AS CHAR(4))
+        After  : FROM p21_sales_history_view (P21 native view)
+                 WHERE year_for_period = YEAR(GETDATE())
+        Reason  : Eliminate custom kb_ view dependency.
+                  year_for_period is DECIMAL in p21 view -- no CAST needed.
+
+  16. DISTINCT invoice_line_uid subquery added
+        Before : Direct SELECT from view
+        After  : SELECT DISTINCT invoice_line_uid, extended_price_home
+                 wrapped in subquery
+        Reason  : p21_sales_history_view has one row per salesrep per
+                  invoice line -- DISTINCT deduplicates so each line
+                  is counted once regardless of salesrep count.
+
+  17. Net sales filters added
+        After  : AND item_id NOT IN ('CREDITMISC','DOWNPAYMENT','PREPAYMENT')
+                 AND other_charge_item = 'N'
+                 AND inv_mast_uid <> 0
+        Reason  : Matches kb_ view exclusion logic:
+                  - CREDITMISC: credit memo adjustments
+                  - DOWNPAYMENT/PREPAYMENT: financial transactions
+                  - other_charge_item = 'N': excludes surcharge lines
+                    (e.g. LOGISTICS SURCHARGE)
+                  - inv_mast_uid <> 0: excludes non-inventory payment
+                    lines (e.g. RETURNED LOCKSTEP PAYMENT items)
+                  NOTE: rma_flag filter removed -- product returns
+                  (rma_flag='Y') ARE included in net sales per kb_ behavior.
+
+  18. @CustNo parameter type changed
+        Before : SqlDbType.Int with int.Parse()
+        After  : SqlDbType.VarChar with .ToString()
+        Reason  : customer_id is VARCHAR in p21_sales_history_view.
+
+  19. extended_price_home replaces sales_price_home
+        Before : sales_price_home (column in kb_ view)
+        After  : extended_price_home (unit_price * qty_shipped,
+                 home currency -- equivalent column in p21 view)
+
+  20. kb_fn_number_shorten removed -- replaced with FormatSalesAbbr()
+        Before : dbo.kb_fn_number_shorten(..., 1) called in SQL
+        After  : Removed from SQL; raw SUM returned as decimal
+                 FormatSalesAbbr() private static method in C# formats:
+                   >= 1,000,000  →  $X.Xmln
+                   >= 1,000      →  $X.Xk
+                   < 1,000       →  $X
+                   negative      →  -$X.Xk
+        Reason  : Eliminate custom kb_ function dependency.
+
+  21. Incentive rewards subtracted per line
+        After  : LEFT JOIN p21_view_rewards_program_values
+                 SUM(accumulated_incentive_points) per invoice_line_uid
+                 subtracted from extended_price_home
+        Reason  : kb_ view subtracts incentive_rewards from
+                  extended_price_home to produce sales_price_home.
+                  Replicates that adjustment using P21 native view.
+
+
+KNOWN VARIANCE
+--------------
+
+  Validated against 200 random customers (two runs of 100).
+  92-98% exact match per run. Remaining differences accepted.
+
+  Root cause 1 -- extended_price_home = 0 for swap/exchange lines
+        kb_ sales_price_home shows non-zero for these lines.
+        p21_sales_history_view extended_price_home = 0.
+        Cannot resolve -- column calculation difference in views.
+        Example item : SOMCP51HCBLG
+
+  Root cause 2 -- real product lines with other_charge_item = 'Y'
+        These lines exist in p21_view_invoice_line but are not
+        exposed by p21_sales_history_view. kb_ includes them.
+        Cannot resolve -- p21_sales_history_view coverage gap.
+        Example item : CBLAQUAPROOFXLDISPLAY
+
+  Impact        : Small fraction of revenue on affected customers.
+                  Differences are consistently small (< 1% of total).
+                  Accepted by Bus App Team 2026-03-27.
+
+
+PENDING -- NEXT VERSION
+-----------------------
+
+  (none -- all kb_ dependencies removed)
+
+
+================================================================
+PERFORMANCE BASELINE
+================================================================
+
+  Date        : 2026-03-27
+  Query       : SELECT customer_id,
+                  dbo.kb_fn_number_shorten(
+                    ISNULL(SUM(ISNULL(sales_price_home,0)),0),1) AS output1,
+                  ISNULL(SUM(ISNULL(sales_price_home,0)),0) AS output2
+                FROM kb_sales_history_report_view
+                WHERE year_for_period = Year(GetDate())
+                AND customer_id IN (1046538, 3010418, 1046080)
+                GROUP BY customer_id
+                ORDER BY customer_id
+  Customers   : 3 (1046538, 3010418, 1046080)
+  Duration    : 8 seconds
+  Environment : Dev
+  Notes       : Year filter still using Year(GetDate()) [unfixed]
+                Both kb_sales_history_report_view and
+                kb_fn_number_shorten are unoptimized at this point
+
+================================================================
+TESTING PLAN
+================================================================
+
+PRE-DEPLOYMENT CHECKLIST
+------------------------
+  [ ] Deploy asi_ribbon_cm_SYTD to Dev/Test P21 environment
+  [ ] Register business rule in P21 ribbon configuration
+  [ ] Confirm old rule kb_CustRM_getYTDSalesAbbr is disabled
+      (do not delete until new rule is confirmed working)
+
+TEST CASES
+----------
+
+  TC-01  Active customer with YTD sales
+  -------------------------------------
+  Input  : Valid customer_id with invoices in current year
+           customer_type != Prospect
+  Steps  : 1. Open customer ribbon in P21
+           2. Observe YTD Sales ribbon tile
+  Expect : Abbreviated dollar amount displayed (e.g. $1.3mln)
+  Verify : Run SQL against invoice_hdr / sales view directly
+           and confirm value matches ribbon display
+  Status : [ ] Pass  [ ] Fail  [ ] Blocked
+
+  TC-02  Active customer with no YTD sales
+  -----------------------------------------
+  Input  : Valid customer_id with NO invoices in current year
+           customer_type != Prospect
+  Steps  : 1. Open customer ribbon in P21
+           2. Observe YTD Sales ribbon tile
+  Expect : $0 displayed (not blank, not error)
+  Status : [ ] Pass  [ ] Fail  [ ] Blocked
+
+  TC-03  Prospect customer
+  ------------------------
+  Input  : customer_type = Prospect
+  Steps  : 1. Open customer ribbon in P21
+           2. Observe YTD Sales ribbon tile
+  Expect : *PROS displayed in ribbon
+           Color: f2a65a (orange)
+  Status : [ ] Pass  [ ] Fail  [ ] Blocked
+
+  TC-04  No customer ID
+  ----------------------
+  Input  : cust_id field is blank/null
+  Steps  : 1. Open ribbon with no customer in context
+  Expect : Ribbon tile displays blank, no error thrown
+  Status : [ ] Pass  [ ] Fail  [ ] Blocked
+
+  TC-05  Year boundary -- confirm current year only
+  --------------------------------------------------
+  Input  : Customer with invoices in both 2025 and 2026
+  Steps  : 1. Run SQL manually for customer:
+              SELECT SUM(sales_price_home)
+              FROM kb_sales_history_report_view
+              WHERE year_for_period = CAST(YEAR(GETDATE())
+                AS CHAR(4))
+              AND customer_id = [test_id]
+           2. Observe ribbon tile
+  Expect : Ribbon value matches 2026 total only (not 2025)
+  Status : [ ] Pass  [ ] Fail  [ ] Blocked
+
+  TC-06  Large sales value formatting
+  ------------------------------------
+  Input  : Customer with YTD sales > $1,000,000
+  Expect : Value displays as $X.Xmln format
+  Status : [ ] Pass  [ ] Fail  [ ] Blocked
+
+  TC-07  Small sales value formatting
+  -------------------------------------
+  Input  : Customer with YTD sales < $1,000 (e.g. $450)
+  Expect : Value displays as $450
+  Status : [ ] Pass  [ ] Fail  [ ] Blocked
+
+  TC-08  Negative sales value (net credits)
+  ------------------------------------------
+  Input  : Customer whose credits exceed invoices YTD
+  Expect : Negative value displayed correctly (e.g. -$2.1k)
+  Status : [ ] Pass  [ ] Fail  [ ] Blocked
+
+SQL VALIDATION QUERY
+---------------------
+Use this to verify expected values before comparing to ribbon:
+
+  SELECT
+    ih.customer_id,
+    dbo.kb_fn_number_shorten(
+      ISNULL(SUM(ISNULL(sales_price_home,0)),0),1) AS ribbon_value,
+    ISNULL(SUM(ISNULL(sales_price_home,0)),0)       AS raw_value
+  FROM kb_sales_history_report_view
+  WHERE year_for_period = CAST(YEAR(GETDATE()) AS CHAR(4))
+  AND customer_id IN ([test_customer_ids])
+  GROUP BY ih.customer_id
+  ORDER BY ih.customer_id
+
+================================================================
+ROLLBACK PLAN
+================================================================
+
+  If issues are found after deployment:
+  1. Re-enable kb_CustRM_getYTDSalesAbbr in P21 ribbon config
+  2. Disable asi_ribbon_cm_SYTD
+  3. Log issue in change log below
+
+  Do NOT delete kb_CustRM_getYTDSalesAbbr until asi_ribbon_cm_SYTD
+  has been confirmed working in production for at least one week.
+
+================================================================
+SIGN-OFF
+================================================================
+
+  Developed by  : ________________________  Date: __________
+  Tested by     : ________________________  Date: __________
+  Approved by   : ________________________  Date: __________
+
+================================================================
+END OF CHANGE LOG
+================================================================

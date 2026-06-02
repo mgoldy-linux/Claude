@@ -1,0 +1,104 @@
+
+Requirements Document
+
+Special Pricing Indicator
+
+
+
+
+
+Author(s):	
+Creation Date: March 19, 2026 
+Last Updated:	March 19, 2026
+Version	1.1
+
+
+
+
+
+Contents
+Document Control	3
+Change Record	3
+Reviewers	3
+Overview	4
+Objectives	4
+Definitions	4
+Assumptions	4
+Technical Considerations	4
+<Major Setup and Design Component>	5
+<Specific Setup>	5
+<Specific Design>	5
+Future Features / Updates / Enhancements	6
+Open / Closed Issues	7
+Open Issues	7
+Closed Issues	7
+
+Document Control
+
+Change Record
+DateAuthorVersionChange Reference3/19/26Chad Skelton1.03/23/26Chad Skelton1.1Added further clarification to the overview and more detail on field names
+Reviewers
+NamePositionEvan JenkinsFinance - Pricing SpecialistChad SkeltonIT – Product Manager ERPMark GoldynIT – System DeveloperJossy VadakkelIT – Director Business ApplicationsMatt MunsonIT – Director Business ApplicationsOverview
+All Surfaces is working with a new pricing partner named Zilliant. For Zilliant to correctly manage the pricing data we are providing them, it is important they know which price pages and books are truly “special pricing” versus other programmed pricing. This change will not only aid Zilliant in their efforts but also provides All Surfaces with a better mechanism for identifying special pricing than just through the name.
+
+
+Objectives 
+The key business objectives are:
+* Provide new user-defined fields on the Sales Price Book Maintenance and Sales Price Page Maintenance screens that will allow members of the Pricing team to identify special pricing and price levels.
+
+Definitions
+
+Assumptions
+This section lists underlying ASI business rules and decisions, as well as system rules that drive the configuration described in this document:
+1. Members of the Pricing team will manually maintain these fields.
+2. There is no data validation taking place on these fields.
+
+
+
+Technical Considerations
+The following should be considerations for any related technical configuration or customization related to Price Book and Pages Maintenance:
+1. New fields should be Varchar, 80 characters
+2. Best to remove the “Tracked Price Level” field altogether and replace it with the new “Price Level Group Field.”
+3. Price Book has a UD table that can be used:
+4. There is no UD table currently for Price Page. One will need to be created for this.
+
+
+Price Book and Price Page Maintenance Designs
+* The following user defined fields should be created:
+o Price Level Group : This field will replace the Tracked Price Level field on the Price Book screen. (Sample data: Mapei – Adhesives)
+o Strategic Price Type: This field should appear on both the Price Book and Price Page screens.  (Sample data: Special Price)
+
+
+Price Book Design
+
+          
+
+Price Page Design
+	
+          
+Future Features / Updates / Enhancements
+This section includes features, updates and enhancements that may require updates to the system configuration described in this document in future releases.  
+1. 
+2. 
+3. 
+Open / Closed Issues
+
+Open Issues
+1..
+2.  
+3..
+
+Closed Issues
+
+
+
+4
+
+
+9
+Requirements Document		
+
+		
+
+
+
