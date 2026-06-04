@@ -32,14 +32,15 @@ WITH RankedTransfers AS (
         ROW_NUMBER() OVER (PARTITION BY t.transfer_no, t.item_id ORDER BY t.cur_promise_date DESC) AS rn
     FROM v_transfer_portal_status t
     INNER JOIN (
-        SELECT location_id
+        SELECT CAST(location_id AS VARCHAR) AS location_id
         FROM dbo.asi_fnt_get_user_loc('BGABBERT')  -- test user
-        -- FROM dbo.asi_fnt_get_user_loc(:user_id)  -- production
+        -- FROM dbo.asi_fnt_get_user_loc('<user_id>')  -- production
     ) AS my_locs
         ON my_locs.location_id = t.to_loc
     WHERE
         status_no NOT IN (1, 2, 5, 6)
         AND status <> 'PT Canceled'
+        AND (:to_loc IS NULL OR t.to_loc = :to_loc)  -- SA 43045 branch loc filter (retrieval arg: String)
 )
 SELECT
     RT.*,
@@ -48,7 +49,6 @@ FROM RankedTransfers RT
 LEFT JOIN p21_view_oe_hdr voh
     ON RT.order_no = voh.order_no
 WHERE rn = 1
-    AND (:to_loc = 0 OR to_loc = :to_loc)  -- SA 43045 branch loc filter; pass 0 for all locations (retrieval arg: Number, default 0)
 ORDER BY
     required_dt,
     from_loc,
