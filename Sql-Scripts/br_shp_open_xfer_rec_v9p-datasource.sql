@@ -40,7 +40,6 @@ WITH RankedTransfers AS (
     WHERE
         status_no NOT IN (1, 2, 5, 6)
         AND status <> 'PT Canceled'
-        AND (:to_loc = 0 OR t.to_loc = :to_loc)  -- SA 43045 branch loc filter; pass 0 for all locations (retrieval arg: Number, default 0)
 )
 SELECT
     RT.*,
@@ -49,6 +48,7 @@ FROM RankedTransfers RT
 LEFT JOIN p21_view_oe_hdr voh
     ON RT.order_no = voh.order_no
 WHERE rn = 1
+    AND (:to_loc = 0 OR to_loc = :to_loc)  -- SA 43045 branch loc filter; pass 0 for all locations (retrieval arg: Number, default 0)
 ORDER BY
     required_dt,
     from_loc,
