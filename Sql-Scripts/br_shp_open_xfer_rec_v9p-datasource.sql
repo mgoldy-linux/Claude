@@ -36,7 +36,7 @@ WITH RankedTransfers AS (
         FROM dbo.asi_fnt_get_user_loc('BGABBERT')  -- test user
         -- FROM dbo.asi_fnt_get_user_loc(:user_id)  -- production
     ) AS my_locs
-        ON my_locs.location_id = CAST(t.to_loc AS INT)
+        ON my_locs.location_id = t.to_loc
     WHERE
         status_no NOT IN (1, 2, 5, 6)
         AND status <> 'PT Canceled'
