@@ -111,6 +111,7 @@ foreach (string dllPath in dllFiles.OrderBy(f => f))
 
             results.Add(new RuleInfo(
                 AssemblyFile : Path.GetFileName(dllPath),
+                FilePath     : Path.GetFullPath(dllPath),
                 ClassName    : type.FullName,
                 Name         : name,
                 Description  : desc
@@ -135,9 +136,9 @@ Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
 
 using (var w = new StreamWriter(outPath, append: false, System.Text.Encoding.UTF8))
 {
-    w.WriteLine("AssemblyFile,ClassName,P21-Name,Description");
+    w.WriteLine("AssemblyFile,FilePath,ClassName,P21-Name,Description");
     foreach (RuleInfo r in results.OrderBy(r => r.AssemblyFile).ThenBy(r => r.ClassName))
-        w.WriteLine($"{Csv(r.AssemblyFile)},{Csv(r.ClassName)},{Csv(r.Name)},{CsvQuoted(r.Description)}");
+        w.WriteLine($"{Csv(r.AssemblyFile)},{Csv(r.FilePath)},{Csv(r.ClassName)},{Csv(r.Name)},{CsvQuoted(r.Description)}");
 }
 
 // ── Summary ───────────────────────────────────────────────────────────────────
@@ -246,4 +247,4 @@ static void PrintUsage()
     Console.WriteLine("  BusinessRuleExporter MyRule.dll");
 }
 
-record RuleInfo(string AssemblyFile, string ClassName, string Name, string Description);
+record RuleInfo(string AssemblyFile, string FilePath, string ClassName, string Name, string Description);
