@@ -9,7 +9,7 @@ if (args.Length == 0 || args[0] is "-h" or "--help")
 }
 
 string inputPath    = args[0];
-string outputFile   = "business_rules.csv";
+string outputFile   = @"C:\_P25\csv-out\business_rules.csv";
 string? baseFilter  = null;
 bool recursive      = true;
 bool verbose        = false;
@@ -68,13 +68,13 @@ foreach (string dllPath in dllFiles.OrderBy(f => f))
 {
     try
     {
-        var resolver = new DefaultAssemblyResolver();
+        var resolver = new LenientResolver();
         resolver.AddSearchDirectory(Path.GetDirectoryName(Path.GetFullPath(dllPath))!);
 
         var rp = new ReaderParameters
         {
             AssemblyResolver          = resolver,
-            ReadingMode               = ReadingMode.Immediate,
+            ReadingMode               = ReadingMode.Deferred,
             ThrowIfSymbolsAreNotMatching = false,
             InMemory                  = true,
         };
@@ -228,7 +228,7 @@ static void PrintUsage()
     Console.WriteLine("  <path>               Path to a .dll file  OR  a directory to scan");
     Console.WriteLine();
     Console.WriteLine("Options:");
-    Console.WriteLine("  -o, --output <file>  Output CSV path          (default: business_rules.csv)");
+    Console.WriteLine(@"  -o, --output <file>  Output CSV path          (default: C:\_P25\csv-out\business_rules.csv)");
     Console.WriteLine("  -b, --base   <name>  Only include classes whose direct base class name");
     Console.WriteLine("                         contains <name>  (e.g. -b Rule  or  -b BusinessRule)");
     Console.WriteLine("      --no-recursive   Do not descend into subdirectories");
@@ -245,6 +245,24 @@ static void PrintUsage()
     Console.WriteLine("  BusinessRuleExporter C:\\P21\\Custom\\Rules -o rules.csv");
     Console.WriteLine("  BusinessRuleExporter C:\\P21\\Custom\\Rules -b Rule -v");
     Console.WriteLine("  BusinessRuleExporter MyRule.dll");
+}
+
+// Swallows AssemblyResolutionException so .NET Framework DLLs can be read
+// on machines that only have .NET 8 (mscorlib 4.0 won't resolve, but the
+// type definitions and method bodies are still fully readable).
+class LenientResolver : DefaultAssemblyResolver
+{
+    public override AssemblyDefinition Resolve(AssemblyNameReference name)
+    {
+        try { return base.Resolve(name); }
+        catch (AssemblyResolutionException) { return null!; }
+    }
+
+    public override AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters)
+    {
+        try { return base.Resolve(name, parameters); }
+        catch (AssemblyResolutionException) { return null!; }
+    }
 }
 
 record RuleInfo(string AssemblyFile, string FilePath, string ClassName, string Name, string Description);
