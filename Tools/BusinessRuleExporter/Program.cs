@@ -135,9 +135,9 @@ Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
 
 using (var w = new StreamWriter(outPath, append: false, System.Text.Encoding.UTF8))
 {
-    w.WriteLine("AssemblyFile,ClassName,Name,Description");
+    w.WriteLine("AssemblyFile,ClassName,P21-Name,Description");
     foreach (RuleInfo r in results.OrderBy(r => r.AssemblyFile).ThenBy(r => r.ClassName))
-        w.WriteLine($"{Csv(r.AssemblyFile)},{Csv(r.ClassName)},{Csv(r.Name)},{Csv(r.Description)}");
+        w.WriteLine($"{Csv(r.AssemblyFile)},{Csv(r.ClassName)},{Csv(r.Name)},{CsvQuoted(r.Description)}");
 }
 
 // ── Summary ───────────────────────────────────────────────────────────────────
@@ -207,6 +207,11 @@ static string Csv(string? value)
         return $"\"{value.Replace("\"", "\"\"")}\"";
     return value;
 }
+
+// Always wraps in quotes — used for free-text fields like Description
+// that may contain commas, semicolons, or other delimiter characters.
+static string CsvQuoted(string? value)
+    => $"\"{(value ?? string.Empty).Replace("\"", "\"\"")}\"";
 
 static string Truncate(string s, int max)
     => s.Length <= max ? s : string.Concat(s.AsSpan(0, max), "…");
