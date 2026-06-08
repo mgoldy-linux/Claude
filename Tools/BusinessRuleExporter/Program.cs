@@ -9,7 +9,7 @@ if (args.Length == 0 || args[0] is "-h" or "--help")
 }
 
 string inputPath    = args[0];
-string outputFile   = @"C:\_P25\csv-out\business_rules.csv";
+string outputFile   = @"C:\_P25\Data-Out\CSV\business_rules.csv";
 string? baseFilter  = null;
 bool recursive      = true;
 bool verbose        = false;
@@ -228,7 +228,7 @@ static void PrintUsage()
     Console.WriteLine("  <path>               Path to a .dll file  OR  a directory to scan");
     Console.WriteLine();
     Console.WriteLine("Options:");
-    Console.WriteLine(@"  -o, --output <file>  Output CSV path          (default: C:\_P25\csv-out\business_rules.csv)");
+    Console.WriteLine(@"  -o, --output <file>  Output CSV path          (default: C:\_P25\Data-Out\CSV\business_rules.csv)");
     Console.WriteLine("  -b, --base   <name>  Only include classes whose direct base class name");
     Console.WriteLine("                         contains <name>  (e.g. -b Rule  or  -b BusinessRule)");
     Console.WriteLine("      --no-recursive   Do not descend into subdirectories");
