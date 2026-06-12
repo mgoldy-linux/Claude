@@ -12,7 +12,6 @@
 //   - RENAMED namespace from kb_RibbonMetrics_r1 to asi_RibbonMetrics
 //   - REMOVED #nullable disable (not required by project)
 //   - REMOVED using System.Reflection, using System.Linq (no longer needed after LINQ expressions removed)
-//   - CHANGED GetFieldByAlias("salesrep_id") x4 to this.Data.Fields["salesrep_id"] direct access
 //   - CHANGED class name LINQ expression x4 to nameof()
 //   - CHANGED private string outputNumber (instance field) to local variable
 //   - REMOVED kb_SQLHelper and all LogError calls -- P21 built-in business rule logging used instead
@@ -41,6 +40,15 @@
 //     commission schedule -- shows DISTINCT classes from actual customer assignments
 //     (matches the salesrep assignment tool); 18 of 21 no-schedule reps get real data;
 //     schedule-derived output unchanged for the 83 scheduled reps (parity preserved)
+// 2026-06-12  Bus App Team
+//   - KEPT GetFieldByAlias("salesrep_id") for the input field (reverted from direct
+//     Data.Fields["salesrep_id"] access, which failed metric test: "Field name
+//     salesrep_id not found"). This metric is registered on THREE windows whose
+//     field NAMES differ -- w_salesrep_commission_maint: salesrep_id,
+//     w_users_sheet: ufc_users_ud_salesrep_id, w_salesrep_sheet: contact_id --
+//     only the ALIAS is salesrep_id on all three (ribbon_metric uids 12/13/14).
+//     Direct name access is kept only for business_rule_result (framework-named).
+//   - ADDED salesrep_id captured once into a local at top of Execute()
 // ============================================================
 
 using P21.Extensions.BusinessRule;
@@ -56,8 +64,12 @@ namespace asi_RibbonMetrics
     {
       RuleResult ruleResult = new RuleResult();
 
-      // CHANGED: direct field access replaces GetFieldByAlias()
-      if (string.IsNullOrEmpty(this.Data.Fields["salesrep_id"].FieldValue?.ToString()))
+      // GetFieldByAlias required: this metric runs on three windows where the
+      // field NAME differs (salesrep_id / ufc_users_ud_salesrep_id / contact_id);
+      // only the configured alias "salesrep_id" is common to all three.
+      string repId = this.Data.Fields.GetFieldByAlias("salesrep_id")?.FieldValue?.ToString();
+
+      if (string.IsNullOrEmpty(repId))
       {
         this.Data.Fields["business_rule_result"].FieldValue = "";
         ruleResult.Success = true;
@@ -129,8 +141,7 @@ namespace asi_RibbonMetrics
           sqlCommand.CommandType = CommandType.Text;
 
           // CHANGED: SqlDbType.VarChar -- salesrep_commission.salesrep_id is VARCHAR
-          sqlCommand.Parameters.Add("@RepID", SqlDbType.VarChar).Value =
-            this.Data.Fields["salesrep_id"].FieldValue.ToString().Trim();
+          sqlCommand.Parameters.Add("@RepID", SqlDbType.VarChar).Value = repId.Trim();
 
           DataTable dataTable = new DataTable();
           using (SqlDataReader reader = sqlCommand.ExecuteReader())
@@ -138,7 +149,7 @@ namespace asi_RibbonMetrics
 
           if (dataTable.Rows.Count < 1)
           {
-            LogRuleError("Query returned no rows for salesrep ID: " + this.Data.Fields["salesrep_id"].FieldValue);
+            LogRuleError("Query returned no rows for salesrep ID: " + repId);
             ruleResult.Message = "Salesrep ID failed to retrieve results. This error has been logged. If it continues to happen, please contact the Bus App Team.\r\n\r\n- asi_ribbon_rm_default_products";
             ruleResult.Success = false;
             return ruleResult;
@@ -154,7 +165,7 @@ namespace asi_RibbonMetrics
       catch (Exception ex)
       {
         // CHANGED: kbSqlHelper.LogError replaced with insert into native business_rule_log
-        LogRuleError("Salesrep ID: " + this.Data.Fields["salesrep_id"].FieldValue + "\r\n" + ex);
+        LogRuleError("Salesrep ID: " + repId + "\r\n" + ex);
         ruleResult.Success = false;
         ruleResult.Message = $"Rule execution failed: {ex.Message}\r\n\r\nThis error has been logged. If it continues to happen, please contact the Bus App Team.\r\n\r\n- asi_ribbon_rm_default_products";
         return ruleResult;
