@@ -57,6 +57,11 @@
 //     regardless of alias configuration
 //   - REMOVED alias matching from GetSalesrepIdField() -- field aliases are
 //     unreliable in newer P21 versions; resolution is by field name only
+//   - CHANGED blank salesrep ID result from "" to "Not a salesrep" -- the ribbon
+//     tile cannot be hidden per record; an empty tile looked broken on
+//     non-salesrep user records
+//   - NOTE third confirmed registration field: salesrep_commission.salesrep_id
+//     (matched by the existing EndsWith salesrep_id rule; no code change)
 // ============================================================
 
 using P21.Extensions.BusinessRule;
@@ -81,10 +86,12 @@ namespace asi_RibbonMetrics
         return ruleResult;
       }
 
+      // CHANGED 2026-06-12: blank salesrep ID (e.g., a non-salesrep user record)
+      // now shows "Not a salesrep" -- the ribbon renders an empty tile otherwise
       string repId = repField.FieldValue;
       if (string.IsNullOrEmpty(repId))
       {
-        this.Data.Fields["business_rule_result"].FieldValue = "";
+        this.Data.Fields["business_rule_result"].FieldValue = "Not a salesrep";
         ruleResult.Success = true;
         return ruleResult;
       }
