@@ -55,6 +55,8 @@
 //     salesrep-tab registration passes the rep ID as contacts.id (a salesrep's
 //     ID is its contact id in P21); one rule now serves both registrations
 //     regardless of alias configuration
+//   - REMOVED alias matching from GetSalesrepIdField() -- field aliases are
+//     unreliable in newer P21 versions; resolution is by field name only
 // ============================================================
 
 using P21.Extensions.BusinessRule;
@@ -73,7 +75,7 @@ namespace asi_RibbonMetrics
       DataField repField = GetSalesrepIdField();
       if (repField == null)
       {
-        LogRuleError("Salesrep ID field not found in rule data. Expected alias 'salesrep_id', or a field named users_ud.salesrep_id / contacts.id (or ending in salesrep_id / contact_id). Check the metric's Field Selector.");
+        LogRuleError("Salesrep ID field not found in rule data. Expected a field named users_ud.salesrep_id / contacts.id (or ending in salesrep_id / contact_id). Check the metric's Field Selector.");
         ruleResult.Message = "Salesrep ID field is not configured for this metric. This error has been logged. Please contact the Bus App Team.\r\n\r\n- asi_ribbon_rm_default_products";
         ruleResult.Success = false;
         return ruleResult;
@@ -183,22 +185,17 @@ namespace asi_RibbonMetrics
       }
     }
 
-    // ADDED: resolves the salesrep ID input field. The field NAME differs per
-    // window registration (users_ud.salesrep_id on the user maintenance tab,
-    // contacts.id on the salesrep tab -- in P21 a salesrep's ID IS its contact
-    // id; the 2019 kb_ registrations used salesrep_id / ufc_users_ud_salesrep_id
-    // / contact_id), so a single Data.Fields["..."] name lookup throws
-    // "Field name ... not found". Match order: configured alias "salesrep_id",
-    // then salesrep_id-named fields, then contact-id-named fields.
+    // ADDED: resolves the salesrep ID input field BY NAME ONLY -- no aliases
+    // (field aliases are unreliable in newer P21 versions). The field NAME
+    // differs per window registration (users_ud.salesrep_id on the user
+    // maintenance tab, contacts.id on the salesrep tab -- in P21 a salesrep's
+    // ID IS its contact id; the 2019 kb_ registrations used salesrep_id /
+    // ufc_users_ud_salesrep_id / contact_id), so a single Data.Fields["..."]
+    // name lookup throws "Field name ... not found". Match order:
+    // salesrep_id-named fields, then contact-id-named fields.
     // Enumeration never throws.
     private DataField GetSalesrepIdField()
     {
-      foreach (DataField field in this.Data.Fields)
-      {
-        if ("salesrep_id".Equals(field.FieldAlias, StringComparison.OrdinalIgnoreCase))
-          return field;
-      }
-
       foreach (DataField field in this.Data.Fields)
       {
         if (field.FieldName != null
