@@ -51,6 +51,10 @@
 //     Direct name access kept only for business_rule_result (framework-named).
 //   - CHANGED missing-field case to a logged failure with a Field Selector hint
 //     (was: indistinguishable from a blank salesrep_id)
+//   - ADDED contacts.id / contact_id matching to GetSalesrepIdField() -- the
+//     salesrep-tab registration passes the rep ID as contacts.id (a salesrep's
+//     ID is its contact id in P21); one rule now serves both registrations
+//     regardless of alias configuration
 // ============================================================
 
 using P21.Extensions.BusinessRule;
@@ -69,7 +73,7 @@ namespace asi_RibbonMetrics
       DataField repField = GetSalesrepIdField();
       if (repField == null)
       {
-        LogRuleError("Salesrep ID field not found in rule data. Expected alias 'salesrep_id' or a field named users_ud.salesrep_id (or ending in salesrep_id). Check the metric's Field Selector.");
+        LogRuleError("Salesrep ID field not found in rule data. Expected alias 'salesrep_id', or a field named users_ud.salesrep_id / contacts.id (or ending in salesrep_id / contact_id). Check the metric's Field Selector.");
         ruleResult.Message = "Salesrep ID field is not configured for this metric. This error has been logged. Please contact the Bus App Team.\r\n\r\n- asi_ribbon_rm_default_products";
         ruleResult.Success = false;
         return ruleResult;
@@ -180,11 +184,13 @@ namespace asi_RibbonMetrics
     }
 
     // ADDED: resolves the salesrep ID input field. The field NAME differs per
-    // window registration (users_ud.salesrep_id on w_users_sheet; salesrep_id,
-    // ufc_users_ud_salesrep_id, contact_id on the 2019 kb_ registrations), so a
-    // single Data.Fields["..."] name lookup throws "Field name ... not found".
-    // Match order: configured alias "salesrep_id", then users_ud.salesrep_id,
-    // then any field name ending in salesrep_id. Enumeration never throws.
+    // window registration (users_ud.salesrep_id on the user maintenance tab,
+    // contacts.id on the salesrep tab -- in P21 a salesrep's ID IS its contact
+    // id; the 2019 kb_ registrations used salesrep_id / ufc_users_ud_salesrep_id
+    // / contact_id), so a single Data.Fields["..."] name lookup throws
+    // "Field name ... not found". Match order: configured alias "salesrep_id",
+    // then salesrep_id-named fields, then contact-id-named fields.
+    // Enumeration never throws.
     private DataField GetSalesrepIdField()
     {
       foreach (DataField field in this.Data.Fields)
@@ -198,6 +204,15 @@ namespace asi_RibbonMetrics
         if (field.FieldName != null
             && (field.FieldName.Equals("users_ud.salesrep_id", StringComparison.OrdinalIgnoreCase)
                 || field.FieldName.EndsWith("salesrep_id", StringComparison.OrdinalIgnoreCase)))
+          return field;
+      }
+
+      foreach (DataField field in this.Data.Fields)
+      {
+        if (field.FieldName != null
+            && (field.FieldName.Equals("contacts.id", StringComparison.OrdinalIgnoreCase)
+                || field.FieldName.Equals("contact_id", StringComparison.OrdinalIgnoreCase)
+                || field.FieldName.EndsWith("contact_id", StringComparison.OrdinalIgnoreCase)))
           return field;
       }
 
