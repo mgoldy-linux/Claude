@@ -41,14 +41,16 @@
 //     (matches the salesrep assignment tool); 18 of 21 no-schedule reps get real data;
 //     schedule-derived output unchanged for the 83 scheduled reps (parity preserved)
 // 2026-06-12  Bus App Team
-//   - KEPT GetFieldByAlias("salesrep_id") for the input field (reverted from direct
-//     Data.Fields["salesrep_id"] access, which failed metric test: "Field name
-//     salesrep_id not found"). This metric is registered on THREE windows whose
-//     field NAMES differ -- w_salesrep_commission_maint: salesrep_id,
-//     w_users_sheet: ufc_users_ud_salesrep_id, w_salesrep_sheet: contact_id --
-//     only the ALIAS is salesrep_id on all three (ribbon_metric uids 12/13/14).
-//     Direct name access is kept only for business_rule_result (framework-named).
-//   - ADDED salesrep_id captured once into a local at top of Execute()
+//   - ADDED GetSalesrepIdField() resolver -- direct Data.Fields["salesrep_id"]
+//     access failed the metric test ("Field name salesrep_id not found") because
+//     the registered field is users_ud.salesrep_id, and the name differs per
+//     window registration (ribbon_metric uids 12/13/14 store salesrep_id,
+//     ufc_users_ud_salesrep_id, contact_id with alias salesrep_id). Resolver
+//     matches alias "salesrep_id" first, then any field name equal to
+//     users_ud.salesrep_id or ending in salesrep_id, by enumeration (no throw).
+//     Direct name access kept only for business_rule_result (framework-named).
+//   - CHANGED missing-field case to a logged failure with a Field Selector hint
+//     (was: indistinguishable from a blank salesrep_id)
 // ============================================================
 
 using P21.Extensions.BusinessRule;
@@ -64,11 +66,16 @@ namespace asi_RibbonMetrics
     {
       RuleResult ruleResult = new RuleResult();
 
-      // GetFieldByAlias required: this metric runs on three windows where the
-      // field NAME differs (salesrep_id / ufc_users_ud_salesrep_id / contact_id);
-      // only the configured alias "salesrep_id" is common to all three.
-      string repId = this.Data.Fields.GetFieldByAlias("salesrep_id")?.FieldValue?.ToString();
+      DataField repField = GetSalesrepIdField();
+      if (repField == null)
+      {
+        LogRuleError("Salesrep ID field not found in rule data. Expected alias 'salesrep_id' or a field named users_ud.salesrep_id (or ending in salesrep_id). Check the metric's Field Selector.");
+        ruleResult.Message = "Salesrep ID field is not configured for this metric. This error has been logged. Please contact the Bus App Team.\r\n\r\n- asi_ribbon_rm_default_products";
+        ruleResult.Success = false;
+        return ruleResult;
+      }
 
+      string repId = repField.FieldValue;
       if (string.IsNullOrEmpty(repId))
       {
         this.Data.Fields["business_rule_result"].FieldValue = "";
@@ -170,6 +177,31 @@ namespace asi_RibbonMetrics
         ruleResult.Message = $"Rule execution failed: {ex.Message}\r\n\r\nThis error has been logged. If it continues to happen, please contact the Bus App Team.\r\n\r\n- asi_ribbon_rm_default_products";
         return ruleResult;
       }
+    }
+
+    // ADDED: resolves the salesrep ID input field. The field NAME differs per
+    // window registration (users_ud.salesrep_id on w_users_sheet; salesrep_id,
+    // ufc_users_ud_salesrep_id, contact_id on the 2019 kb_ registrations), so a
+    // single Data.Fields["..."] name lookup throws "Field name ... not found".
+    // Match order: configured alias "salesrep_id", then users_ud.salesrep_id,
+    // then any field name ending in salesrep_id. Enumeration never throws.
+    private DataField GetSalesrepIdField()
+    {
+      foreach (DataField field in this.Data.Fields)
+      {
+        if ("salesrep_id".Equals(field.FieldAlias, StringComparison.OrdinalIgnoreCase))
+          return field;
+      }
+
+      foreach (DataField field in this.Data.Fields)
+      {
+        if (field.FieldName != null
+            && (field.FieldName.Equals("users_ud.salesrep_id", StringComparison.OrdinalIgnoreCase)
+                || field.FieldName.EndsWith("salesrep_id", StringComparison.OrdinalIgnoreCase)))
+          return field;
+      }
+
+      return null;
     }
 
     // ADDED: replaces kb_SQLHelper.LogError / kb_table_br_error_log
