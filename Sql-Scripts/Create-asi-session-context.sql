@@ -24,3 +24,8 @@ BEGIN
 END
 ELSE
     PRINT 'asi_session_context already exists — skipped.'
+
+-- Permissions (MERGE requires SELECT + INSERT + UPDATE)
+GRANT SELECT, INSERT, UPDATE ON dbo.asi_session_context TO PxxiUser;
+GRANT SELECT, INSERT, UPDATE ON dbo.asi_session_context TO p21_application_role;
+PRINT 'Permissions granted to PxxiUser and p21_application_role.'
