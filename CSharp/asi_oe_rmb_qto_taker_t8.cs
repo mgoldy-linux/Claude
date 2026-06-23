@@ -8,30 +8,39 @@
 //               TriggerWindowTitle is empty for this event (T7 confirmed),
 //               so we query oe_hdr for the most recent open quote and
 //               display it in the dialog for user confirmation.
+//               Uses Win32 P/Invoke for MessageBox — no Windows.Forms ref needed.
 //               T4 (qtowindowopening) covers the wizard path.
 // Registration: Message Box Opening event (multi-row, Data.Set)
 //               Multi-Row: checked
 // Field Selector: MessageBoxData > message_no (checked)
-// Requires ref: System.Windows.Forms
 // ============================================================
 // CHANGE LOG
 // ------------------------------------------------------------
 // 2026-06-23  Bus App Team  (T7 -> T8)
 //   - T7: confirmed TriggerWindowTitle is empty for this event
 //   - T8: show Yes/No confirmation dialog with found order_no
-//         so user can verify before taker is updated
+//   - T8b: replaced System.Windows.Forms with Win32 P/Invoke (no ref needed)
 // ============================================================
 
 using P21.Extensions.BusinessRule;
 using System;
 using System.Data;
 using System.Data.SqlClient;
-using System.Windows.Forms;
+using System.Runtime.InteropServices;
 
 namespace asi_OeRmbQtoTaker_t8
 {
     public class asi_oe_rmb_qto_taker_t8 : P21.Extensions.BusinessRule.Rule
     {
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern int MessageBox(IntPtr hWnd, string text, string caption, uint type);
+
+        private const uint MB_YESNO       = 0x00000004;
+        private const uint MB_OK          = 0x00000000;
+        private const uint MB_ICONQUESTION = 0x00000020;
+        private const uint MB_ICONINFO    = 0x00000040;
+        private const int  IDYES          = 6;
+
         public override RuleResult Execute()
         {
             RuleResult ruleResult = new RuleResult();
@@ -91,11 +100,10 @@ namespace asi_OeRmbQtoTaker_t8
 
                 if (string.IsNullOrEmpty(orderNo))
                 {
-                    MessageBox.Show(
+                    MessageBox(IntPtr.Zero,
                         "No open quotes found.\nTaker will not be updated.",
                         "QTO Taker Update",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                        MB_OK | MB_ICONINFO);
 
                     ruleResult.Success = true;
                     return ruleResult;
@@ -105,13 +113,10 @@ namespace asi_OeRmbQtoTaker_t8
                     "Found quote {0} (Customer: {1})\n\nUpdate Taker to {2}?",
                     orderNo, customerId, userIdUpper);
 
-                DialogResult answer = MessageBox.Show(
-                    prompt,
-                    "QTO Taker Update",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question);
+                int answer = MessageBox(IntPtr.Zero, prompt, "QTO Taker Update",
+                    MB_YESNO | MB_ICONQUESTION);
 
-                if (answer == DialogResult.Yes)
+                if (answer == IDYES)
                 {
                     const string updateSql =
                         @"UPDATE oe_hdr
