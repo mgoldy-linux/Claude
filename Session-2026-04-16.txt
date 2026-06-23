@@ -194,3 +194,6 @@ claude6/8/26 claude --resume the Visual Rules guide
 6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
 6/22/26  /resume 5166131a-51be-4bae-b861-9388d0da57ba
 6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
+6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
+6/23/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
+6/23/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
