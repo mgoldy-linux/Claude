@@ -21,6 +21,9 @@
 //   - T9/T10: SELECT TOP 1 ORDER BY date_last_modified found wrong quote
 //   - T11: reads order_no from asi_session_context populated by
 //          asi_oe_qto_session ValidateField rule on Order Entry tab-off
+// 2026-06-23  Bus App Team  (T11 update)
+//   - Dialog title changed to "Convert to Order Update"
+//   - ruleResult.Message confirmed on success path (immediate user feedback)
 // ============================================================
 
 using P21.Extensions.BusinessRule;
@@ -121,7 +124,7 @@ namespace asi_OeRmbQtoTaker_t11
                 string prompt = string.Format(
                     "Update Taker to {0} on order {1}?", userIdUpper, orderNo);
 
-                int answer = ShowYesNo(prompt, "QTO Taker Update");
+                int answer = ShowYesNo(prompt, "Convert to Order Update");
 
                 if (answer == IDYES)
                 {
