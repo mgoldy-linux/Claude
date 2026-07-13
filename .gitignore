@@ -5,6 +5,10 @@
 Claude-resume.txt
 Claude-resume.txt.bak
 
+# .NET build artifacts
+[Bb]in/
+[Oo]bj/
+
 # OS / editor
 Thumbs.db
 .DS_Store

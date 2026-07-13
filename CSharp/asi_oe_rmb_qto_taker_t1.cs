@@ -98,7 +98,7 @@ namespace asi_OeRmbQtoTaker_t1
                     @"SELECT TOP 1 order_no
                         FROM oe_hdr
                        WHERE projected_order = 'Y'
-                         AND order_taker != @UserId
+                         AND taker != @UserId
                        ORDER BY date_last_modified DESC";
 
                 using (SqlCommand findCmd = new SqlCommand(findSql, P21SqlConnection))
@@ -117,7 +117,7 @@ namespace asi_OeRmbQtoTaker_t1
                 {
                     const string updateSql =
                         @"UPDATE oe_hdr
-                             SET order_taker        = @UserId,
+                             SET taker              = @UserId,
                                  last_maintained_by = @UserId,
                                  date_last_modified = GETDATE()
                            WHERE order_no       = @OrderNo

@@ -1,10 +1,35 @@
-6/16/26  claude --resume "P21 BR QTO taker update"  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/11/25 claude --resume "update -wc carriers"
-6/9/26 claude --resume "jsTextValidator", claude --resume "SA 45138 - add sales orders to portal BOP Critical or Backordered items" / claude --resume "SA 46487 UOM AD Hoc Report"
-claude6/8/26 claude --resume the Visual Rules guide
-6/3/26 claude --resume "AHI\\AHI-API1$" (KB cleanup research)  --resume "compare proc_customer_pricing_loc_items stored procedures"
-6/2/26 claude --resume bb0573cd-98f9-4654-b1c0-4ebf1020545c "2026-06-02 BRR Refresh Fixes" / --resume "SQL Update oe_hdr last modified date" 'claude --resume "Check kb_table_br_error_log permissions"
-6/1/26 claude --resume "dbatools Fix / Compare-Folders Bug Fixes / Harvest-XE Run Counter"  /resume e866aa88-bbee-4c3d-b209-8192d77148a1  | claude --resume "excel wireless transaction report" claude --resume 51988261-7e6e-40f2-b019-11d761065fec - why user define tables
+6/24/26  claude --resume "Test update BR kb_Order_Validator_v2 by changing assby ver"  /resume 747d3c22-a9f3-44d2-b48c-0d67c1b67b31
+6/24/26  claude --resume "SA 48237 create view asi_view_inv_mast"  /resume 30d0f0fd-559f-4327-a782-7afb4e351b46
+6/24/26  /resume 77be3a5e-4a57-40e5-b6dd-ad1b2efa1afd
+6/24/26  /resume fe361e97-9540-4f3e-b485-b4645cc400e2
+6/23/26  claude --resume "P21 BR QTO taker update"  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
+6/22/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
+6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
+6/22/26  /resume ffdcbbca-fa6f-4ae5-b397-116b33cd42a5
+6/22/26  /resume 5166131a-51be-4bae-b861-9388d0da57ba
+6/19/26  /resume adbc04e0-4d41-43bd-854d-5cf5b7b28eab
+6/17/26  /resume d9231fc2-f719-423f-bfd5-2f5064dd8443
+6/16/26  claude --resume "search for asi_view_edi_855_po_ack"  /resume 2fadf3f7-7f88-431c-acbc-3c653882fbbb
+6/16/26  /resume 12a1d24f-643c-4b21-b16a-efacb4676838
+6/16/26  /resume 8e10cd68-4e39-42db-b7b2-c931bba57165
+6/16/26  /resume c0d7c0b0-434a-4ef8-ac1f-a99fcd9ca022
+6/16/26  /resume 5f207bcf-c88a-4768-bebd-0bdaac62a546
+6/15/26  claude --resume "refresh P21 Dev"  /resume 779d3e00-598e-43f1-9ae1-1ff4798326aa
+6/15/26  claude --resume "Compare p21 users"  /resume 28869416-caa2-4e0c-84d7-982bf55e692f
+6/15/26  /resume c511ad0f-fb03-4bd1-9b3d-8e928fe4e0d1
+6/15/26  /resume 2ef3c55b-bd55-4898-b0c3-e3a8169c16b7
+6/9/26   claude --resume "jsTextValidator"
+6/9/26   claude --resume "SA 45138 - add sales orders to portal BOP Critical or Backordered items"
+6/9/26   claude --resume "SA 46487 UOM AD Hoc Report"
+6/8/26   claude --resume "the Visual Rules guide"
+6/3/26   claude --resume "AHI\AHI-API1$"
+6/3/26   claude --resume "compare proc_customer_pricing_loc_items stored procedures"
+6/2/26   claude --resume "2026-06-02 BRR Refresh Fixes"  /resume bb0573cd-98f9-4654-b1c0-4ebf1020545c
+6/2/26   claude --resume "SQL Update oe_hdr last modified date"
+6/2/26   claude --resume "Check kb_table_br_error_log permissions"
+6/1/26   claude --resume "dbatools Fix / Compare-Folders Bug Fixes / Harvest-XE Run Counter"  /resume e866aa88-bbee-4c3d-b209-8192d77148a1
+6/1/26   claude --resume "excel wireless transaction report"
+6/1/26   claude --resume "why user define tables"  /resume 51988261-7e6e-40f2-b019-11d761065fec
 5/29/26  claude --resume "Confluence API"
 5/29/26  claude --resume "Session management questions"  /resume 6c32fd26-1c2e-4633-b195-2779de278b07
 5/28/26  claude --resume "SA 45138 - add sales orders to portal BOP Critical or Backordered items"
@@ -39,161 +64,94 @@ claude6/8/26 claude --resume the Visual Rules guide
 4/30/26  claude --resume "P21 Business Rules Nightly Email Agent"  /resume 8a17fbad-6fbb-4ceb-b6fe-cd7fa19044a8
 4/28/26  claude --resume "First PO Correction"
 4/26/26  claude --resume "cleanup portal BR SAL Orders Unapproved"
-6/15/26  claude --resume "refresh P21 Dev"  /resume 779d3e00-598e-43f1-9ae1-1ff4798326aa
-6/15/26  claude --resume "Compare p21 users"  /resume 28869416-caa2-4e0c-84d7-982bf55e692f
-6/15/26  claude --resume "Compare p21 users"  /resume 28869416-caa2-4e0c-84d7-982bf55e692f
-6/15/26  claude --resume "Compare p21 users"  /resume 28869416-caa2-4e0c-84d7-982bf55e692f
-6/15/26  claude --resume "Compare p21 users"  /resume 28869416-caa2-4e0c-84d7-982bf55e692f
-6/15/26  claude --resume "Compare p21 users"  /resume 28869416-caa2-4e0c-84d7-982bf55e692f
-6/15/26  /resume c511ad0f-fb03-4bd1-9b3d-8e928fe4e0d1
-6/15/26  claude --resume "Compare p21 users"  /resume 28869416-caa2-4e0c-84d7-982bf55e692f
-6/15/26  claude --resume "Compare p21 users"  /resume 28869416-caa2-4e0c-84d7-982bf55e692f
-6/15/26  /resume c511ad0f-fb03-4bd1-9b3d-8e928fe4e0d1
-6/15/26  claude --resume "Compare p21 users"  /resume 28869416-caa2-4e0c-84d7-982bf55e692f
-6/15/26  claude --resume "Compare p21 users"  /resume 28869416-caa2-4e0c-84d7-982bf55e692f
-6/15/26  /resume c511ad0f-fb03-4bd1-9b3d-8e928fe4e0d1
-6/15/26  /resume 2ef3c55b-bd55-4898-b0c3-e3a8169c16b7
-6/15/26  /resume 2ef3c55b-bd55-4898-b0c3-e3a8169c16b7
-6/15/26  /resume 2ef3c55b-bd55-4898-b0c3-e3a8169c16b7
-6/15/26  /resume 2ef3c55b-bd55-4898-b0c3-e3a8169c16b7
-6/15/26  /resume 2ef3c55b-bd55-4898-b0c3-e3a8169c16b7
-6/15/26  /resume 2ef3c55b-bd55-4898-b0c3-e3a8169c16b7
-6/15/26  /resume 2ef3c55b-bd55-4898-b0c3-e3a8169c16b7
-6/15/26  /resume 2ef3c55b-bd55-4898-b0c3-e3a8169c16b7
-6/15/26  /resume 2ef3c55b-bd55-4898-b0c3-e3a8169c16b7
-6/15/26  /resume 2ef3c55b-bd55-4898-b0c3-e3a8169c16b7
-6/15/26  /resume 2ef3c55b-bd55-4898-b0c3-e3a8169c16b7
-6/15/26  /resume 2ef3c55b-bd55-4898-b0c3-e3a8169c16b7
-6/15/26  /resume 2ef3c55b-bd55-4898-b0c3-e3a8169c16b7
-6/16/26  /resume 12a1d24f-643c-4b21-b16a-efacb4676838
-6/16/26  /resume 12a1d24f-643c-4b21-b16a-efacb4676838
-6/16/26  /resume 8e10cd68-4e39-42db-b7b2-c931bba57165
-6/16/26  /resume 8e10cd68-4e39-42db-b7b2-c931bba57165
-6/16/26  /resume 12a1d24f-643c-4b21-b16a-efacb4676838
-6/16/26  /resume 12a1d24f-643c-4b21-b16a-efacb4676838
-6/16/26  /resume 12a1d24f-643c-4b21-b16a-efacb4676838
-6/16/26  /resume c0d7c0b0-434a-4ef8-ac1f-a99fcd9ca022
-6/16/26  /resume 12a1d24f-643c-4b21-b16a-efacb4676838
-6/16/26  /resume c0d7c0b0-434a-4ef8-ac1f-a99fcd9ca022
-6/16/26  /resume c0d7c0b0-434a-4ef8-ac1f-a99fcd9ca022
-6/16/26  /resume c0d7c0b0-434a-4ef8-ac1f-a99fcd9ca022
-6/16/26  /resume c0d7c0b0-434a-4ef8-ac1f-a99fcd9ca022
-6/16/26  /resume c0d7c0b0-434a-4ef8-ac1f-a99fcd9ca022
-6/16/26  /resume c0d7c0b0-434a-4ef8-ac1f-a99fcd9ca022
-6/16/26  /resume c0d7c0b0-434a-4ef8-ac1f-a99fcd9ca022
-6/16/26  /resume c0d7c0b0-434a-4ef8-ac1f-a99fcd9ca022
-6/16/26  /resume 12a1d24f-643c-4b21-b16a-efacb4676838
-6/16/26  /resume 12a1d24f-643c-4b21-b16a-efacb4676838
-6/16/26  /resume 12a1d24f-643c-4b21-b16a-efacb4676838
-6/16/26  /resume 5f207bcf-c88a-4768-bebd-0bdaac62a546
-6/16/26  /resume 5f207bcf-c88a-4768-bebd-0bdaac62a546
-6/16/26  /resume 5f207bcf-c88a-4768-bebd-0bdaac62a546
-6/16/26  claude --resume "P21 BR QTO taker update"  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/16/26  claude --resume "P21 BR QTO taker update"  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/16/26  claude --resume "P21 BR QTO taker update"  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/16/26  claude --resume "P21 BR QTO taker update"  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/16/26  claude --resume "P21 BR QTO taker update"  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/16/26  claude --resume "P21 BR QTO taker update"  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/16/26  claude --resume "P21 BR QTO taker update"  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/16/26  claude --resume "P21 BR QTO taker update"  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/16/26  claude --resume "P21 BR QTO taker update"  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/16/26  claude --resume "P21 BR QTO taker update"  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/16/26  claude --resume "P21 BR QTO taker update"  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/16/26  claude --resume "P21 BR QTO taker update"  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/16/26  claude --resume "P21 BR QTO taker update"  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/16/26  claude --resume "search for asi_view_edi_855_po_ack"  /resume 2fadf3f7-7f88-431c-acbc-3c653882fbbb
-6/16/26  claude --resume "search for asi_view_edi_855_po_ack"  /resume 2fadf3f7-7f88-431c-acbc-3c653882fbbb
-6/17/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/17/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/17/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/17/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/17/26  /resume d9231fc2-f719-423f-bfd5-2f5064dd8443
-6/17/26  /resume d9231fc2-f719-423f-bfd5-2f5064dd8443
-6/17/26  /resume d9231fc2-f719-423f-bfd5-2f5064dd8443
-6/17/26  /resume d9231fc2-f719-423f-bfd5-2f5064dd8443
-6/17/26  /resume d9231fc2-f719-423f-bfd5-2f5064dd8443
-6/17/26  /resume d9231fc2-f719-423f-bfd5-2f5064dd8443
-6/17/26  /resume d9231fc2-f719-423f-bfd5-2f5064dd8443
-6/17/26  /resume d9231fc2-f719-423f-bfd5-2f5064dd8443
-6/17/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/17/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/17/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/17/26  /resume d9231fc2-f719-423f-bfd5-2f5064dd8443
-6/18/26  claude --resume "SA 48237 create view asi_view_inv_mast"  /resume 30d0f0fd-559f-4327-a782-7afb4e351b46
-6/18/26  claude --resume "SA 48237 create view asi_view_inv_mast"  /resume 30d0f0fd-559f-4327-a782-7afb4e351b46
-6/18/26  claude --resume "SA 48237 create view asi_view_inv_mast"  /resume 30d0f0fd-559f-4327-a782-7afb4e351b46
-6/18/26  claude --resume "SA 48237 create view asi_view_inv_mast"  /resume 30d0f0fd-559f-4327-a782-7afb4e351b46
-6/18/26  claude --resume "SA 48237 create view asi_view_inv_mast"  /resume 30d0f0fd-559f-4327-a782-7afb4e351b46
-6/18/26  claude --resume "SA 48237 create view asi_view_inv_mast"  /resume 30d0f0fd-559f-4327-a782-7afb4e351b46
-6/18/26  claude --resume "SA 48237 create view asi_view_inv_mast"  /resume 30d0f0fd-559f-4327-a782-7afb4e351b46
-6/19/26  /resume adbc04e0-4d41-43bd-854d-5cf5b7b28eab
-6/19/26  /resume adbc04e0-4d41-43bd-854d-5cf5b7b28eab
-6/19/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/19/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/19/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/19/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/19/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/19/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/19/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/19/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/19/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/19/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/19/26  claude --resume "portal cleanup"  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/22/26  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/22/26  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/22/26  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/22/26  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/22/26  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
-6/22/26  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
-6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
-6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
-6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
-6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
-6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
-6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
-6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
-6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
-6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
-6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
-6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
-6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
-6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
-6/22/26  /resume a34aaa90-36b8-4877-84c4-e2844838e607
-6/22/26  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/22/26  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/22/26  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/22/26  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/22/26  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/22/26  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/22/26  /resume 8b483eb3-bf49-4235-ae9f-d1784023e10d
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume ffdcbbca-fa6f-4ae5-b397-116b33cd42a5
-6/22/26  /resume 5166131a-51be-4bae-b861-9388d0da57ba
-6/22/26  /resume 5166131a-51be-4bae-b861-9388d0da57ba
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume 5166131a-51be-4bae-b861-9388d0da57ba
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/22/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/23/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
-6/23/26  /resume cf9947b2-c5f5-4055-91ea-6c6c8076a2a7
+6/11/25  claude --resume "update -wc carriers"
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  /resume a8249720-0041-4b96-8246-4fbdec7930d1
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  /resume f3716e61-fd94-4fa2-a1ee-2aa3fd7b024f
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  /resume 20f3c94b-2ca7-45bc-9c38-def1a915ebd0
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/25/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/26/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/26/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/26/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/26/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/26/26  claude --resume "SA 47981 add item description to WWMS sales order picking"  /resume 9295539f-e6f7-414a-8893-e08bb9b820c6
+6/26/26  /resume 153d7898-0d5d-45f3-bb95-c68420ce1cea
+6/26/26  /resume 153d7898-0d5d-45f3-bb95-c68420ce1cea
+6/26/26  /resume 153d7898-0d5d-45f3-bb95-c68420ce1cea
+6/26/26  /resume 153d7898-0d5d-45f3-bb95-c68420ce1cea
+6/26/26  /resume 153d7898-0d5d-45f3-bb95-c68420ce1cea
+6/26/26  /resume 153d7898-0d5d-45f3-bb95-c68420ce1cea
+6/26/26  /resume 153d7898-0d5d-45f3-bb95-c68420ce1cea
+6/26/26  /resume 153d7898-0d5d-45f3-bb95-c68420ce1cea
+6/26/26  claude --resume "jsTextValidator"  /resume fa2d7afc-843d-43e8-b9a6-4c0bb38ce92f
+6/26/26  claude --resume "jsTextValidator"  /resume fa2d7afc-843d-43e8-b9a6-4c0bb38ce92f
+6/26/26  claude --resume "jsTextValidator"  /resume fa2d7afc-843d-43e8-b9a6-4c0bb38ce92f
+6/26/26  claude --resume "jsTextValidator"  /resume fa2d7afc-843d-43e8-b9a6-4c0bb38ce92f
+6/26/26  claude --resume "jsTextValidator"  /resume fa2d7afc-843d-43e8-b9a6-4c0bb38ce92f
+6/26/26  claude --resume "jsTextValidator"  /resume fa2d7afc-843d-43e8-b9a6-4c0bb38ce92f
+6/26/26  claude --resume "jsTextValidator"  /resume fa2d7afc-843d-43e8-b9a6-4c0bb38ce92f
+6/26/26  /resume 90ee8d8c-19de-4f3f-a409-c49ce4b7d8e2
+6/26/26  claude --resume "jsTextValidator"  /resume fa2d7afc-843d-43e8-b9a6-4c0bb38ce92f
+6/26/26  claude --resume "vendor invoice report research"  /resume 08e0d96d-fdb2-4aaf-bba2-c255918ef3d4
+6/26/26  claude --resume "vendor invoice report research"  /resume 08e0d96d-fdb2-4aaf-bba2-c255918ef3d4
+6/26/26  claude --resume "vendor invoice report research"  /resume 08e0d96d-fdb2-4aaf-bba2-c255918ef3d4
+6/26/26  claude --resume "vendor invoice report research"  /resume 08e0d96d-fdb2-4aaf-bba2-c255918ef3d4
+6/26/26  claude --resume "vendor invoice report research"  /resume 08e0d96d-fdb2-4aaf-bba2-c255918ef3d4
+6/26/26  claude --resume "vendor invoice report research"  /resume 08e0d96d-fdb2-4aaf-bba2-c255918ef3d4
+6/26/26  /resume 20f3c94b-2ca7-45bc-9c38-def1a915ebd0
+6/26/26  /resume 20f3c94b-2ca7-45bc-9c38-def1a915ebd0
+6/26/26  claude --resume "vendor invoice report research"  /resume 08e0d96d-fdb2-4aaf-bba2-c255918ef3d4
+6/26/26  /resume 20f3c94b-2ca7-45bc-9c38-def1a915ebd0
+6/26/26  /resume 20f3c94b-2ca7-45bc-9c38-def1a915ebd0
+6/26/26  /resume 20f3c94b-2ca7-45bc-9c38-def1a915ebd0
+6/26/26  /resume 20f3c94b-2ca7-45bc-9c38-def1a915ebd0
+6/26/26  /resume 20f3c94b-2ca7-45bc-9c38-def1a915ebd0
+6/26/26  claude --resume "SA 48752 CSR Team Open Orders"  /resume f6e9c800-c8d1-4307-809f-1be7af2a79f0
+6/26/26  claude --resume "SA 48752 CSR Team Open Orders"  /resume f6e9c800-c8d1-4307-809f-1be7af2a79f0
+6/26/26  claude --resume "SA 48752 CSR Team Open Orders"  /resume f6e9c800-c8d1-4307-809f-1be7af2a79f0
+6/26/26  claude --resume "goals summary"  /resume 4a176a68-e97b-4755-80f1-b96e4b1f212c
+6/26/26  claude --resume "goals summary"  /resume 4a176a68-e97b-4755-80f1-b96e4b1f212c
+6/26/26  claude --resume "goals summary"  /resume 4a176a68-e97b-4755-80f1-b96e4b1f212c
+7/13/26  /resume c2e5519a-dc9e-4392-a3cd-d0ee7239e928
+7/13/26  /resume c2e5519a-dc9e-4392-a3cd-d0ee7239e928
+7/13/26  /resume c2e5519a-dc9e-4392-a3cd-d0ee7239e928
+7/13/26  /resume c2e5519a-dc9e-4392-a3cd-d0ee7239e928
+7/13/26  /resume c2e5519a-dc9e-4392-a3cd-d0ee7239e928
