@@ -58,13 +58,12 @@ $newSql = @(
     ''
     'WHERE oo.taker IN ('
     "`t-- Roster resolves at query time, so role changes need no portal edit."
-    "`t-- Inactive users are intentionally NOT excluded: open orders left behind by"
-    "`t-- departed CSRs must stay visible so they don't go unwatched."
     "`t-- Integration accounts are excluded so web/EDI volume does not swamp the team."
     "`tSELECT u.id"
     "`tFROM users AS u WITH(NOLOCK)"
     "`tINNER JOIN roles AS r WITH(NOLOCK) ON r.role_uid = u.role_uid"
     "`tWHERE r.role IN ('Customer Service', 'Customer Service Manager')"
+    "`t  AND u.delete_flag = 'N'"
     "`t  AND u.id NOT IN ('ECOMM', 'ESTORE', 'SHAGTOOLS') )"
 ) -join $nl
 

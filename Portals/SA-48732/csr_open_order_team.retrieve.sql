@@ -27,11 +27,10 @@ LEFT JOIN kb_view_salesrep AS sr ON COALESCE(oo.updated_salesrep_id,oo.oe_salesr
 
 WHERE oo.taker IN (
 	-- Roster resolves at query time, so role changes need no portal edit.
-	-- Inactive users are intentionally NOT excluded: open orders left behind by
-	-- departed CSRs must stay visible so they don't go unwatched.
 	-- Integration accounts are excluded so web/EDI volume does not swamp the team.
 	SELECT u.id
 	FROM users AS u WITH(NOLOCK)
 	INNER JOIN roles AS r WITH(NOLOCK) ON r.role_uid = u.role_uid
 	WHERE r.role IN ('Customer Service', 'Customer Service Manager')
+	  AND u.delete_flag = 'N'
 	  AND u.id NOT IN ('ECOMM', 'ESTORE', 'SHAGTOOLS') )

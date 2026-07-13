@@ -29,8 +29,7 @@ This deploy replaces that clone's SQL. **No Prod DB change is required** — ele
 |---|---|---|
 | Filter | `taker = me OR salesrep = me OR sales-manager = me OR product-manager = me` | `taker IN (Customer Service + Customer Service Manager users)` |
 | Roster | n/a | resolved at query time from `users` ⋈ `roles`, so role changes need no portal edit |
-| Excluded | — | `ECOMM`, `ESTORE`, `SHAGTOOLS` (integration accounts; 547 Prod lines that would swamp the team's real work) |
-| Inactive users | — | **Included by design** (no `delete_flag` filter) — see below |
+| Excluded | — | `ECOMM`, `ESTORE`, `SHAGTOOLS` (integration accounts; 547 Prod lines that would swamp the team's real work) + inactive users (`delete_flag = 'N'`) |
 | Joins dropped | — | `INNER JOIN inv_mast`, `LEFT JOIN contacts AS manager_contact` |
 | Taker column | already present & visible (`users_ud_taker`, header `text="Taker"`) — inherited from `Open Orders mine`, **no change needed** | unchanged |
 
@@ -45,21 +44,17 @@ Verified on Prod that dropping it changes nothing: row count **6,835 with and wi
 `Customer Service` (role_uid **7**) + `Customer Service Manager` (role_uid **23**) — there is no role
 literally named "CSR". 14 active humans after excluding the 3 integration accounts.
 
-## Inactive users are deliberately included (changed 2026-07-13)
-The `u.delete_flag = 'N'` filter was **removed at the requester's direction**. Open orders left behind by
-CSRs who have left the company stay visible, so they don't go unwatched — which is arguably the point of
-a team-monitoring portal. Their taker name renders as `** LEFT 08/2025 ** Christopher Wheeler`, so
-orphaned orders are self-labelling in the Taker column.
+## Inactive users are excluded — `u.delete_flag = 'N'` (settled 2026-07-13)
+Only **active** P21 accounts are in the roster, so a departed CSR's orders drop off the portal
+automatically. Briefly trialled removing this filter, then reverted — keep it.
 
-Impact is small: there are **39 departed/inactive users** across the two roles, holding **11 open order
-lines** in Prod (6,816 → 6,827).
+**Do not size this filter from Play.** Play's refresh flags most user accounts as deleted, so dropping
+`delete_flag` there swings the result 2,142 → 9,299 rows and makes the filter look far more consequential
+than it is. In Prod it excludes just **11 open order lines** across 39 departed users. Prod is
+authoritative for any row-count question on this portal.
 
-**Do not size this change from Play.** Play's refresh deactivates most user accounts, so removing the
-filter there swings the result from 2,142 → 9,299 rows. That is a Play artifact, not real behavior. Prod
-is authoritative.
-
-The remaining `delete_flag = 'N'` in the SQL is on `oe_pick_ticket` (excludes deleted pick tickets) and
-is unrelated — leave it.
+There is a second `delete_flag = 'N'` in the SQL, on `oe_pick_ticket` — that one excludes deleted pick
+tickets, is unrelated, and stays.
 
 ## Target environments
 Play (`P21Play` @ `P21Dev.allsurfaces.com`) → Prod (`P21` @ `P21.allsurfaces.com`)
@@ -89,13 +84,11 @@ every `n_cst_pe_user_def` element — it is not a per-element key.
 5. Users must restart the P21 client to pick it up
 
 ## Verification
-- SQL extracted from the `.srd` runs clean on Play: **9,299 rows**, all 19 columns bind, every taker
-  returned is Customer Service / CS Manager (incl. departed ones, as intended).
-- Prod expected volume: **~6,827 open order lines** across the 14 active CSRs + 11 orphaned lines from
-  departed CSRs.
-- In the portal: the **Taker** column is the first column; every value should be a CSR or CS Manager,
-  and no `E COMM` / `E Store` / `Shag Tools` rows should appear. Orders from departed staff will show a
-  taker name prefixed `** LEFT … **`.
+- SQL extracted from the `.srd` runs clean on Play: **2,142 rows**, all 19 columns bind, every taker
+  returned is Customer Service / CS Manager. (Play shows only 3 CSR takers — stale refresh, see above.)
+- Prod expected volume: **~6,817 open order lines** across the 14 active CSRs.
+- In the portal: the **Taker** column is the first column; every value should be an active CSR or CS
+  Manager. No `E COMM` / `E Store` / `Shag Tools` rows, and no `** LEFT … **` names.
 - DB→file linkage resolves: `library_file + '\' + datawindow_name + '.srd'` → `Test-Path` = True.
 
 ## Rollback
