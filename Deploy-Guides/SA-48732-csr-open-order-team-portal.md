@@ -139,6 +139,26 @@ authoritative for any row-count question on this portal.
 There is a second `delete_flag = 'N'` in the SQL, on `oe_pick_ticket` — that one excludes deleted pick
 tickets, is unrelated, and stays.
 
+## ⚠⚠ KEEP THE DATAWINDOW SQL DUMB — the logic belongs in a view
+**Symptom if you get this wrong:** opening the portal throws a PowerBuilder null-reference crash —
+`PBRuntimeError.Throw` → `n_uirequestprocessor_selectelement` → `WindowService.SelectPage`. **No SQL
+error is shown, because the query never runs.**
+
+**Cause:** the `.srd`'s `retrieve=` SQL is parsed by PowerBuilder to *build the DataWindow object*. If PB
+cannot parse it, the element fails to construct and you get the crash above. The first rewrite inlined
+nested `CASE` / `COALESCE` / `NULLIF` expressions plus an `IN (SELECT …)` role filter directly into the
+DataWindow — PB choked. The original portal worked precisely because its DataWindow SQL was a **trivial
+list of column references** over `kb_view_open_orders`; all the complexity lived in the view.
+
+**The rule:** all logic goes in `asi_view_csr_open_orders`. The DataWindow SQL is 19 plain column
+references and nothing else (344 chars). Do not push expressions back into the `.srd`.
+
+## Deploy order (view FIRST)
+1. `asi_view_csr_open_orders.sql` → target DB (includes the required grants)
+2. **then** `csr_open_order_team.srd` → that env's portal share
+
+Deploying the `.srd` first gives "Invalid object name" / a failed retrieve.
+
 ## Target environments
 Play (`P21Play` @ `P21Dev.allsurfaces.com`) → Prod (`P21` @ `P21.allsurfaces.com`)
 
