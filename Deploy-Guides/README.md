@@ -11,4 +11,4 @@ Each guide covers: artifact(s) & ticket · target environments · dependency & d
 | Ticket | Title | Status |
 |--------|-------|--------|
 | SA-49504 | [asi_view_edi_855_po_ack (EDI PO-Ack Exceptions portal)](SA-49504-edi-855-view.md) | Deployed to Prod 2026-07-13 — awaiting user feedback |
-| SA-48732 | [CSR Open Order Team portal](SA-48732-csr-open-order-team-portal.md) | Deployed + verified on Play 2026-07-13 — Prod pending acceptance |
+| SA-48732 | [CSR Open Order Team portal](SA-48732-csr-open-order-team-portal.md) | On Play 2026-07-13 — ready for user acceptance testing; Prod pending UAT sign-off |
