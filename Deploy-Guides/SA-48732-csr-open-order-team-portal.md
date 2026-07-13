@@ -80,6 +80,36 @@ nothing (identical row count with and without).
 `EXCEPT` in both directions against the live `kb_` query on Prod: **6,881 rows each, 0 rows in
 `kb` not in `asi`, 0 rows in `asi` not in `kb`.** Re-verify this if the query is ever touched again.
 
+## Salesrep is LINE-level, with a header fallback (fixed 2026-07-13)
+**Reported:** order 5920710 showed a blank salesrep in the portal, but Order Entry showed Jeff Haupt.
+
+**Cause (pre-existing, inherited from `kb_view_open_orders` — not introduced by the rewrite):** the
+salesrep column reads `oe_line_ud` (line-level). Order 5920710 has **no `oe_line_ud` row at all**, so
+`COALESCE(updated_salesrep_id, oe_salesrep_id, 0)` fell through to `0`, matched no contact, and rendered
+blank. Order Entry reads `oe_hdr_salesrep` instead. Confirmed the old `kb_` query returns blank for the
+same order.
+
+**Do NOT "fix" this by repointing the column at the header rep.** The line-level source is deliberate: a
+line can be reassigned to a different rep than the order header carries, and **~40% of open lines (2,772
+in Prod) legitimately differ** — e.g. order 5318586 header = Trent McDowell, lines reassigned to Nick
+Kessler. Using the header would silently rewrite the rep on all of them.
+
+**The fix applied:** fall back to the header rep *only* when the line has no rep of its own.
+`NULLIF` guards UD fields stored as `0` rather than `NULL`.
+```sql
+LEFT JOIN contacts AS sr ON sr.id = COALESCE(
+        CONVERT(VARCHAR(16), NULLIF(oelud.updated_salesrep_id, 0)),
+        CONVERT(VARCHAR(16), NULLIF(oelud.oe_salesrep_id, 0)),
+        ohsr.salesrep_id)
+```
+Costs no extra join — `oe_hdr_salesrep` is already joined for the split-commission dedup.
+
+**Verified on Prod:** blanks **294 → 0**; lines changed **294** (exactly the blanks); lines that already
+had a rep and were altered: **0**. Row count unchanged.
+
+**Tell Justine:** the salesrep on a line may legitimately differ from the one shown in Order Entry. That
+is portal behavior (line-level reassignment), not a bug.
+
 ### Performance (measured on Prod, plan-cache DMVs)
 | | CPU | Elapsed | Logical reads |
 |---|---:|---:|---:|

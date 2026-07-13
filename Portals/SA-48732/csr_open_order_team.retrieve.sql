@@ -33,7 +33,15 @@ LEFT JOIN customer AS cust ON cust.customer_id = oeh.customer_id
 LEFT JOIN inv_mast AS im ON im.inv_mast_uid = oel.inv_mast_uid
 LEFT JOIN oe_line_ud AS oelud ON oelud.order_no = oel.order_no AND oelud.line_no = oel.line_no
 LEFT JOIN users AS taker ON taker.id = oeh.taker
-LEFT JOIN contacts AS sr ON sr.id = CONVERT(VARCHAR(16), COALESCE(oelud.updated_salesrep_id, oelud.oe_salesrep_id, 0))
+-- Salesrep is LINE-level (oe_line_ud), which is deliberate: a line can be reassigned to a
+-- different rep than the order header carries, and ~40% of open lines are. Fall back to the
+-- header rep only when the line has no rep of its own -- otherwise the column comes back blank
+-- even though Order Entry shows a rep (e.g. order 5920710 has no oe_line_ud row at all).
+-- NULLIF guards the case where the UD field is stored as 0 rather than NULL.
+LEFT JOIN contacts AS sr ON sr.id = COALESCE(
+		CONVERT(VARCHAR(16), NULLIF(oelud.updated_salesrep_id, 0)),
+		CONVERT(VARCHAR(16), NULLIF(oelud.oe_salesrep_id, 0)),
+		ohsr.salesrep_id)
 LEFT JOIN contacts_ud AS sr_ud ON sr_ud.id = sr.id
 LEFT JOIN (SELECT oept.order_no, oeptd.oe_line_no, MAX(oept.print_date) AS print_date
 	FROM oe_pick_ticket AS oept
