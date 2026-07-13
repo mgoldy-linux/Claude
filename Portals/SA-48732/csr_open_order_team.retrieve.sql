@@ -1,31 +1,51 @@
-SELECT taker.name AS taker, 
-	sr.salesrep_name AS salesrep, 
-	oo.location_id, 
-	oo.customer_id, 
-	oo.customer_name, 
-	oo.order_no, 
-	oo.line_no, 
-	oo.item_id, 
-	oo.item_desc, 
-	oo.qty_open, oo.base_unit, 
-	oo.open_value, 
-	oo.po_no AS customer_po_no, 
-	oo.order_date, pt.print_date AS pick_ticket_print_date, oel.required_date, 
-	oo.disposition, oo.validation_status, oo.approved
+SELECT taker.name AS taker,
+	CASE WHEN LEN(RTRIM(LTRIM(ISNULL(sr_ud.nickname,'')))) > 0
+	     THEN sr_ud.nickname ELSE sr.first_name END + ' ' + sr.last_name AS salesrep,
+	oeh.location_id,
+	cust.customer_id,
+	cust.customer_name,
+	oeh.order_no,
+	oel.line_no,
+	im.item_id,
+	im.item_desc,
+	(oel.unit_quantity * oel.unit_size) - oel.qty_invoiced - oel.qty_canceled AS qty_open, im.base_unit,
+	CASE COALESCE(oelud.extended_reward, 0)
+		WHEN 0 THEN (oel.qty_ordered - oel.qty_invoiced - oel.qty_canceled)
+			* (oel.unit_price / oel.pricing_unit_size)
+		ELSE
+			CASE COALESCE(oel.qty_ordered, 0)
+				WHEN 0 THEN ((oel.unit_quantity * oel.unit_size) - oel.qty_invoiced - oel.qty_canceled)
+					* (oel.unit_price / oel.pricing_unit_size)
+				ELSE (((oel.unit_quantity * oel.unit_size) - oel.qty_invoiced - oel.qty_canceled)
+					* (oel.unit_price / oel.pricing_unit_size)) - oelud.extended_reward
+			END
+	END AS open_value,
+	oeh.po_no AS customer_po_no,
+	oeh.order_date, pt.print_date AS pick_ticket_print_date, oel.required_date,
+	oel.disposition, oeh.validation_status, oeh.approved
 
-FROM kb_view_open_orders AS oo
-INNER JOIN oe_line AS oel ON oo.order_no = oel.order_no AND oo.line_no = oel.line_no
-INNER JOIN oe_hdr AS oeh ON oeh.order_no = oo.order_no
-LEFT JOIN users AS taker ON taker.id = oo.taker
+FROM oe_hdr AS oeh
+INNER JOIN oe_line AS oel ON oel.order_no = oeh.order_no
+-- primary_salesrep only: oe_hdr_salesrep carries split commissions (some orders have 5 reps)
+-- and would otherwise multiply the order lines.
+INNER JOIN oe_hdr_salesrep AS ohsr ON ohsr.order_number = oeh.order_no AND ohsr.primary_salesrep = 'Y'
+LEFT JOIN customer AS cust ON cust.customer_id = oeh.customer_id
+LEFT JOIN inv_mast AS im ON im.inv_mast_uid = oel.inv_mast_uid
+LEFT JOIN oe_line_ud AS oelud ON oelud.order_no = oel.order_no AND oelud.line_no = oel.line_no
+LEFT JOIN users AS taker ON taker.id = oeh.taker
+LEFT JOIN contacts AS sr ON sr.id = CONVERT(VARCHAR(16), COALESCE(oelud.updated_salesrep_id, oelud.oe_salesrep_id, 0))
+LEFT JOIN contacts_ud AS sr_ud ON sr_ud.id = sr.id
 LEFT JOIN (SELECT oept.order_no, oeptd.oe_line_no, MAX(oept.print_date) AS print_date
-	FROM oe_pick_ticket AS oept 
+	FROM oe_pick_ticket AS oept
 	LEFT JOIN oe_pick_ticket_detail AS oeptd ON oeptd.pick_ticket_no = oept.pick_ticket_no
-	WHERE oept.delete_flag = 'N' AND oept.printed_flag = 'Y' 
-	GROUP BY oept.order_no, oeptd.oe_line_no) AS pt 
-		ON pt.order_no = oo.order_no AND pt.oe_line_no = oo.line_no
-LEFT JOIN kb_view_salesrep AS sr ON COALESCE(oo.updated_salesrep_id,oo.oe_salesrep_id,0) = CONVERT(VARCHAR(16),sr.salesrep_id)
+	WHERE oept.delete_flag = 'N' AND oept.printed_flag = 'Y'
+	GROUP BY oept.order_no, oeptd.oe_line_no) AS pt
+		ON pt.order_no = oeh.order_no AND pt.oe_line_no = oel.line_no
 
-WHERE oo.taker IN (
+WHERE oeh.completed <> 'Y' AND oeh.projected_order <> 'Y' AND oeh.rma_flag <> 'Y'
+  AND oel.complete <> 'Y' AND oel.delete_flag <> 'Y' AND oel.cancel_flag <> 'Y'
+  AND oel.parent_oe_line_uid = 0
+  AND oeh.taker IN (
 	-- Roster resolves at query time, so role changes need no portal edit.
 	-- Integration accounts are excluded so web/EDI volume does not swamp the team.
 	SELECT u.id

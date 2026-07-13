@@ -10,9 +10,22 @@ Justine Daugherty (`JDAUGHERTY`) needs a portal to monitor her team's assigned o
 - Filter to orders whose **taker** is in the CSR or CSR Manager role
 
 ## Artifact(s)
-- `csr_open_order_team.srd` — Dynachange portal DataWindow (UTF-16LE, PBExportHeader)
+All in `C:\Claude\Portals\SA-48732\`:
+- `csr_open_order_team.retrieve.sql` — **the source of truth for the query.** Edit this, then rebuild.
+- `Build-CsrOpenOrderTeam-Srd.ps1` — injects the SQL into the `.srd` (validates it contains no `"`,
+  which would break the DataWindow string)
+- `csr_open_order_team.BASE.srd` — pristine baseline (the unmodified Prod clone); never edit
+- `csr_open_order_team.srd` — **generated**; deploy this one
+- `Register-CsrOpenOrderTeam-Play.sql` — creates the portal element (idempotent, has rollback)
 - Portal element `CSR OPEN ORDER TEAM` (`classname = n_cst_pe_user_def`)
 - Ticket: SA-48732
+
+### ⚠ The DataWindow binds columns by POSITION, not by name
+The `.srd` column bindings still carry `dbname="kb_view_open_orders.taker"` etc. — that metadata is
+stale and harmless (the original portal already had a `dbname` that didn't match its SELECT). What
+matters is that the SELECT returns **the same 19 columns in the same order**. If you reorder or
+add columns to the SQL, the DataWindow will bind the wrong data to the wrong column with no error.
+Verified aligned: srd position 1 `users_ud_taker` ← sql `taker`, then 18 exact name matches.
 
 ## Starting state (found 2026-07-13 — read before deploying)
 The portal was **already created in Prod on 2026-06-26 by `mgoldyn`** (element uid **324**, `.srd` on
@@ -33,12 +46,52 @@ This deploy replaces that clone's SQL. **No Prod DB change is required** — ele
 | Joins dropped | — | `INNER JOIN inv_mast`, `LEFT JOIN contacts AS manager_contact` |
 | Taker column | already present & visible (`users_ud_taker`, header `text="Taker"`) — inherited from `Open Orders mine`, **no change needed** | unchanged |
 
-Dropping the viewer filter removed the only references to **`kb_fn_get_sales_manager`** and
-**`kb_fn_get_product_manager`** — two fewer `kb_` dependencies. The portal still uses
-`kb_view_open_orders` and `kb_view_salesrep` (future retirement candidates).
+## KB retirement — the portal is now 100% `kb_`-free
+The base views were also replaced (scope added 2026-07-13 at the requester's direction — "if I touch
+something I want it up to date and best performance"). All four `kb_` dependencies are gone:
 
-The `inv_mast` join existed only to feed `im.commission_class_id` into the sales-manager lookup.
-Verified on Prod that dropping it changes nothing: row count **6,835 with and without it**.
+| KB object | Replaced with |
+|---|---|
+| `kb_view_open_orders` | `oe_hdr` + `oe_line` + `oe_line_ud` + `inv_mast` + `customer` + `oe_hdr_salesrep` |
+| `kb_view_salesrep` | `contacts` + `contacts_ud` (it was only ever a wrapper over `contacts`; the portal used just `salesrep_id` + `salesrep_name`) |
+| `kb_fn_get_sales_manager` | dropped — only referenced by the old viewer filter |
+| `kb_fn_get_product_manager` | dropped — only referenced by the old viewer filter |
+
+### ⚠ The two views originally proposed do NOT work — don't retry them
+- **`p21_view_GetOpenOrders`** is header-level, 10 columns. It supplies only 4 of the 19 the portal needs
+  (no `taker`, `line_no`, `qty_open`, `item_id`). The portal is one row per order *line*; this view
+  cannot express that.
+- **`p21_view_oe_hdr_salesrep`** has **no `salesrep_name`** — the only thing the portal wants from a
+  salesrep source. Worse, it carries **split commissions** (1.16M orders have 2 reps, 238K have 3, some
+  have 5), so joining it naively **multiplies order lines**.
+
+### The split-commission trap (critical)
+`kb_view_open_orders` avoided that duplication with `oe_hdr_salesrep.primary_salesrep = 'Y'`. The
+replacement keeps it as `INNER JOIN oe_hdr_salesrep AS ohsr ON ... AND ohsr.primary_salesrep = 'Y'`.
+**Do not remove that predicate** — row counts will silently inflate.
+
+### Dead joins removed
+The old query re-joined `oe_line` and `oe_hdr` on top of a view that already contained both. The
+`oe_hdr` join (`oeh`) was referenced nowhere in the SELECT at all. The `inv_mast` join existed only to
+feed `commission_class_id` into the sales-manager lookup — verified on Prod that dropping it changes
+nothing (identical row count with and without).
+
+### Equivalence — proven, not assumed
+`EXCEPT` in both directions against the live `kb_` query on Prod: **6,881 rows each, 0 rows in
+`kb` not in `asi`, 0 rows in `asi` not in `kb`.** Re-verify this if the query is ever touched again.
+
+### Performance (measured on Prod, plan-cache DMVs)
+| | CPU | Elapsed | Logical reads |
+|---|---:|---:|---:|
+| `kb_view` (old) | 1,004 ms | 1,444 ms | 222,420 |
+| base-table (new) | 1,092 ms | 1,345 ms | **163,484** |
+
+**The durable win is I/O: ~27% fewer logical reads.** CPU is a wash (marginally worse). Elapsed swings
+with Prod load — don't trust wall-clock here; logical reads is the stable metric.
+
+Note SQL Server *prunes* the unused scalar UDF (`kb_fn_get_sales_manager_value`) and the three
+correlated `disposition` subqueries out of `kb_view_open_orders`, so those cost nothing in practice —
+they were **not** the source of the gain. The gain came from dropping the dead joins.
 
 ## Roles the filter resolves to
 `Customer Service` (role_uid **7**) + `Customer Service Manager` (role_uid **23**) — there is no role
