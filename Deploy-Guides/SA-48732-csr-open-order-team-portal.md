@@ -172,19 +172,26 @@ every `n_cst_pe_user_def` element — it is not a per-element key.
 
 ## Deploy steps
 
-### Play — DONE 2026-07-13
-1. `.srd` staged → `\\ASP21FS1\play\Portals\csr_open_order_team.srd`
-2. Element registered via `Register-CsrOpenOrderTeam-Play.sql` → **uid 333**, `portal_user_defined_uid` 321
-3. Restart the P21 client (portal definitions are cached at login)
-4. Assign the portal to a test user in Dynachange → open it → verify
+### Play — DONE 2026-07-13, **opens clean in the P21 client, no errors**
+1. `asi_view_csr_open_orders.sql` deployed to `P21Play` (with grants) — **do this first**
+2. `.srd` staged → `\\ASP21FS1\play\Portals\csr_open_order_team.srd`
+3. Element registered via `Register-CsrOpenOrderTeam-Play.sql` → **uid 333**, `portal_user_defined_uid` 321
+4. Portal container `CSR OPEN ORDERS TEAM` (`portal_uid` 221) created in Dynachange; element attached
+   via `portal_x_portal_element`
+5. Restart the P21 client (portal definitions are cached at login)
+6. Confirmed opening the portal renders with no error — this is what validates the "keep the
+   DataWindow SQL dumb" fix above.
 
-### Prod — PENDING acceptance on Play
-1. Back up the current Prod file:
-   `\\asp21fs1\Prod\Portals\csr_open_order_team.srd` → keep a dated copy
-2. Copy the new `.srd` over it (same filename)
-3. **No DB change** — element 324 already resolves to this file
-4. Assign the portal to Justine (`JDAUGHERTY`, role `ALL`) and/or the CS Manager role via Dynachange
-5. Users must restart the P21 client to pick it up
+### Prod — PENDING Justine's UAT sign-off
+1. **Deploy the view first:** run `asi_view_csr_open_orders.sql` against `P21` @ `P21.allsurfaces.com`
+   (creates the view + grants). Nothing else works without it.
+2. Back up the current Prod file: `\\asp21fs1\Prod\Portals\csr_open_order_team.srd` → keep a dated copy
+3. Copy the new `.srd` over it (same filename)
+4. Element `CSR OPEN ORDER TEAM` (Prod uid **324**) already resolves to this file — **no portal_element
+   DB change needed.** But Prod has no *portal container* yet: create one in Dynachange the way Play's
+   `portal_uid` 221 was, and attach element 324 to it.
+5. Assign the portal to Justine (`JDAUGHERTY`, role `ALL`) and/or the CS Manager role via Dynachange
+6. Users must restart the P21 client to pick it up
 
 ## Verification
 - SQL extracted from the `.srd` runs clean on Play: **2,142 rows**, all 19 columns bind, every taker
