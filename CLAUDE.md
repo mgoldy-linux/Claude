@@ -52,6 +52,17 @@ $Script:SqlInst22 = 'DESKTOP-2ELUN3U'
 $Script:SqlInst19 = 'DESKTOP-2ELUN3U\SQLEXPRESS'
 ```
 
+## Standing Rule — flag `kb_` / `js_` and always recommend performance
+
+On **any** code touched here (SQL, business rules, portal `.srd`, reports, PowerShell):
+
+1. **Flag every `kb_` and `js_` reference** — unprompted, by name, even when it is outside the task at hand. KB and JS both left the company; retiring their objects is a 2026 goal, and code already open for edit is the cheapest moment to fix it. Check the *dependency chain*, not just the file — a clean-looking query over `kb_view_x` is not clean. Recommend, then let the user decide scope; do not silently expand the change.
+2. **Always recommend performance improvements** — volunteer them.
+
+**Measure, never assert.** Prove equivalence first (`EXCEPT` in both directions), then quote **logical reads / CPU from the plan-cache DMVs — not wall-clock**, which on Prod has reported the exact opposite of the truth. Report honestly when a rewrite is *not* faster.
+
+Run `/kbjs` for the full checklist, established replacements, and the P21 traps (split commissions, DataWindow SQL, positional column binding). Details in `.claude/skills/kbjs/SKILL.md`.
+
 ## C# Business Rule
 
 `ASI_IM_Gen_Discontinued_Check.cs` is a Prophet21 validator that enforces a 4-step workflow when marking items as discontinued in the EDI system. It references Prophet21 SDK types — it cannot be compiled standalone.
