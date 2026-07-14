@@ -51,10 +51,22 @@ EXEC @rc = dbo.p21_apply_alert_token @alert_type_uid=12, @token_name=N'percent_p
      @token_available_areas=36, @token_description=N'Percent Profit off Standard Cost',
      @token_data_type_cd=853,  @token_code_group_no=NULL;                       -- decimal
 
-/*--- Event level only: single-row filter for a combined one-alert design ---*/
+/*--- Event level only: single-row filter for the combined "Team" alert ---*/
 EXEC @rc = dbo.p21_apply_alert_token @alert_type_uid=12, @token_name=N'low_margin_flag',
      @token_available_areas=32, @token_description=N'Low Margin Flag',
      @token_data_type_cd=851,  @token_code_group_no=NULL;                       -- char (mirrors new_order)
+
+/*--- Header: location NAMES (Evan asked for "Loc # and Name") ---
+  available_areas 43 = 32 + 11 -> event AND header.  Bit 11 (8+2+1) is what makes
+  a token render in the HEADER block; without it, it comes out as literal text
+  (proven live: sales_location_id at 32 rendered as "<sales_location_id>").      */
+EXEC @rc = dbo.p21_apply_alert_token @alert_type_uid=12, @token_name=N'sales_location_name',
+     @token_available_areas=43, @token_description=N'Sales Location Name',
+     @token_data_type_cd=850,  @token_code_group_no=NULL;                       -- varchar
+
+EXEC @rc = dbo.p21_apply_alert_token @alert_type_uid=12, @token_name=N'ship_location_name',
+     @token_available_areas=43, @token_description=N'Ship Location Name',
+     @token_data_type_cd=850,  @token_code_group_no=NULL;                       -- varchar
 GO
 
 /*--- REQUIRED: two EXISTING tokens need the header bit -------------------------
@@ -84,6 +96,8 @@ UPDATE token SET description = 'Standard Cost'                     WHERE name = 
 UPDATE token SET description = 'Percent Profit off MAC'            WHERE name = 'percent_profit_off_mac';
 UPDATE token SET description = 'Percent Profit off Standard Cost'  WHERE name = 'percent_profit_off_standard_cost';
 UPDATE token SET description = 'Low Margin Flag'                   WHERE name = 'low_margin_flag';
+UPDATE token SET description = 'Sales Location Name'               WHERE name = 'sales_location_name';
+UPDATE token SET description = 'Ship Location Name'                WHERE name = 'ship_location_name';
 GO
 
 /*--- Verify: 6 rows, human-readable descriptions, correct areas/types ---*/
@@ -92,6 +106,8 @@ FROM   token t
 JOIN   alert_type_x_token x ON x.token_uid = t.token_uid
 WHERE  x.alert_type_uid = 12
   AND  t.name IN ('price_page_description','unit_mac','unit_standard_cost',
-                  'percent_profit_off_mac','percent_profit_off_standard_cost','low_margin_flag')
+                  'percent_profit_off_mac','percent_profit_off_standard_cost','low_margin_flag',
+                  'sales_location_name','ship_location_name',
+                  'sales_location_id','source_location_id')   -- the 2 repointed to 43
 ORDER BY t.name;
 GO

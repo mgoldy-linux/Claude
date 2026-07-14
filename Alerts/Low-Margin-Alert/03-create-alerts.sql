@@ -138,8 +138,9 @@ DECLARE @header VARCHAR(MAX) =
      'Customer: (<customer_id>) <customer_name> <contact_name>' + CHAR(13)+CHAR(10)
   +  'Taken by: <taker>'                                        + CHAR(13)+CHAR(10)
   +  'Sales Rep: <primary_salesrep_name>'                       + CHAR(13)+CHAR(10)
-  +  'Sales Location ID: <sales_location_id>'                   + CHAR(13)+CHAR(10)
-  +  'Ship Location ID: <source_location_id>'                   + CHAR(13)+CHAR(10)
+  -- Evan asked for "Loc # and Name if possible" on both.
+  +  'Sales Location ID: <sales_location_id> - <sales_location_name>'   + CHAR(13)+CHAR(10)
+  +  'Ship Location ID: <source_location_id> - <ship_location_name>'    + CHAR(13)+CHAR(10)
   +  'Job Number: <job_name>'                                   + CHAR(13)+CHAR(10)
   +  'Number of Lines: <total_line_items>'                      + CHAR(13)+CHAR(10)
   +  'Validation: <validation_status>'                          + CHAR(13)+CHAR(10)

@@ -81,7 +81,28 @@ BEGIN
     PRINT 'ADD: 6 columns queued.';
 END
 
-/*--- 3. price_page join (the only new join) ---*/
+/*--- 3. Location NAMES (Evan: "Loc # and Name if possible") ---*/
+IF CHARINDEX('sales_location_name', @sql) > 0
+    PRINT 'SKIP: location name columns already present.';
+ELSE
+BEGIN
+    SET @pos = CHARINDEX('''low_margin_flag''', @sql);
+    IF @pos = 0 BEGIN RAISERROR('Column anchor ''low_margin_flag'' not found.', 16, 1); RETURN; END
+
+    SET @sql = STUFF(@sql, @pos + LEN('''low_margin_flag'''), 0,
+          CHAR(10) + '		,COALESCE(loc_sales.location_name,  '''') ''sales_location_name'''
+        + CHAR(10) + '		,COALESCE(loc_source.location_name, '''') ''ship_location_name'''
+    );
+    PRINT 'ADD: 2 location name columns queued.';
+END
+
+/*--- 4. Joins: price_page + the two location lookups -------------------------
+  location is 1 row per location_id (64/64 verified) -- no fan-out.
+  loc_sales  = oe_hdr.location_id   (the SALES location)
+  loc_source = oe_line.source_loc_id (the SOURCE/ship-from location -- this is
+               also the location the costs are read from, per the system setting
+               use_sales_loc_for_source_costs = N)
+----------------------------------------------------------------------------*/
 IF CHARINDEX('LEFT JOIN price_page', @sql) > 0
     PRINT 'SKIP: price_page already joined.';
 ELSE
@@ -94,6 +115,22 @@ BEGIN
     PRINT 'ADD: price_page join queued.';
 END
 
+-- NB: guard on the JOIN text, not just 'loc_sales' -- the column added above
+-- already references loc_sales.location_name, so a bare 'loc_sales' check
+-- matches the column and skips the join, leaving an unbindable identifier.
+IF CHARINDEX('LEFT JOIN location AS loc_sales', @sql) > 0
+    PRINT 'SKIP: location joins already present.';
+ELSE
+BEGIN
+    SET @pos = CHARINDEX(@joinAnchor, @sql);
+    IF @pos = 0 BEGIN RAISERROR('Join anchor (oe_line_ud) not found.', 16, 1); RETURN; END
+
+    SET @sql = STUFF(@sql, @pos + LEN(@joinAnchor), 0,
+          CHAR(10) + 'LEFT JOIN location AS loc_sales  ON loc_sales.location_id  = oe_hdr.location_id'
+        + CHAR(10) + 'LEFT JOIN location AS loc_source ON loc_source.location_id = oe_line.source_loc_id');
+    PRINT 'ADD: 2 location joins queued.';
+END
+
 PRINT 'Applying ALTER VIEW, length = ' + CAST(LEN(@sql) AS VARCHAR(20));
 EXEC sp_executesql @sql;
 GO
@@ -103,6 +140,7 @@ SELECT COLUMN_NAME, DATA_TYPE, NUMERIC_PRECISION, NUMERIC_SCALE
 FROM   INFORMATION_SCHEMA.COLUMNS
 WHERE  TABLE_NAME = 'p21_view_alert_oe_OrderEntry'
   AND  COLUMN_NAME IN ('price_page_description','unit_mac','unit_standard_cost',
-                       'percent_profit_off_mac','percent_profit_off_standard_cost','low_margin_flag')
+                       'percent_profit_off_mac','percent_profit_off_standard_cost','low_margin_flag',
+                       'sales_location_name','ship_location_name')
 ORDER BY COLUMN_NAME;
 GO
