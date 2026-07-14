@@ -21,7 +21,7 @@
 
 ---
 
-## ⚠ Blocker A — the existing trigger does not measure what Evan asked for
+## RESOLVED — what today's trigger actually measures  *(was Blocker A)*
 
 `line_item_profit_percentage` =
 
@@ -38,38 +38,72 @@ CASE WHEN users.default_costing_basis = 2 THEN oe_line.commission_cost
      ELSE oe_line.sales_cost END
 ```
 
-…and the view joins `INNER JOIN users ON oe_hdr.last_maintained_by = users.id`.
+…and the view joins `INNER JOIN users ON oe_hdr.last_maintained_by = users.id` — i.e. the basis belongs to **whoever last saved the order**.
 
-**Two problems:**
+**Traced through the live configuration (P21Play, 2026-07-14):**
 
-1. It is computed off **`sales_cost`**, which is neither Standard Cost nor MAC. **Neither of Evan's requested triggers exists today.**
-2. The cost basis is a **per-user setting of whoever last maintained the order** — the same line scores differently depending on who saved it last. This is a latent defect in the *current* alert, not something we are introducing.
+| Evidence | Value | Source |
+|---|---|---|
+| `users.default_costing_basis` | **2** for 815 users, **1** for 55 | `users` |
+| `commission_cost_flag` | **2 = Moving Average** | `system_setting`; decoded from P21's own comment in `p21_b2b_price_item`: `--COMMISSION COST- Standard=1 Moving Average=2 Order Cost=3` |
+| `inventory_costing_basis` | **Average** | `system_setting` → order cost (`sales_cost`) is pulled from MAC (KB0017615) |
 
-**Therefore the new alerts will fire on a different set of lines than the current one.** Quantify this before telling Evan (Phase 4), then tell him with numbers.
+- basis **2** (815 users) → `commission_cost` → **MAC**
+- basis **1** (55 users) → `sales_cost` → order cost → **MAC** (costing basis is Average)
 
-## ⚠ Blocker B — the margin formula must be verified against the screen
+### ⇒ Today's alert is already, effectively, "GM% off MAC"
 
-`oe_line_tab_price_margins` (Sales Margins tab) is a PowerBuilder DataWindow; the math may be **client-side and not in the DB**. If the alert's numbers disagree with what the rep sees on that tab, we recreate exactly the email threads Evan wants to eliminate.
+**This inverts the risk assessment:**
 
-**Derivation to verify (not to trust):** `extended_standard_cost / extended_price` reduces to `(standard_cost * unit_size) / unit_price`, so the unit-level cost comparable to `unit_price` is **`cost * unit_size`**:
+- **Alert B (GM% off MAC < 5%) ≈ the status quo.** Expect similar volume. Low risk.
+- **Alert A (GM% off Standard Cost < 5%) is the genuinely new trigger.** This is where the volume change lands — measure it (Phase 4).
+
+**Caveat — and it is the reason Evan wants `price_page_description`:** commission cost is
+`CASE WHEN cost_page_uid/price_page_uid = 0 THEN <MAC> ELSE <the page's cost> END`.
+A line priced off a page **with a cost page** has a commission cost that is **not** MAC. That is exactly the case where the margin looks wrong and nobody can explain why. His instinct was right.
+
+**Still true:** the per-user `default_costing_basis` join is a latent defect in the *current* alert (same line scores differently depending on who last saved it). The new columns read `inv_loc` directly and are **not** subject to it. Do not replicate the pattern.
+
+## RESOLVED — which location  *(was an open question)*
+
+`system_setting.use_sales_loc_for_source_costs = **N**` → costs come from the **source location**, not the sales location.
+
+⇒ **Keep the alert view's existing join** (`inv_loc.location_id = oe_line.source_loc_id`). It matches the configuration. This is also what `extended_standard_cost` already uses.
+
+⚠ The `kb_` Sales Margins tab reads `inv_loc` at **`:sales_location`** — inconsistent with this setting. *Caveat: no DB object reads `use_sales_loc_for_source_costs` (it is consumed by the PowerBuilder client), so this is inference from the setting name, not proof.* Verify on a line where the two locations differ. **If the tab really is reading the wrong location, that is a `kb_` bug to report — not something to replicate.**
+
+## ⚠ Blocker B (STILL OPEN) — the UOM conversion
+
+The Sales Margins tab's `retrieve=` is:
 
 ```sql
-percent_profit_off_standard_cost = (unit_price - inv_loc.standard_cost      * oe_line.unit_size) / NULLIF(unit_price,0) * 100
-percent_profit_off_mac           = (unit_price - inv_loc.moving_average_cost * oe_line.unit_size) / NULLIF(unit_price,0) * 100
+SET @standard_cost = (SELECT dbo.kb_fn_pricing_convert(il.item_id, il.standard_cost, im.base_unit, :pricing_unit) ...)
+...
+CASE WHEN ROUND(:unit_price,4) = 0.0000 THEN 0.0
+     ELSE 1 - (@standard_cost / :unit_price) END AS [Current Mgn]
 ```
 
-**Do not ship this until it reproduces the tab.**
+**Three things fall out of this:**
 
----
+1. **The tab has NO MAC** — Standard Cost only, plus a price ladder (50%…15% target margins). So **there is no on-screen oracle for "Percent Profit off MAC."** We define it by mirroring the Standard Cost formula with `moving_average_cost` substituted. Evan should know a rep cannot cross-check the MAC figure anywhere today.
+2. **`1 - (cost/price)` returns a RATIO** (`-0.13`) — which is exactly the number in Evan's mock. He copied it off this tab. Algebraically identical to the alert's `(price-cost)/price*100`, just without the ×100. **Use percent** (matches the alert convention and the "less than 5%" language) and **warn Evan his `-0.13` will render as `-13.00`**.
+3. **The earlier derivation (`cost * unit_size`) was WRONG.** The real conversion is a **UOM lookup**, not a multiply:
+   `kb_fn_pricing_convert` = `amount / from_unit_size * to_unit_size`, with sizes from `p21_view_item_uom` per item. Shipping the `* unit_size` guess would have produced wrong margins on precisely the mixed-UOM lines Evan cares about.
 
-## Phase 0 — Establish the oracle  *(blocking; needs Mark)*
+**Open decision (asked, not yet answered):** how to source the UOM conversion —
+(a) **set-based inline** in the view (join `p21_view_item_uom` twice; fastest, no new `kb_` dependency) — *recommended*;
+(b) build `asi_fn_pricing_convert` (a fixed port: `DECIMAL`, not `FLOAT`);
+(c) call `kb_fn_pricing_convert` directly — **rejected**: adds a new `kb_` dependency to a brand-new object.
 
-1. Open **Sales Margins** tab on a Play order line. Capture: item, source location, order UOM, stocking UOM, sell price, MAC, Standard Cost, and both GM% figures. **Pick a line where order UOM ≠ stocking unit** — that is where the formula breaks.
-2. Also capture a second line where they are the same (control).
-3. Run the candidate SQL above against those exact lines and compare.
-4. If it does not reproduce: hunt the DataWindow (`d_ds_oe_line_tab_price_margins` / the `.srd` on the P21 share). If the math is client-side, the screenshot **is** the spec.
+## Phase 0 — Verify against the screen  *(reduced, but still required)*
 
-**Exit criteria:** candidate SQL reproduces the tab on both lines, to the cent.
+The formula is now *known*, not guessed — but it must still reconcile to the tab before it ships.
+
+1. Open **Sales Margins** on a Play order line. Capture: item, sales location, source location, order/pricing UOM, base UOM, sell price, Standard Cost, Current Mgn.
+2. **Pick a line where the pricing unit ≠ base unit** (the conversion is a no-op otherwise) — and ideally one where **sales location ≠ source location**, to settle the location discrepancy above.
+3. Run the candidate SQL against those lines; compare to the cent.
+
+**Exit criteria:** the Standard Cost margin reconciles to the tab. (MAC has no oracle — sanity-check it against `inv_loc.moving_average_cost` by hand instead.)
 
 ## Phase 1 — View columns (P21Play)
 
