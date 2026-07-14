@@ -1,6 +1,6 @@
 # P21 Alert Token — How To Add a New Token
 
-*Last updated: 2026-05-27*
+*Last updated: 2026-07-14 — data_type_cd table corrected; available_areas rewritten as a bitmask; whole-alert creation added.*
 
 ---
 
@@ -14,7 +14,42 @@ This guide covers adding a new token to an existing P21 alert. A token is a data
 | `dbo.token` | Register the token via `p21_apply_alert_token` |
 | `dbo.alert_type_x_token` | Linked automatically by the proc above |
 
-**Always test on P21Training first, then apply to Prod.**
+**Test in P21Play, not P21Training.** Play is refreshed from Prod, so it *is* the Prod baseline — the script proven there is the script that runs in Prod. (Training carries one-off tokens that exist nowhere else.)
+
+---
+
+## Creating a WHOLE alert (not just a token)
+
+An entire alert is scriptable — **no Dynachange UI required**. Four tables:
+
+| Table | Holds |
+|---|---|
+| `alert_implementation` | the definition: name, `alert_type_uid`, **`where_clause`** (the SQL that actually runs), activation/expiration, `row_status_flag` (705 = active) |
+| `Alert_implementation_query` | one row per filter: `column_id` = **token_uid**, `operator_cd`, `column_value` |
+| `alert_message` | `subject`, `header`, `line_item`, `footer` — the email body, with `<token>` placeholders |
+| `alert_recipient` | recipients — hangs off **`alert_message_uid`**, not the implementation |
+
+**Traps, all learned the hard way (2026-07-14):**
+
+- 🚨 **`alert_message.sender_email_address` MUST be `NULL`, never `''`.** P21 falls back to `system_setting.alert_default_smtp_sender_email` **only when it IS NULL**. An empty string is not NULL, so it tries to send *from* an empty address and parks the mail in `alert_queued_mail` with `reason_cd 1060` — whose description is **"Email system down."** That reads like an infrastructure outage. It is not.
+- `alert_recipient.record_type_cd` = **1059** ("Email Recipient") and is **NOT NULL**. Omitting it fails the INSERT.
+- `recipient_type_cd`: `1281` = To, `1282` = CC, `1283` = BCC.
+- **Recipients can be tokens.** `<taker_email>`, `<primary_salesrep_email>` (any `available_areas = 80` token) resolve per order. That is how "Order Taker" and "Sales Rep" get on an alert.
+- **A missing recipient does NOT kill the alert.** `p21_fn_validate_email_address` returns `<email_not_found/>`, and `p21_sp_alert_generation` strips it and still sends to everyone else — but it *also* fires a bogus `<email_not_found/>` message into `alert_queued_mail` each time. Beware of designs that rely on a deliberately-blank recipient: they work, but they permanently pollute the queue.
+- **None of these tables have identity columns.** Supply `MAX(uid) + 1` yourself. **uids do NOT align across environments — match on name, never uid.**
+- **Filters are ANDed.** The grid cannot express an OR. To trigger on `A < 5 OR B < 5`, precompute a flag column in the view (`CASE WHEN ... THEN 'Y' ELSE 'N' END`) and filter on that.
+
+**Verify without sending mail** — two checks that catch nearly everything:
+
+```sql
+-- 1. does the where_clause actually run?  (proves every token resolves to a column)
+EXEC sp_executesql N'SELECT COUNT(*) FROM dbo.p21_view_alert_oe_OrderEntry WHERE <where_clause>'
+
+-- 2. does every <token> in subject/header/line_item/footer exist as a view column?
+--    an unresolved token renders as LITERAL TEXT in the email, silently.
+```
+
+`pending_alerts` is empty except in the instant an order is saved, so the view normally returns 0 rows. That is expected — you are testing that it *parses*, not that it returns data.
 
 ---
 
@@ -164,17 +199,36 @@ Expected: one row with correct `available_areas` and a human-readable `descripti
 
 ## available_areas Reference (alert_type_uid = 12)
 
-`available_areas` is a bitmask that controls where a token appears in the P21 alert editor.
+`available_areas` is a **bitmask**. It controls where a token may be used — and, critically, **whether it will actually render** in a given section of the email. A token used in a section whose bit it does not carry comes out as **literal text** (`<sales_location_id>`) in the sent email, with no error anywhere.
 
-| Value | Meaning | Example tokens |
-|---|---|---|
-| `4` | Line item body (per-line data in email) | item_description, unit_price, order_quantity |
-| `11` | Order header | customer_name, order_number, ship_to_name |
-| `32` | Event / order-level | new_order, company_id, will_call |
-| `36` | Both event and line item (32+4) | item_id, price_edit, line_item_profit_percentage |
-| `43` | Event + header combo | approved, total_amount, customer_id |
-| `80` | Email routing | user_email, buyer_email, taker_email |
-| `256` | User lookup | All Salesrep's User ID(s) |
+**Treat it as bits, not as a menu of magic numbers:**
+
+| Bit | Meaning |
+|---|---|
+| `4` | Line item body (per-line data) |
+| `11` (= 8+2+1) | **Order header** |
+| `32` | Event / order level — **this is what alert FILTERS read** |
+| `80` | Email routing (a token that resolves to an *address*) |
+| `256` | User lookup |
+
+Common combinations:
+
+| Value | = | Meaning | Example tokens |
+|---|---|---|---|
+| `4` | 4 | line item body only | item_description, unit_price, order_quantity |
+| `11` | 8+2+1 | header only | customer_name, total_line_items |
+| `32` | 32 | event only (filterable, **NOT renderable in the header**) | new_order, will_call |
+| `36` | 32+4 | event + line item body | item_id, line_item_profit_percentage |
+| `43` | 32+11 | event + header | total_amount, customer_id, sales_location_id |
+| `139` | 128+11 | header (+128) | primary_salesrep_name |
+| `171` | 128+32+11 | event + header (+128) | taker |
+
+**Rules of thumb**
+- To **render in the header**, the token MUST carry bit `11`. Verified live 2026-07-14: `customer_name` (11), `customer_id` (43), `primary_salesrep_name` (139) and `taker` (171) all rendered; `sales_location_id` (32) and `source_location_id` (32) rendered as **literal text** until repointed to `43`.
+- To be usable as an alert **filter**, the token must carry bit `32`.
+- To be a **recipient**, use `80` (see `taker_email`, `primary_salesrep_email`).
+
+⚠ **Token names are NOT unique.** `source_location_id` exists twice — uid `236` (Order Entry) and uid `103` (inv_TransferEntry / inv_OrderBasedTransferUpdate). **Never** `UPDATE token ... WHERE name = '...'`; always scope through `alert_type_x_token` to the alert type you mean, or target `token_uid`.
 
 **To confirm the right value**, query existing tokens on the same alert type:
 
@@ -190,12 +244,21 @@ ORDER BY t.available_areas, t.name
 
 ## data_type_cd Reference
 
+> **CORRECTED 2026-07-14.** This table previously said `851 = decimal`. **It does not.** The wrong value is how `extended_standard_cost` came to be registered as a `char` in March (SA 37384) — it holds a `DECIMAL(19,2)`. Values below are read from `code_p21`, not from memory.
+
 | Value | Meaning |
 |---|---|
-| `850` | String / varchar |
-| `851` | Decimal / numeric |
+| `850` | varchar |
+| `851` | **char** |
+| `852` | int |
+| `853` | **decimal** |
+| `854` | datetime |
 
-Confirm by querying an existing token of the same type.
+```sql
+SELECT code_no, code_description FROM code_p21 WHERE code_no BETWEEN 850 AND 854
+```
+
+*Footnote on `extended_standard_cost`:* the mistyping generates `... AND extended_standard_cost > '500'` (quoted) in the alert's `where_clause`. It still compares **numerically** — SQL Server's data-type precedence converts the varchar literal to decimal — so the live filter is **not** broken. It is fragile, not wrong. Do not "fix" it without testing.
 
 ---
 
