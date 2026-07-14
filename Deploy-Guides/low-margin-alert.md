@@ -22,20 +22,39 @@ All under `C:\Claude\Alerts\Low-Margin-Alert\`, run **in numbered order**:
 - Play was verified at the **Prod baseline** (2026-07-14) before any change, so the scripts proven in Play are the scripts that run in Prod.
 - ⚠ **P21Training is NOT the path.** It carries a one-off `price_page_description` token from 2026-05-26 that exists nowhere else. Reference only — do not promote from it.
 
+## Design — split by AUDIENCE, not by trigger  ⚠ differs from Evan's spec
+
+Evan asked for two alerts split by **trigger** (Standard Cost / MAC) because each needs different recipients. Measured on Prod over 14 days, that design **double-emails**: 239 of 477 alerting orders trip **both** thresholds, so the core team would receive **716** emails — 239 of them a second report of the same order. That works against Evan's stated goal of reducing email churn.
+
+Split by **audience** instead — same policy, no duplicates:
+
+| Alert | Fires when | Recipients |
+|---|---|---|
+| **Low Margin Alert - Team** (uid 103 in Play) | `low_margin_flag = 'Y'` — **either** margin < 5% | Alex Sivongsay, Order Taker, Justine Daugherty, Sales Rep |
+| **Low Margin Alert - Purchasing Escalation (MAC)** (uid 104 in Play) | `percent_profit_off_mac < 5` | **Pam Dundas + Alex Boeve only** |
+
+Both emails carry **both** GM% figures, so the reader sees which threshold failed.
+
+**Core team: 716 → 477 emails, zero duplicates. Pam/Alex: 353 either way.** Verified in Play: at $16.00 (both trip) the team gets **one** email; at $16.15 (standard cost only) the team gets one and purchasing correctly gets **none**.
+
+**Rejected:** a single alert with a *conditional recipient token*. It does work — `p21_sp_alert_generation` strips an `<email_not_found/>` recipient and still sends to everyone else — but it also fires a bogus `<email_not_found/>` message into `alert_queued_mail` every time it doesn't escalate (~9/day of permanent queue noise).
+
+**⚠ This is a deviation from Evan's written spec and needs his sign-off.**
+
 ## 🚨 RECIPIENTS — the one thing that must change for Prod
 
 **The Play build has `mgoldyn@allsurfaces.com` as the ONLY recipient, deliberately.**
 P21Play has **live SMTP** (`enable_email_functionality = Y`, `email_type = SMTP`, sender `noreply@allsurfaces.com`), so real recipients in Play would send real email to real people.
 
-Before Prod, edit the `alert_recipient` INSERT in `03-create-alerts.sql` to Evan's list:
+Before Prod, edit the `alert_recipient` INSERT in `03-create-alerts.sql`:
 
-| Alert | Recipients |
-|---|---|
-| **Low Margin Alert - Standard Cost** (uid 103 in Play) | Alex Sivongsay, Order Taker (`<taker_email>`), Justine Daugherty, Sales Rep (`<primary_salesrep_email>`) |
-| **Low Margin Alert - MAC** (uid 104 in Play) | the same **+ Pam Dundas, Alex Boeve** |
+- **Team alert** → `asivongsay@allsurfaces.com`, `<taker_email>`, `jdaugherty@allsurfaces.com`, `<primary_salesrep_email>`
+- **Purchasing alert** → Pam Dundas + Alex Boeve
 
+Notes:
 - Recipients may be **tokens** — `<taker_email>` and `<primary_salesrep_email>` resolve per order. That is how "Order Taker" and "Sales Rep" get on the email.
 - `recipient_type_cd`: 1281 = To, 1282 = CC, 1283 = BCC. `record_type_cd` = **1059** (NOT NULL — omitting it fails the INSERT).
+- **`sender_email_address` MUST be NULL, never `''`.** P21 only falls back to `alert_default_smtp_sender_email` when it IS NULL; an empty string parks the mail as `reason_cd 1060 "Email system down"` — which reads like an outage but is not.
 - **Still to obtain:** email addresses for **Pam Dundas** and **Alex Boeve**.
 
 ## Dependencies & deploy order
