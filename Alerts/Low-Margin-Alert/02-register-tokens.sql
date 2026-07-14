@@ -57,6 +57,26 @@ EXEC @rc = dbo.p21_apply_alert_token @alert_type_uid=12, @token_name=N'low_margi
      @token_data_type_cd=851,  @token_code_group_no=NULL;                       -- char (mirrors new_order)
 GO
 
+/*--- REQUIRED: two EXISTING tokens need the header bit -------------------------
+  Evan's mock puts Sales Location ID and Ship Location ID in the HEADER, but both
+  are registered available_areas = 32 (event only).  A token only renders in the
+  header if bit 11 (8+2+1) is set -- proven live: customer_name (11),
+  customer_id (43), primary_salesrep_name (139) and taker (171) all rendered;
+  sales_location_id (32) and source_location_id (32) came out as the LITERAL TEXT
+  "<sales_location_id>" in the test email.  43 = 32 + 11 = event AND header.
+
+  ⚠ SCOPE BY token_uid, NOT BY NAME.  'source_location_id' is a DUPLICATE token
+  name: uid 236 = Order Entry (ours), uid 103 = inv_TransferEntry /
+  inv_OrderBasedTransferUpdate (NOT ours).  A name-based UPDATE hits both.
+------------------------------------------------------------------------------*/
+UPDATE t SET t.available_areas = 43, t.date_last_modified = GETDATE()
+FROM token t
+JOIN alert_type_x_token x ON x.token_uid = t.token_uid
+WHERE x.alert_type_uid = 12                                   -- Order Entry ONLY
+  AND t.name IN ('sales_location_id','source_location_id')
+  AND t.available_areas = 32;
+GO
+
 /*--- REQUIRED: the proc overwrites description with the raw column formula ---*/
 UPDATE token SET description = 'Price Page Description'            WHERE name = 'price_page_description';
 UPDATE token SET description = 'MAC'                               WHERE name = 'unit_mac';

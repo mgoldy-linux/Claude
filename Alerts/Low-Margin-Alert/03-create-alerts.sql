@@ -151,10 +151,16 @@ INSERT alert_message
 VALUES
   (@mStd, @aStd,
    '[TEST-Play] Low Margin (Standard Cost) Order# <order_number> for <customer_name> - Total: $<total_amount>',
-   @header, @line, @footer, '', 'Alert - Low Margin (Standard Cost)', '', @now, @now, @user, 704),
+   @header, @line, @footer, NULL, 'Alert - Low Margin (Standard Cost)', NULL, @now, @now, @user, 704),
   (@mMac, @aMac,
    '[TEST-Play] Low Margin (MAC) Order# <order_number> for <customer_name> - Total: $<total_amount>',
-   @header, @line, @footer, '', 'Alert - Low Margin (MAC)', '', @now, @now, @user, 704);
+   @header, @line, @footer, NULL, 'Alert - Low Margin (MAC)', NULL, @now, @now, @user, 704);
+-- ⚠ sender_email_address MUST be NULL, never '' (empty string).
+--   P21 falls back to system_setting alert_default_smtp_sender_email ONLY when
+--   this is NULL. An empty string is not NULL, so it tried to send FROM an empty
+--   address and parked the mail in alert_queued_mail with reason_cd 1060 =
+--   "Email system down" -- which reads like an infrastructure outage but is not.
+--   The working alert (uid 97) has NULL here.
 
 /*=====================  RECIPIENTS — mgoldyn ONLY  ====================*/
 DECLARE @r INT = (SELECT ISNULL(MAX(alert_recipient_uid),0) FROM alert_recipient);
