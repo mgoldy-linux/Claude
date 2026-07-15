@@ -14,6 +14,7 @@ existing row; don't add a new one. Move a task to **Completed** once it's accept
 
 | Last touched | Task | Status | Where it stands / next step | Detail |
 |---|---|---|---|---|
+| 2026-07-15 | YTD Sales ribbon tile — `asi_ribbon_cm_SYTD` (ref 20251229) | 🟡 Ready to test/deploy | Rewrite of `kb_CustRM_getYTDSalesAbbr` is built: critical year-filter bug fixed (VARCHAR `year_for_period` vs INT → blank tile), all kb_ deps removed (now on `p21_sales_history_view`). Never deployed or logged. Next: run test plan TC-01..08 in Dev/Test, then Prod per changelog rollback plan | `Docs\asi_ribbon_cm_SYTD_changelog.txt` |
 | 2026-07-15 | P21 Play API — create orders | 🔵 In progress | Postman auth to Play working; only a GET read exists. Next: hit `/uiserver0/ui/interactive/v1` docs to learn if orders POST-create or must drive UI-server window endpoints | `project_2026_07_15_p21_play_api_orders.md` |
 | 2026-07-14 | Low Margin Alert (Evan) | 🟡 Awaiting sign-off | Built + tested in Play (2 alerts, split by audience). Prod blocked on Evan's sign-off, the "Ship Location" question, and Pam Dundas / Alex Boeve addresses | `project_2026_07_13_low_margin_alert.md` |
 | 2026-07-13 | SA-48715 Five Way Params (SSRS) | 🔵 In progress | Deployed `-SA-48715-Fix` lost the Null default on 17 params; `@division` unwired in `…Dropdown-1.rdl`. Next: confirm working copy, re-set the 17 defaults | `project_2026_07_13_sa48715_five_way_params.md` |
@@ -45,3 +46,47 @@ existing row; don't add a new one. Move a task to **Completed** once it's accept
 | 2026-05-01 | P21Training DB refresh scripts | `project_p21training_refresh.md` |
 
 <!-- Older sessions (pre-May 2026) are captured in memory; add rows here only for notable shipped work. -->
+
+## Backlog — requests, side projects, nice-to-haves (not yet started)
+
+**No status here — these haven't started.** When you pick one up, cut the row and add it to **Active** with a status.
+
+| Added | Item | Type | Priority | Who / why | Notes |
+|---|---|---|---|---|---|
+| 2026-07-15 | Raise `cleanupPeriodDays` so `/resume` reaches older sessions | Nice-to-have | Med | Me — transcripts prune at ~30d, killing older resume points | Config change in settings.json; notes remain the durable layer regardless |
+| 2026-07-15 | Cleanup deleted salesreps (ribbon default products) | Side project | Low | Follow-up from `asi_ribbon_rm_default_products` (3c76bac) | See `project_2026_06_11_ribbon_default_products.md` |
+| 2026-07-15 | Confirm B2B 80-char / no-symbol limit still valid | Request (open Q) | Med | Gates the `asi_po_entry_text_validator` rewrite | Blocks the parked jsTextValidator task; see `project_2026_06_26_js_text_validator_b2b.md` |
+| 2026-07-15 | Ticket 47715 — waiting on user | Request | Med | External ticket; waiting on user reply | Keep: 3 Goals |
+| 2026-07-15 | Fix `asi_proc_copy_p21_user` — missing user description before Prod update | Side project | Med | Bug fix before Prod update | Keep: Project Focus |
+| 2026-07-15 | Purch open-PO EDI portal — update `kb_ref` | Request | Med | **kb_ flag** — retire the kb_ dependency | Keep: Project Focus |
+| 2026-07-15 | Fix CMI Open Orders & RMA tab — more SQL fix | Side project | Med | Follow-on SQL fix | Keep: BR list |
+| 2026-07-15 | Combine all ribbon BRs into one rule (start with Order-Entry ribbon) | Side project | Med | **Check kb_/js_ in the ribbon rules**; overlaps the `asi_ribbon_cm_SYTD` YTD work | Keep: BR list |
+| 2026-07-15 | Update refresh scripts to include alerts/emails | Side project | Med | Refresh-script enhancement | Keep: To do |
+| 2026-07-15 | P21 Upgrade — check PO fix / latest UnApproved-PO portal; how to update POs (for Jere) | Side project | Med | Q2 upgrade focus; Jere | Keep: P21 Upgrade Q2 |
+| 2026-07-15 | Check with Tony about P21 emails | Request | Med | Waiting on Tony | Keep: To do |
+| 2026-07-15 | Set up weekly Compare-folders job (Fridays) | Side project | Low | Automate the folder compare | Keep: To do |
+| 2026-07-15 | sp conversion for Jossy — add examples | Request | Low | Jossy | Keep: To do |
+| 2026-07-15 | Rename wireless portal; add to module & limit to two weeks | Side project | Low | Portal task | Keep: To do |
+| 2026-07-15 | "scan * pack" in audit trail — look deeper | Side project | Low | Investigation | Keep: To do |
+| 2026-07-15 | Price-change tracking — any source other than audit trail? | Request (open Q) | Low | Investigation | Keep: To do |
+| 2026-07-15 | P21 user-def tables — is it possible to check? (ask Claude) | Request (open Q) | Low | Investigation | Keep: To do |
+| 2026-07-15 | Suspended Alerts status (ref 1/5/26) | Request | Low | Alerts review | Keep: Project Focus |
+| 2026-07-15 | Create Confluence doc for non-regular tasks (Rewards alerts, holidays in P21 & data warehouse, periods) | Side project | Low | Documentation | Keep: Project Focus |
+| 2026-07-15 | Fax Number cleanup (ref 20250925) | Side project | Low | — | Keep: Project Focus |
+| 2026-07-15 | Portal: order-no on top; click order number → line-location info (see "RE: Report") | Side project | Low | Portal enhancement | Keep: Project Focus |
+| 2026-07-15 | P21 Upgrade — add "P21 Web" related docs to folder | Side project | Low | Documentation | Keep: P21 Upgrade Q2 |
+| 2026-07-15 | Look at `DirectShipPriceCheck_0801_0805.dll` — item with the same… | Side project | Low | BR investigation | Keep: BR list |
+| 2026-07-15 | Fix ProPerks Title in Dev | Side project | Low | — | Keep: BR list |
+| 2026-07-15 | Check "validate orders" BR (ref 20251215) | Request | Low | May overlap `kb_Order_Validator_v2` (Active) — verify before starting | Keep: BR list |
+| 2026-07-15 | Test Visual Rule — on hold / long-term | Side project | Low | See `project_p21_visual_rules_guide.md` | Keep: 3 Goals |
+| 2026-07-15 | Cleanup BR documentation in general | Side project | Low | Overlaps Goal 2 (BR docs, due 2026-10-30) | Keep: BR list |
+| 2026-07-15 | Use API to create/update P21 users | Side project | Med | Adjacent to Active "P21 Play API — create orders" (that one is orders, this is users) | Keep: Long Term Goals |
+| 2026-07-15 | Update "Add & Remove P21 Users" script to copy messages to clipboard | Side project | Low | PowerShell enhancement | Keep: Long Term Goals |
+| 2026-07-15 | Write script to monitor files added to the old file server | Side project | Low | PowerShell | Keep: Long Term Goals |
+| 2026-07-15 | Extract data from the parameters column of the execution log/plan | Side project | Low | Investigation | Keep: Long Term Goals |
+| 2026-07-15 | Pass SQL SP parameters from VBA (currently not working) | Side project | Low | Investigation | Keep: Long Term Goals |
+| 2026-07-15 | `Get-CallerLineNumber` → output to file | Side project | Low | PowerShell | Keep: Long Term Goals |
+| 2026-07-15 | Understand "Sale Reps factor of 2" | Nice-to-have | Low | Likely the split-commission ×2 row-doubling (`primary_salesrep`) — see `feedback_p21_split_commission_dedup` | Keep: Long Term Goals |
+| 2026-07-15 | Understand EDI 832 (how it works) | Nice-to-have | Low | Learning | Keep: Long Term Goals |
+| 2026-07-15 | Improve Power Query skills | Nice-to-have | Low | Learning | Keep: Long Term Goals |
+| 2026-07-15 | Focused time on API/Postman (learning) | Nice-to-have | Low | Skill-building companion to the API work above | Keep: Long Term Goals |
