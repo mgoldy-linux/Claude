@@ -30,6 +30,7 @@ existing row; don't add a new one. Move a task to **Completed** once it's accept
 
 | Date | Task | Detail |
 |---|---|---|
+| 2026-07-15 | Efrain — Discontinued items + on-hand qty query (fixed C2 alias bug; delivered inline) | `Sql-Scripts\Discontinued-Items-With-QOH.sql` |
 | 2026-06-22 | Portal Tab Tracking XE deployed (Play + Prod) | `project_2026_06_22_portal_tab_tracking.md` |
 | 2026-06-18 | SA-48237 asi_view_inv_mast built (P21Dev) | `project_2026_06_18_asi_view_inv_mast.md` |
 | 2026-06-15 | Compare-P21-Users.sql built | `project_2026_06_15_compare_p21_users.md` |
