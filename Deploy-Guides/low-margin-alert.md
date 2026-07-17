@@ -1,7 +1,15 @@
 # Deployment Guide — Low Margin Alert (Evan Jenkins request, no ticket #)
 
 > Produced during development. Update as the artifact changes; commit with the code.
-> **STATUS (2026-07-14): BUILT AND VERIFIED IN PLAY.** Not yet end-to-end tested (needs a real low-margin order entered in the Play client). Not deployed to Prod. Awaiting Evan's sign-off on a sample email.
+> **STATUS (2026-07-17): EVAN SIGNED OFF** ("everything else looks good") on the audience split, with 2 tweaks now handled:
+> 1. *Sell Price on its own line* — already correct in the current template; his sample was stale (generated mid-build 7/14). Regenerate a fresh sample to confirm.
+> 2. *Price Page Description blank* — populates on 86% of real low-margin lines; the 14% blank are `price_page_uid = 0` (not priced from a price page). Added a `(no price page)` fallback so the line is never empty. Applied to script 01 (Prod-ready) and to the live Play view.
+>
+> **Outlook line-break fix (2026-07-17):** the first fired email showed the banner *"We removed extra line breaks from this message"* and merged fields onto single lines. Outlook's *Remove extra line breaks in plain text messages* strips SINGLE newlines but never collapses **blank-line-separated** paragraphs. Fixed by separating every field with a blank line (`@br` = double CRLF) in the @header/@line templates. Also added `%` to percent lines and grouped minor fields with ` | `. Applied to script 03 + hot-swapped into live Play msg 106/107.
+>
+> **Activation flag: `704 = ACTIVE (fires), 705 = INACTIVE`.** Script 03 now creates the alerts at 704. (Earlier confusion: in Play the old prod alerts sit at 705 = deactivated.)
+>
+> **Remaining before Prod:** (a) re-fire in Play and confirm the blank-line layout renders cleanly → send to Evan for final OK; (b) Prod deploy with real recipients (all now known).
 
 ## Artifact(s)
 All under `C:\Claude\Alerts\Low-Margin-Alert\`, run **in numbered order**:
@@ -49,13 +57,13 @@ P21Play has **live SMTP** (`enable_email_functionality = Y`, `email_type = SMTP`
 Before Prod, edit the `alert_recipient` INSERT in `03-create-alerts.sql`:
 
 - **Team alert** → `asivongsay@allsurfaces.com`, `<taker_email>`, `jdaugherty@allsurfaces.com`, `<primary_salesrep_email>`
-- **Purchasing alert** → Pam Dundas + Alex Boeve
+- **Purchasing alert** → Pam Dundas (`pdundas@allsurfaces.com`) + Alex Boeve (`aboeve@allsurfaces.com`)
 
 Notes:
 - Recipients may be **tokens** — `<taker_email>` and `<primary_salesrep_email>` resolve per order. That is how "Order Taker" and "Sales Rep" get on the email.
 - `recipient_type_cd`: 1281 = To, 1282 = CC, 1283 = BCC. `record_type_cd` = **1059** (NOT NULL — omitting it fails the INSERT).
 - **`sender_email_address` MUST be NULL, never `''`.** P21 only falls back to `alert_default_smtp_sender_email` when it IS NULL; an empty string parks the mail as `reason_cd 1060 "Email system down"` — which reads like an outage but is not.
-- **Still to obtain:** email addresses for **Pam Dundas** and **Alex Boeve**.
+- **Obtained 2026-07-17** (P21Play `users`, both active `delete_flag=N`): Pam Dundas = `pdundas@allsurfaces.com` (id `PDUNDAS`), Alex Boeve = `aboeve@allsurfaces.com` (id `ABOEVE`).
 
 ## Dependencies & deploy order
 1. **View first** — the tokens reference its columns; registering a token against a missing column fails.
@@ -87,16 +95,21 @@ Notes:
 - **Every `<token>` in the message body resolves** to a view column, or it renders as literal text in the email.
 - **Enter a real low-margin order and read the actual email.** Check: no 6-decimal values (the `p21_fn_MaskDecimal` trap — we use `CAST AS DECIMAL`), and the MAC/Standard Cost figures agree with the Sales Margins tab.
 
+## Price Page Description — `(no price page)` fallback (Evan 2026-07-17)
+- Column is now `COALESCE(NULLIF(price_page.description,''),'(no price page)')`. On lines with `price_page_uid = 0` (priced manually / by contract, ~14% of low-margin lines, incl. Evan's `MAP1785142` sample) there is no price page and thus no description — the fallback text prevents a confusingly empty line.
+- Applied to `01-alter-view-add-margin-columns.sql` (runs clean on the fresh Prod view) **and** hot-swapped into the live P21Play view (script 01's idempotency guard would skip a re-run, so Play was patched surgically — `scratchpad/swap-pricepage-play.sql`).
+
 ## Known open items
-- **`Ship Location ID` is mapped to `source_location_id`** (`oe_line.source_loc_id`). Evan's mock puts it in the header, but it is a **line-level** value — confirm the mapping and that it populates.
+- **`Ship Location ID` is mapped to `source_location_id`** (`oe_line.source_loc_id`). Evan did **not** flag it in his 7/17 sign-off, so the source-location mapping is accepted. Still a **line-level** value shown in the header — confirm it renders on the first real Prod email.
 - `sales_location_id` and `source_location_id` are registered `available_areas = 32` (event) but used in the **header**. They resolve as view columns; whether P21 renders them there is unproven until the first real email.
+- **Regenerate a fresh sample** from the current Play alert and send to Evan — the sample he reviewed was stale (Sell Price merged, price page blank); the current build fixes both.
 - The **Sales Margins tab reconciliation** has not been done (the tab shows Standard Cost only — there is no MAC on it anywhere).
 
 ## Rollback
-1. **Deactivate the two new alerts first** (stops email immediately):
+1. **Deactivate the two new alerts first** (stops email immediately) — **`704 = ACTIVE, 705 = INACTIVE`**, so set 705:
    ```sql
-   UPDATE alert_implementation SET row_status_flag = 704
-   WHERE alert_implementation_name IN ('Low Margin Alert - Standard Cost','Low Margin Alert - MAC');
+   UPDATE alert_implementation SET row_status_flag = 705
+   WHERE alert_implementation_name IN ('Low Margin Alert - Team','Low Margin Alert - Purchasing Escalation (MAC)');
    ```
 2. Delete them (children first — FK order): `alert_recipient` → `alert_message` → `Alert_implementation_query` → `alert_implementation`.
 3. **Restore the view** from the backup taken in step 2 of the deploy.

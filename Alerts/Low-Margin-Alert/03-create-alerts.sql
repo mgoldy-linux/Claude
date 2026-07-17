@@ -57,6 +57,12 @@ DECLARE @namePurch VARCHAR(255) = 'Low Margin Alert - Purchasing Escalation (MAC
 DECLARE @user    VARCHAR(50)  = 'MGOLDYN';
 DECLARE @now     DATETIME     = CAST(CAST(GETDATE() AS DATE) AS DATETIME);  -- midnight, like alert 97
 DECLARE @expiry  DATETIME     = '2049-12-31 23:59:59';
+-- Line separators. @br = a BLANK line (double CRLF). Outlook's "Remove extra line
+-- breaks in plain text messages" strips SINGLE newlines (it silently merged fields
+-- in the first sample), but NEVER collapses a blank-line-separated paragraph. So
+-- every field is separated by @br to guarantee it renders on its own line.
+DECLARE @nl VARCHAR(2) = CHAR(13)+CHAR(10);
+DECLARE @br VARCHAR(4) = CHAR(13)+CHAR(10)+CHAR(13)+CHAR(10);
 
 /*--- teardown any prior run, incl. the earlier trigger-split build ---*/
 DECLARE @old TABLE (uid INT);
@@ -94,10 +100,12 @@ INSERT alert_implementation
 VALUES
   -- ALERT 1: either threshold -> the team.  low_margin_flag precomputes the OR,
   -- because P21 ANDs its filter rows and cannot express an OR in the grid.
-  (@aTeam, 12, @nameTeam, @now, @expiry, @now, @now, @user, 705,
+  -- row_status_flag: 704 = ACTIVE (fires), 705 = INACTIVE. (Standard P21 convention;
+  -- proven 2026-07-17 -- the alerts fired only at 704. To deactivate, set 705.)
+  (@aTeam, 12, @nameTeam, @now, @expiry, @now, @now, @user, 704,
    'low_margin_flag = ''Y'' AND ' + @common, 1092, GETDATE(), '', 0, 'Y', 'N'),
   -- ALERT 2: MAC only -> purchasing
-  (@aPurch, 12, @namePurch, @now, @expiry, @now, @now, @user, 705,
+  (@aPurch, 12, @namePurch, @now, @expiry, @now, @now, @user, 704,
    'percent_profit_off_mac < 5 AND ' + @common, 1092, GETDATE(), '', 0, 'Y', 'N');
 
 /*==========================  FILTER ROWS  =============================
@@ -135,31 +143,28 @@ FROM f;
 
 /*============================  EMAIL BODY  ===========================*/
 DECLARE @header VARCHAR(MAX) =
-     'Customer: (<customer_id>) <customer_name> <contact_name>' + CHAR(13)+CHAR(10)
-  +  'Taken by: <taker>'                                        + CHAR(13)+CHAR(10)
-  +  'Sales Rep: <primary_salesrep_name>'                       + CHAR(13)+CHAR(10)
+     'Customer: (<customer_id>) <customer_name> <contact_name>'           + @br
+  +  'Taken by: <taker>'                                                  + @br
+  +  'Sales Rep: <primary_salesrep_name>'                                 + @br
   -- Evan asked for "Loc # and Name if possible" on both.
-  +  'Sales Location ID: <sales_location_id> - <sales_location_name>'   + CHAR(13)+CHAR(10)
-  +  'Ship Location ID: <source_location_id> - <ship_location_name>'    + CHAR(13)+CHAR(10)
-  +  'Job Number: <job_name>'                                   + CHAR(13)+CHAR(10)
-  +  'Number of Lines: <total_line_items>'                      + CHAR(13)+CHAR(10)
-  +  'Validation: <validation_status>'                          + CHAR(13)+CHAR(10)
-  +  '--------------------------------------------------------';
+  +  'Sales Location: <sales_location_id> - <sales_location_name>'        + @br
+  +  'Ship Location: <source_location_id> - <ship_location_name>'         + @br
+  -- minor fields grouped onto one (wrapping) line to hold height down
+  +  'Job: <job_name>   |   Lines: <total_line_items>   |   Validation: <validation_status>' + @br
+  +  '------------------------------------------------------------';
 
 -- BOTH GM% figures appear on every email, in both alerts. That is what lets one
 -- message serve both thresholds -- the reader sees which one failed.
 DECLARE @line VARCHAR(MAX) =
-     'Lines Items:'                                                        + CHAR(13)+CHAR(10)
-  +  '<item_id> - <item_description>'                                      + CHAR(13)+CHAR(10)
-  +  'Order Qty: <order_quantity>'                                         + CHAR(13)+CHAR(10)
-  +  'Sell Price: $<unit_price>'                                           + CHAR(13)+CHAR(10)
-  +  'MAC: $<unit_mac>'                                                    + CHAR(13)+CHAR(10)
-  +  'Standard Cost: $<unit_standard_cost>'                                + CHAR(13)+CHAR(10)
-  +  'Price Page Description: <price_page_description>'                    + CHAR(13)+CHAR(10)
-  +  'Req Date: <line_required_date>'                                      + CHAR(13)+CHAR(10)
-  +  'Unit of Measure: <unit_of_measure>'                                  + CHAR(13)+CHAR(10)
-  +  'Percent Profit off MAC: <percent_profit_off_mac>'                    + CHAR(13)+CHAR(10)
-  +  'Percent Profit off Standard Cost: <percent_profit_off_standard_cost>';
+     'Lines Items:'                                                        + @br
+  +  '<item_id> - <item_description>'                                      + @br
+  +  'Order Qty: <order_quantity>'                                         + @br
+  +  'Sell Price: $<unit_price>'                                           + @br
+  +  'MAC: $<unit_mac>'                                                    + @br
+  +  'Standard Cost: $<unit_standard_cost>'                                + @br
+  +  'Price Page Description: <price_page_description>'                    + @br
+  +  'Req Date: <line_required_date>   |   UOM: <unit_of_measure>'         + @br
+  +  'Percent Profit off MAC: <percent_profit_off_mac>%   |   Percent Profit off Standard Cost: <percent_profit_off_standard_cost>%';
 
 DECLARE @footerTeam VARCHAR(MAX) =
      'Note: Sales Rep and Order Taker, please confirm Sell Price. Pricing Team will confirm programming and GM %, Purchasing Team will confirm cost.' + CHAR(13)+CHAR(10)+CHAR(13)+CHAR(10)

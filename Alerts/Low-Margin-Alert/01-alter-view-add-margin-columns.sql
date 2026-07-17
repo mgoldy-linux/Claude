@@ -62,7 +62,7 @@ BEGIN
 
     SET @sql = STUFF(@sql, @pos + LEN(@colAnchor), 0,
           CHAR(10) + '		-- mg add: Low Margin Alert (Evan Jenkins request, 2026-07)'
-        + CHAR(10) + '		,COALESCE(price_page.description, '''') ''price_page_description'''
+        + CHAR(10) + '		,COALESCE(NULLIF(price_page.description, ''''), ''(no price page)'') ''price_page_description''  -- (no price page) when line not priced from a price page (uid=0); Evan 2026-07-17'
         + CHAR(10) + '		,CAST(COALESCE(inv_loc.moving_average_cost * oe_line.pricing_unit_size, 0) AS DECIMAL(19,2)) ''unit_mac'''
         + CHAR(10) + '		,CAST(COALESCE(inv_loc.standard_cost       * oe_line.pricing_unit_size, 0) AS DECIMAL(19,2)) ''unit_standard_cost'''
         + CHAR(10) + '		,CAST(CASE WHEN ISNULL(oe_line.unit_price, 0) = 0 THEN 0'
