@@ -1,26 +1,28 @@
 # SA 47981 — Item Description on WWMS Sales Order Picking — Status Update (2026-07-21)
 
-**Status: On hold / needs a different approach.**
+**Status: Working — final polish and one quick test remain.**
 
 ## What was requested
 Show the item's **description** next to the Item ID on the WWMS (warehouse) Sales Order Picking screen. Today pickers see only the Item ID, not what the item actually is.
 
-## Where things stand
-We got the **data half working**: the system can correctly find the right item description for each pick line and hand it to the screen. We confirmed this repeatedly — the correct description is retrieved every time.
+## Good news — it works
+We got the description to **appear on the picking screen.** In testing, item `CRA197` correctly displayed **"Crain 197 "Comfort Knees" Knee Pads"** in a new field on the screen. (We have a screenshot on file.)
 
-The blocker is the **display half**: the Prophet 21 WWMS handheld/picking screen does not provide a supported way to place a new custom field on that particular screen. We tried every available tool the P21 customization menu offers for this screen, and none of them can make a new description field actually appear there:
+An earlier update said this might not be possible without help from Prophet 21's vendor (Epicor). **That is no longer the case** — we found the piece that was missing and the description now shows up. No outside support is needed.
 
-- One method gets the description into the screen's data but the screen won't show it in a custom box.
-- Another method can look up the description but only "attaches" its result to an existing field, not to a new one, and only runs at moments when the pick line isn't loaded yet.
-- The event-based method has no trigger for "a pick line was just displayed," so it can't run at the right time.
+## What was actually going on
+The description was always being looked up correctly. The only problem was **timing** — the screen was being told the description *before* it knew which item the picker was on, so it came up blank. Once the picker selects a bin, the screen refreshes with the item loaded, and at that moment the description fills in correctly. So the feature works; we just need to make sure it fills in at the most useful moment for the picker.
 
-In plain terms: **the description is ready and correct — Prophet 21 just won't let us paint it onto this specific screen using the built-in customization tools.**
+## The one thing left to check
+We need to confirm **when** the description appears as a picker moves through a pick ticket:
 
-## Why we're pausing
-We've reached the limit of what can be done with the standard P21 customization tools on this screen. Continuing to try variations of the same tools is unlikely to succeed and would burn more time.
+- If it fills in automatically for **every line** as the picker advances — we're essentially done.
+- If it only fills in **after the picker selects a bin** — we'll add a small action (a button) so the description shows up **before** the bin step, when it's most useful for deciding the pick.
+
+This is a quick test on the picking screen, then a small adjustment if needed.
 
 ## Recommended next step
-Open a question with **Epicor / Prophet 21 support**: *"What is the supported way to display a custom column (item description) on the WWMS Sales Order Picking screen?"* This screen appears to require a type of customization (an RF-screen change) that isn't exposed through the normal business-rule menu we have access to. Epicor can confirm whether it's possible and how.
+Run the pick-through test above and confirm the timing. Depending on the result, either close the ticket as-is or add the button, then move to the live environment.
 
-## Effort protection
-All work, findings, and the exact technical dead-ends are documented internally, so if this is revisited (by us or Epicor), no time is lost re-discovering what we already learned. Nothing is left running that affects live picking.
+## Notes
+All work and findings are documented internally. Nothing left running affects live picking — this is all in the test/business-rules environment.
