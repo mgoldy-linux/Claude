@@ -1,5 +1,5 @@
 // =============================================================================
-// asi_WWMS_sales_order_picking_item_desc_t2   (SA 47981)
+// asi_WWMS_sales_order_picking_item_desc_t3   (SA 47981)
 // Pre-SQL rule for d_ds_oe_pick_ticket_detail_val (WWMS Sales Order Picking)
 //
 // Purpose:
@@ -10,24 +10,32 @@
 //
 // Base SELECT list ends with:
 //     ... ,inv_mast.net_weight ,COALESCE(inv_mast.weight, 0) FROM oe_pick_ticket_detail ...
-//   We insert  ",inv_mast.item_desc WWMSITEMDESC"  immediately after the COALESCE
-//   column. The result column is aliased WWMSITEMDESC -- a unique name that won't
-//   collide with orphaned screen-only "item_desc" columns left in the datawindow.
+//   We insert  ",inv_mast.item_desc wwmsitemdesc"  immediately after the COALESCE
+//   column. The result column is aliased wwmsitemdesc (LOWERCASE) -- a unique name
+//   that won't collide with orphaned screen-only "item_desc" columns, and whose
+//   case MATCHES the DynaChange screen-only Column Name (PB is case-sensitive).
 //
 // Field-access note:
-//   "sql_statement" does NOT exist on this window/version (it threw KeyNotFound).
-//   Rather than hard-code a field name, this rule ENUMERATES Data.Fields and
-//   locates the field whose value carries the SELECT (matched by a unique anchor).
-//   It modifies and writes back to that same field. If no SQL-bearing field is
-//   found, it logs the full field list so we can confirm whether Pre-SQL exposes
-//   the query via Data.Fields at all.
+//   The SELECT arrives in the field named "sql_statement" (confirmed live via the
+//   Data.Fields dump). This rule still ENUMERATES Data.Fields and locates the
+//   field carrying the SELECT by a unique anchor rather than hard-coding the name,
+//   so it is robust across P21 versions. If no SQL-bearing field is found it logs
+//   the full field list for diagnostics.
+//
+// IMPORTANT (registration):
+//   The Pre-SQL rule fires per-datawindow and matches on the SQL's leading
+//   "--DS <name>" comment. Class Name MUST be  --DS d_ds_oe_pick_ticket_detail_val
+//   (the DETAIL grid), NOT  --DS d_ds_oe_pick_ticket_validations  (the pick-ticket
+//   lookup that fires first). Binding to validations => rule only ever sees a query
+//   without the anchor => "NO SQL FIELD FOUND" and nothing is injected.
 //
 // IMPORTANT (display side):
 //   Adding a column to the result set requires the datawindow to have a matching
 //   column for the new on-screen field, or P21 may report a column-count mismatch.
-//   Add ONE screen-only column with Column Name = WWMSITEMDESC (Alphanumeric,
-//   Max Length 255) via DynaChange; P21 maps the injected result column to it BY
-//   NAME. Remove any earlier orphaned item_desc screen-only columns first.
+//   Add ONE screen-only column with Column Name = wwmsitemdesc (lowercase,
+//   Alphanumeric, Max Length 255) via DynaChange; P21 maps the injected result
+//   column to it BY NAME and the match is CASE-SENSITIVE. Remove any earlier
+//   orphaned item_desc screen-only columns first.
 //   All WWMS testing is done in P21BusinessRules -- attach, test, and read
 //   business_rule_log there.
 // =============================================================================
@@ -37,20 +45,23 @@ using System;
 using System.Data;
 using System.Data.SqlClient;
 
-namespace asi_WWMS_sales_order_picking_item_desc_t2
+namespace asi_WWMS_sales_order_picking_item_desc_t3
 {
-    public class asi_WWMS_sales_order_picking_item_desc_t2 : P21.Extensions.BusinessRule.Rule
+    public class asi_WWMS_sales_order_picking_item_desc_t3 : P21.Extensions.BusinessRule.Rule
     {
         // Unique, pick-ticket-independent marker for the picking-detail SELECT.
         private const string Anchor = "COALESCE(inv_mast.weight, 0)";
 
         // Column to add, aliased to a UNIQUE name so it never collides with any
         // leftover/orphaned screen-only "item_desc" columns lingering in the
-        // datawindow buffer. The screen-only column must be named WWMSITEMDESC.
-        private const string NewColumn = " ,inv_mast.item_desc WWMSITEMDESC";
+        // datawindow buffer. The alias is LOWERCASE to match the DynaChange
+        // screen-only Column Name exactly -- PowerBuilder datawindow column
+        // matching is case-sensitive and PB stores column names lowercase, so
+        // an uppercase alias would not bind (symptom: injected but field blank).
+        private const string NewColumn = " ,inv_mast.item_desc wwmsitemdesc";
 
         // Idempotency guard -- never inject twice. Keyed on the unique alias.
-        private const string Guard = "WWMSITEMDESC";
+        private const string Guard = "wwmsitemdesc";
 
         public override RuleResult Execute()
         {
@@ -168,7 +179,7 @@ namespace asi_WWMS_sales_order_picking_item_desc_t2
                     string userId = this.Session != null && !string.IsNullOrEmpty(this.Session.UserID)
                         ? this.Session.UserID : "unknown";
                     logCmd.Parameters.Add("@User", SqlDbType.VarChar, 255).Value = userId;
-                    logCmd.Parameters.Add("@Rule", SqlDbType.VarChar, 255).Value = nameof(asi_WWMS_sales_order_picking_item_desc_t2);
+                    logCmd.Parameters.Add("@Rule", SqlDbType.VarChar, 255).Value = nameof(asi_WWMS_sales_order_picking_item_desc_t3);
                     logCmd.Parameters.Add("@Asm", SqlDbType.VarChar, 255).Value = GetType().Assembly.GetName().Name;
                     logCmd.Parameters.Add("@Msg", SqlDbType.VarChar, 8000).Value =
                         details.Length > 8000 ? details.Substring(0, 8000) : details;
@@ -179,9 +190,9 @@ namespace asi_WWMS_sales_order_picking_item_desc_t2
         }
 
         public override string GetDescription() =>
-            "SA 47981: Pre-SQL rule adding inv_mast.item_desc (aliased WWMSITEMDESC) to the WWMS picking-detail SELECT (d_ds_oe_pick_ticket_detail_val) so a screen-only WWMSITEMDESC column can bind to it.";
+            "SA 47981: Pre-SQL rule adding inv_mast.item_desc (aliased wwmsitemdesc) to the WWMS picking-detail SELECT (d_ds_oe_pick_ticket_detail_val) so a screen-only wwmsitemdesc column can bind to it.";
 
         public override string GetName() =>
-            nameof(asi_WWMS_sales_order_picking_item_desc_t2);
+            nameof(asi_WWMS_sales_order_picking_item_desc_t3);
     }
 }
