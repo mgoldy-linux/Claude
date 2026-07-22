@@ -57,10 +57,12 @@ DECLARE @namePurch VARCHAR(255) = 'Low Margin Alert - Purchasing Escalation (MAC
 DECLARE @user    VARCHAR(50)  = 'MGOLDYN';
 DECLARE @now     DATETIME     = CAST(CAST(GETDATE() AS DATE) AS DATETIME);  -- midnight, like alert 97
 DECLARE @expiry  DATETIME     = '2049-12-31 23:59:59';
--- Line separators. @br = a BLANK line (double CRLF). Outlook's "Remove extra line
--- breaks in plain text messages" strips SINGLE newlines (it silently merged fields
--- in the first sample), but NEVER collapses a blank-line-separated paragraph. So
--- every field is separated by @br to guarantee it renders on its own line.
+-- Line separators. @nl = single newline, @br = a BLANK line (double CRLF).
+-- Field lists (header + line item) use @nl for compact SINGLE-LINE spacing per
+-- Evan's 2026-07-22 feedback (he found the blank-line version too spread out).
+-- Footer NOTES keep @br so the distinct paragraphs stay readable and don't merge.
+-- NOTE: Outlook's "Remove extra line breaks in plain text messages" can still merge
+-- @nl-separated fields on the reader's side; Evan chose the compact layout knowingly.
 DECLARE @nl VARCHAR(2) = CHAR(13)+CHAR(10);
 DECLARE @br VARCHAR(4) = CHAR(13)+CHAR(10)+CHAR(13)+CHAR(10);
 
@@ -143,27 +145,29 @@ FROM f;
 
 /*============================  EMAIL BODY  ===========================*/
 DECLARE @header VARCHAR(MAX) =
-     'Customer: (<customer_id>) <customer_name> <contact_name>'           + @br
-  +  'Taken by: <taker>'                                                  + @br
-  +  'Sales Rep: <primary_salesrep_name>'                                 + @br
+     'Customer: (<customer_id>) <customer_name> <contact_name>'           + @nl
+  +  'Taken by: <taker>'                                                  + @nl
+  +  'Sales Rep: <primary_salesrep_name>'                                 + @nl
   -- Evan asked for "Loc # and Name if possible" on both.
-  +  'Sales Location: <sales_location_id> - <sales_location_name>'        + @br
-  +  'Ship Location: <source_location_id> - <ship_location_name>'         + @br
+  +  'Sales Location: <sales_location_id> - <sales_location_name>'        + @nl
+  +  'Ship Location: <source_location_id> - <ship_location_name>'         + @nl
   -- minor fields grouped onto one (wrapping) line to hold height down
-  +  'Job: <job_name>   |   Lines: <total_line_items>   |   Validation: <validation_status>' + @br
+  +  'Job: <job_name>   |   Lines: <total_line_items>   |   Validation: <validation_status>' + @nl
   +  '------------------------------------------------------------';
 
 -- BOTH GM% figures appear on every email, in both alerts. That is what lets one
 -- message serve both thresholds -- the reader sees which one failed.
 DECLARE @line VARCHAR(MAX) =
-     'Lines Items:'                                                        + @br
+     'Lines Items:'                                                        + @nl
   +  '<item_id> - <item_description>'                                      + @br
+  -- Evan 2026-07-22: give Order Qty and Sell Price breathing room (blank line
+  -- around each) so the two key figures stand apart from the cost cluster.
   +  'Order Qty: <order_quantity>'                                         + @br
   +  'Sell Price: $<unit_price>'                                           + @br
-  +  'MAC: $<unit_mac>'                                                    + @br
-  +  'Standard Cost: $<unit_standard_cost>'                                + @br
-  +  'Price Page Description: <price_page_description>'                    + @br
-  +  'Req Date: <line_required_date>   |   UOM: <unit_of_measure>'         + @br
+  +  'MAC: $<unit_mac>'                                                    + @nl
+  +  'Standard Cost: $<unit_standard_cost>'                                + @nl
+  +  'Price Page Description: <price_page_description>'                    + @nl
+  +  'Req Date: <line_required_date>   |   UOM: <unit_of_measure>'         + @nl
   +  'Percent Profit off MAC: <percent_profit_off_mac>%   |   Percent Profit off Standard Cost: <percent_profit_off_standard_cost>%';
 
 DECLARE @footerTeam VARCHAR(MAX) =
