@@ -5,11 +5,15 @@
 > 1. *Sell Price on its own line* — already correct in the current template; his sample was stale (generated mid-build 7/14). Regenerate a fresh sample to confirm.
 > 2. *Price Page Description blank* — populates on 86% of real low-margin lines; the 14% blank are `price_page_uid = 0` (not priced from a price page). Added a `(no price page)` fallback so the line is never empty. Applied to script 01 (Prod-ready) and to the live Play view.
 >
-> **Outlook line-break fix (2026-07-17):** the first fired email showed the banner *"We removed extra line breaks from this message"* and merged fields onto single lines. Outlook's *Remove extra line breaks in plain text messages* strips SINGLE newlines but never collapses **blank-line-separated** paragraphs. Fixed by separating every field with a blank line (`@br` = double CRLF) in the @header/@line templates. Also added `%` to percent lines and grouped minor fields with ` | `. Applied to script 03 + hot-swapped into live Play msg 106/107.
+> **Outlook line-break fix (2026-07-17):** the first fired email showed the banner *"We removed extra line breaks from this message"* and merged fields onto single lines. Outlook's *Remove extra line breaks in plain text messages* strips SINGLE newlines but never collapses **blank-line-separated** paragraphs. Also added `%` to percent lines and grouped minor fields with ` | `.
+>
+> **Spacing final round (2026-07-22, commit `bc64bef`):** Evan found the fully blank-line body too spread out. Reverted header + line-item fields to **single-line** spacing (`@nl`), then per his follow-up added a **blank line (`@br`) around Order Qty and Sell Price only** so the two key figures stand apart; the cost cluster (MAC/Std Cost/Price Page/Req Date/GM%) stays single-spaced. Footer Notes keep `@br`. Confirmed to Evan this is an **Outlook display setting, not P21** — single newlines merge per each reader's own *Remove extra line breaks* setting, so a blank line is the only reliable separator. Applied to script 03 + live Play (both alerts rebuilt, active 704).
 >
 > **Activation flag: `704 = ACTIVE (fires), 705 = INACTIVE`.** Script 03 now creates the alerts at 704. (Earlier confusion: in Play the old prod alerts sit at 705 = deactivated.)
 >
-> **Remaining before Prod:** (a) re-fire in Play and confirm the blank-line layout renders cleanly → send to Evan for final OK; (b) Prod deploy with real recipients (all now known).
+> **Price-page demo recipe (2026-07-22):** to show a populated Price Page Description on a low-margin line, use customer **Flooring Systems Inc (1020066)** + item **MAP36163000** (auto-matches page 93854). Let the page price fill in, *then* override the sell price down to force margin < 5% — a manual override keeps `price_page_uid` on ~⅓ of lines (55,784 / 173,104 over 120d), verified live on order 5923022. The old blank sample (`MAP1785142`) simply had no price page → correct `(no price page)` fallback, not a bug.
+>
+> **Remaining before Prod:** (a) Evan's OK on the 7/22 spacing; (b) Prod deploy with real recipients (all now known).
 
 ## Artifact(s)
 All under `C:\Claude\Alerts\Low-Margin-Alert\`, run **in numbered order**:
