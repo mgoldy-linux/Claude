@@ -10,7 +10,7 @@ Each guide covers: artifact(s) & ticket · target environments · dependency & d
 
 | Ticket | Title | Status |
 |--------|-------|--------|
-| SA-50249 | [Five Way Report Acceleration (ASI_ReportCache columnstore)](SA-50249-five-way-report-acceleration.md) | Built + proven in Play & on the DW (149s→125ms). DB/synonyms/compute view live on `asdwdb01`; one-time build+verify job scheduled 2026-07-17 23:00. **GO-LIVE pending BuildLog review** — nothing live swapped yet |
+| SSRS Perf: Five Way *(SA-50249 closed, access-only)* | [Five Way Report Acceleration (ASI_ReportCache columnstore)](SA-50249-five-way-report-acceleration.md) | Report 1 under the **SSRS Reports Performance Improvements** initiative (`C:\_P25\SSRS-Report-Performance-Progress.md`). Built on `asdwdb01` (149s→125ms). 2026-07-27: NULL-join bug fixed, fact rebuild armed for 07-20 23:00. **GO-LIVE pending BuildLog 0/0** — nothing live swapped yet |
 | SA-49504 | [asi_view_edi_855_po_ack (EDI PO-Ack Exceptions portal)](SA-49504-edi-855-view.md) | Deployed to Prod 2026-07-13 — awaiting user feedback |
 | SA-47981 | [WWMS Sales Order Picking: Item Description](SA-47981-wwms-pick-item-desc.md) | 🟡 **On hold — display WORKS (2026-07-21).** Converter renders `ufc_p21soc_wwmsitemdesc` on screen (verified CRA197 → "Crain 197 Comfort Knees Knee Pads"). Earlier "unreachable/needs Epicor" verdict retracted — blocker was rule timing, fixed by the bin-selection re-fire. One line-advance test remains to choose ship-as-is vs add-a-button. Non-technical ticket update in `SA-47981/ticket-update.md` |
 | SA-48732 | [CSR Open Order Team portal](SA-48732-csr-open-order-team-portal.md) | Deployed to Prod 2026-07-27, verified populating; closing ticket 2026-07-29 if no issues |

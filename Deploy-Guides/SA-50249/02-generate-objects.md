@@ -5,21 +5,21 @@ original view in P21Play, EXCEPT both ways, all 195 columns). They live in `ASI_
 reference `P21.dbo.*` via **3-part names** so they survive the nightly P21 restore.
 
 ## Objects
-1. **`dbo.SalesrepManagerMap`** — table
+1. **`dbo.asi_salesrep_manager_map`** — table
    ```sql
-   CREATE TABLE dbo.SalesrepManagerMap (
+   CREATE TABLE dbo.asi_salesrep_manager_map (
        salesrep_id_varchar VARCHAR(16)  NULL,
        commission_class_id VARCHAR(8)   NULL,
        manager_id          VARCHAR(16)  NULL,
        manager_name        VARCHAR(500) NULL
    );
-   CREATE CLUSTERED INDEX CX_SalesrepManagerMap
-       ON dbo.SalesrepManagerMap(salesrep_id_varchar, commission_class_id);
+   CREATE CLUSTERED INDEX CX_map
+       ON dbo.asi_salesrep_manager_map(salesrep_id_varchar, commission_class_id);
    ```
 2. **`dbo.FiveWaySalesCompute`** — VIEW = the `_fast3` definition with:
    - every `P21` base object (`invoice_line`, `oe_line`, `inv_mast`, `contacts`, `p21_view_*`,
      `kb_view_*`, `kb_fn_*`, …) qualified to **`P21.dbo.<name>`**;
-   - the sales-manager-name join pointed at **`dbo.SalesrepManagerMap`** (local);
+   - the sales-manager-name join pointed at **`dbo.asi_salesrep_manager_map`** (local);
    - product-manager map + inlined manager_id exactly as validated in `_fast3`.
 3. **`dbo.FiveWaySalesFact`** — table + clustered columnstore, structure from the compute view:
    ```sql
@@ -32,7 +32,7 @@ The validated `_fast3` and map definitions are saved in the working scratchpad
 (`CREATE_fast3.sql`, plus the product-manager CASE and map-build SQL). The generator:
 1. reads the `_fast3` view body,
 2. qualifies P21 object references to 3-part `P21.dbo.*`,
-3. repoints the map join to `ASI_ReportCache.dbo.SalesrepManagerMap`,
+3. repoints the map join to `ASI_ReportCache.dbo.asi_salesrep_manager_map`,
 4. renames the view to `FiveWaySalesCompute`.
 
 > **REVIEW/TEST REQUIRED:** the 2-part → 3-part qualification must be verified object-by-object on

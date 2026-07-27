@@ -1,8 +1,15 @@
-# Deployment Guide — SA-50249 Five Way Sales Report Acceleration (ASI_ReportCache)
+# Deployment Guide — Five Way Sales Report Acceleration (ASI_ReportCache)
 
+> **Ticket note:** SA-50249 was an **access-only** request and is **closed**. This performance work is a
+> separate deliverable, now tracked as **Report 1** under the **SSRS Reports Performance Improvements**
+> initiative (`C:\_P25\SSRS-Report-Performance-Progress.md`). Filenames keep the `SA-50249` name for continuity.
+>
 > Produced during development. Update as the artifact changes; commit with the code.
-> **STATUS: DRAFT for review — nothing has been deployed to the DW (asdwdb01) yet.**
-> Fully built and proven in **P21Play**; this guide adapts that to the DW's nightly-restore reality.
+> **STATUS (2026-07-20): NOT yet live — no view swap has ever been performed.**
+> DB, synonyms, map, compute view and a first fact build all exist on the DW. The 2026-07-17
+> one-time build+verify surfaced **two defects (both now fixed, see below)**; the fact is being
+> rebuilt on **2026-07-20 23:00** before go-live is reconsidered.
+> Originally built and proven in **P21Play**; this guide adapts that to the DW's nightly-restore reality.
 
 ## What problem this solves
 `asi_3yr_sales_history_report_view` recomputes heavy per-row logic (3 scalar UDFs over ~3.6M rows)
@@ -12,12 +19,13 @@ passthrough = **125 ms / 2,016 reads** — proven byte-for-byte equal (EXCEPT bo
 
 ## Artifact(s)
 - **New database `ASI_ReportCache`** (persistent, SIMPLE recovery, not backed up — fully rebuildable)
-- `ASI_ReportCache.dbo.SalesrepManagerMap` — memoizes the sales-manager UDFs (~505 rows)
+- `ASI_ReportCache.dbo.asi_salesrep_manager_map` — memoizes the sales-manager UDFs (~505 rows)
 - `ASI_ReportCache.dbo.FiveWaySalesCompute` — the fast compute VIEW (reads `P21.dbo.*` + local map)
 - `ASI_ReportCache.dbo.FiveWaySalesFact` — materialized table + clustered columnstore (~3.6M rows)
 - `ASI_ReportCache.dbo.uspRefreshFiveWaySalesFact` — nightly refresh proc
 - SQL Agent job **`ASI Refresh - Five Way Sales Fact`** (runs the proc post-restore)
-- **Swap** of `P21.dbo.asi_3yr_sales_history_report_view` → `SELECT * FROM ASI_ReportCache.dbo.FiveWaySalesFact`
+- **Swap** of `P21.dbo.asi_3yr_sales_history_report_view` →
+  `SELECT * FROM ASI_ReportCache.dbo.FiveWaySalesFact WHERE invoice_date >= DATEADD(year,-3,GETDATE())`
 - Ticket: SA-50249
 
 ## Target environment
@@ -37,14 +45,14 @@ passthrough = **125 ms / 2,016 reads** — proven byte-for-byte equal (EXCEPT bo
 ```
 2:05 AM   P21 restored from Prod  (brings ORIGINAL asi_3yr view + base tables + kb_ funcs)
 ~3:30 AM  Agent job -> ASI_ReportCache.dbo.uspRefreshFiveWaySalesFact:
-            1. rebuild SalesrepManagerMap   (calls P21.dbo.kb_fn_* once per ~505 pairs)
+            1. rebuild asi_salesrep_manager_map   (calls P21.dbo.kb_fn_* once per ~505 pairs)
             2. TRUNCATE + reload FiveWaySalesFact from FiveWaySalesCompute (reads P21.dbo.*)
             3. IF load OK  ->  CREATE OR ALTER P21.dbo.asi_3yr_sales_history_report_view
                                AS SELECT * FROM ASI_ReportCache.dbo.FiveWaySalesFact
                ELSE        ->  leave the restored ORIGINAL view in place (reports slow but CORRECT)
 Report run  asi_3yr_sales_history_report_view (passthrough) -> reads columnstore fact -> fast
 ```
-Persistent objects (`FiveWaySalesCompute`, `FiveWaySalesFact`, `SalesrepManagerMap`, the proc) all
+Persistent objects (`FiveWaySalesCompute`, `FiveWaySalesFact`, `asi_salesrep_manager_map`, the proc) all
 live in `ASI_ReportCache` and survive the restore; they reference `P21.dbo.*` via 3-part names.
 
 ## Prerequisites (confirm before deploy)
@@ -55,7 +63,7 @@ live in `ASI_ReportCache` and survive the restore; they reference `P21.dbo.*` vi
 
 ## Deploy order
 1. `01-create-database.sql`  — create `ASI_ReportCache`, SIMPLE recovery, grants.
-2. `02-generate-objects.ps1` — generates + creates `SalesrepManagerMap`, `FiveWaySalesCompute`,
+2. `02-generate-objects.ps1` — generates + creates `asi_salesrep_manager_map`, `FiveWaySalesCompute`,
    `FiveWaySalesFact` (+ CCI) from the validated `_fast3` logic (P21 refs → 3-part names).
 3. `03-refresh-proc.sql`     — create `uspRefreshFiveWaySalesFact`.
 4. Run the proc once manually  — seeds the fact + performs the first view swap (immediate effect).
@@ -91,6 +99,38 @@ ONLY the 5 reports that read `asi_3yr_sales_history_report_view`:
 - `/Company Reports/Sales/Five Way Sales Report Reduced wo Customer Dropdown-SA-48715-Fix`
 - `/Test-Mark/…` (3 copies)
 **NOT** `My Five Way` or `Branch Five Way` — those read `kb_sales_history_report_view` (untouched).
+
+## Defects found by the 2026-07-17 one-time build+verify (both FIXED 2026-07-20)
+
+The one-time job logged `fact_minus_compute=5` and `compute_minus_orig=2 / orig_minus_compute=2`
+instead of the hoped-for 0/0. Diagnosis:
+
+**1. `manager_name` wrong on 13,349 rows — REAL BUG (the reason go-live was held).**
+The memo-map join was `smn_map.commission_class_id = inv_mast.commission_class_id`. Where
+`commission_class_id` is NULL, `NULL = NULL` is UNKNOWN → the LEFT JOIN misses → `COALESCE(...,'None')`
+returns `'None'`. The correct answer was sitting in the map under a NULL key, unreachable (70 such
+map rows). The ORIGINAL view was unaffected because it calls the UDF per row and the UDF handles a
+NULL argument fine — **this was a regression introduced by the memoization itself.**
+Impact: all 13,349 fact rows with a NULL `commission_class_id` (0.35% of 3.83M) reported manager
+`None`; only 4 rows were legitimately `None`. On a sales-manager breakdown report that silently
+misattributes revenue away from real managers.
+**Fix:** NULL-safe join, `ISNULL(smn_map.commission_class_id,'') = ISNULL(inv_mast.commission_class_id,'')`.
+Verified collision-free: **zero** empty-string `commission_class_id` values exist in map or fact.
+The parallel `pm_map` join keys on `inv_mast_uid` and has no NULL exposure.
+**Proven:** 2026-07-15 compute-vs-original went from 2/2 to **0/0**.
+
+**2. The `5`-row diff — benign, a verification artifact.**
+The compute view filtered `invoice_date >= DATEADD(year,-3,GETDATE())`. The fact was built at
+23:04 and verified at 00:04 the next day; the 3-year boundary slid across midnight, and exactly 5
+rows on 2023-07-18 carry a `00:00:00` timestamp, so they fell out of the live view while already
+frozen into the fact. Not a logic defect — but it made the nightly verify **non-deterministic**.
+**Fix:** the fact is now built with a day-stable boundary (`CAST(GETDATE() AS DATE)`, a superset) and
+the exact sliding filter moved to the P21 passthrough view at read time. This preserves the
+ORIGINAL's semantics precisely *and* makes fact-vs-compute a meaningful, repeatable check.
+
+**Lesson:** memoizing a scalar UDF into a lookup table changes NULL semantics — a UDF accepts a NULL
+argument, a join key does not. Any future `*Compute`/`*Fact` pair in this DB must use NULL-safe joins
+on nullable memo keys.
 
 ## Safety notes
 - The view swap is **gated on a successful, sanity-checked fact load** (rowcount threshold). On any
