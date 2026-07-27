@@ -182,16 +182,14 @@ every `n_cst_pe_user_def` element — it is not a per-element key.
 6. Confirmed opening the portal renders with no error — this is what validates the "keep the
    DataWindow SQL dumb" fix above.
 
-### Prod — PENDING Justine's UAT sign-off
-1. **Deploy the view first:** run `asi_view_csr_open_orders.sql` against `P21` @ `P21.allsurfaces.com`
-   (creates the view + grants). Nothing else works without it.
+### Prod — INSTALLED 2026-07-27, portal populates; awaiting Justine's business sign-off
+1. **View deployed:** `asi_view_csr_open_orders.sql` run against `P21` @ `P21.allsurfaces.com` — ✅ done
 2. Back up the current Prod file: `\\asp21fs1\Prod\Portals\csr_open_order_team.srd` → keep a dated copy
-3. Copy the new `.srd` over it (same filename)
+3. Copy the new `.srd` over it (same filename) — ✅ done
 4. Element `CSR OPEN ORDER TEAM` (Prod uid **324**) already resolves to this file — **no portal_element
-   DB change needed.** But Prod has no *portal container* yet: create one in Dynachange the way Play's
-   `portal_uid` 221 was, and attach element 324 to it.
-5. Assign the portal to Justine (`JDAUGHERTY`, role `ALL`) and/or the CS Manager role via Dynachange
-6. Users must restart the P21 client to pick it up
+   DB change needed.** Portal container created in Dynachange, element 324 attached — ✅ done
+5. Assigned to role (`ALL`) via Dynachange — ✅ done
+6. Confirmed populating after client restart — ✅ done
 
 ## Verification
 - SQL extracted from the `.srd` runs clean on Play: **2,142 rows**, all 19 columns bind, every taker
@@ -210,6 +208,6 @@ every `n_cst_pe_user_def` element — it is not a per-element key.
 ## Open items
 - [ ] Confirm with Justine that the existing **Taker** column is what she meant (it was already on
       `Open Orders mine`, which is why "add Taker column" may have been a misread of the source portal).
-- [ ] Decide who the portal is assigned to: Justine only, or the whole CS Manager role.
+- [x] Decide who the portal is assigned to — assigned to role `ALL` in Prod 2026-07-27.
 - [ ] `kb-replacement-tracker.csv` — log the two dropped `kb_fn_get_*` references. **The tracker file
       could not be found on disk**; path needs to be re-established.

@@ -16,11 +16,7 @@
     Deploy to: P21Play (P21Dev.allsurfaces.com) -> P21 (P21.allsurfaces.com)
     Grants required: p21_application_role, PxxiUser   (see bottom)
 */
-IF OBJECT_ID('dbo.asi_view_csr_open_orders', 'V') IS NOT NULL
-    DROP VIEW dbo.asi_view_csr_open_orders;
-GO
-
-CREATE VIEW dbo.asi_view_csr_open_orders
+CREATE OR ALTER VIEW dbo.asi_view_csr_open_orders
 AS
 SELECT
     taker.name AS taker,
@@ -114,6 +110,8 @@ WHERE oeh.completed <> 'Y'
     );
 GO
 
+-- CREATE OR ALTER preserves existing grants, so these are only needed on first deploy
+-- to a given environment. Safe (no-op) to re-run on later deploys.
 GRANT SELECT ON dbo.asi_view_csr_open_orders TO p21_application_role;
 GRANT SELECT ON dbo.asi_view_csr_open_orders TO PxxiUser;
 GO
