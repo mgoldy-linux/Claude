@@ -3,7 +3,10 @@
 # requested by Jami Klitzman to validate the 2026-07-27 mfg "Use Default Value"
 # fix before the normal Sunday schedule.
 #
-# Uses ReportingService2010.FireEvent(EventType="TimedSubscription", EventData=<ScheduleID>).
+# Uses ReportingService2010.FireEvent(EventType="TimedSubscription", EventData=<ScheduleID>, SiteUrl="").
+# NOTE: this environment's FireEvent signature takes 3 string args, not 2 --
+# SiteUrl is a SharePoint-integration-mode parameter, unused/blank in native mode
+# but still required positionally (confirmed 2026-07-28 via reflection on $rs).
 # This fires the REAL subscription -- real email, real recipients, same as if
 # its Sunday schedule had triggered it. It does NOT touch or move the schedule
 # itself, so Sunday's normal run is unaffected; recipients just get a second
@@ -106,7 +109,7 @@ foreach ($sub in $locationSubs) {
     Write-Host ""
     Write-Host "=== Firing $($sub.Desc) ($($sub.SchedId)) ===" -ForegroundColor Cyan
     try {
-        $rs.FireEvent("TimedSubscription", $sub.SchedId)
+        $rs.FireEvent("TimedSubscription", $sub.SchedId, "")
         Write-Host "  FIRED." -ForegroundColor Green
         $summary += [pscustomobject]@{ Location = $sub.Desc; Result = "Fired" }
     } catch {
