@@ -42,7 +42,7 @@ existing row; don't add a new one. Move a task to **Completed** once it's accept
 
 | Date | Task | Detail |
 |---|---|---|
-| 2026-07-27 | SA-48732 CSR Open Order Team — deployed to Prod (view, `.srd`, portal container, assigned to role `ALL`), verified populating. Closing ticket 2026-07-29 if no issues | `project_2026_07_13_sa48732_csr_open_order_team.md` |
+| 2026-07-29 | SA-48732 CSR Open Order Team — deployed to Prod 2026-07-27 (view, `.srd`, portal container, assigned to role `ALL`), verified populating. **Closed 2026-07-29 — no issues reported.** Taker-column confirmation & kb-tracker logging left as non-blocking follow-ups | `project_2026_07_13_sa48732_csr_open_order_team.md` |
 | 2026-07-15 | Efrain — Discontinued items + on-hand qty query (fixed C2 alias bug; delivered inline) | `Sql-Scripts\Discontinued-Items-With-QOH.sql` |
 | 2026-06-22 | Portal Tab Tracking XE deployed (Play + Prod) | `project_2026_06_22_portal_tab_tracking.md` |
 | 2026-06-18 | SA-48237 asi_view_inv_mast built (P21Dev) | `project_2026_06_18_asi_view_inv_mast.md` |

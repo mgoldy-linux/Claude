@@ -182,7 +182,7 @@ every `n_cst_pe_user_def` element — it is not a per-element key.
 6. Confirmed opening the portal renders with no error — this is what validates the "keep the
    DataWindow SQL dumb" fix above.
 
-### Prod — INSTALLED 2026-07-27, portal populates; awaiting Justine's business sign-off
+### Prod — CLOSED 2026-07-29, no issues reported
 1. **View deployed:** `asi_view_csr_open_orders.sql` run against `P21` @ `P21.allsurfaces.com` — ✅ done
 2. Back up the current Prod file: `\\asp21fs1\Prod\Portals\csr_open_order_team.srd` → keep a dated copy
 3. Copy the new `.srd` over it (same filename) — ✅ done
@@ -206,8 +206,12 @@ every `n_cst_pe_user_def` element — it is not a per-element key.
   to anyone, a bad deploy is invisible to users until it is assigned — assign last.
 
 ## Open items
+Ticket closed 2026-07-29 (2 business days after Prod deploy, no issues reported). The two items below
+were left open by design — see the project memory's closure rationale — and are follow-ups, not
+blockers on this deploy:
 - [ ] Confirm with Justine that the existing **Taker** column is what she meant (it was already on
       `Open Orders mine`, which is why "add Taker column" may have been a misread of the source portal).
+      If she raises it later, reopen as a follow-up — the portal is correct per the requirements as understood.
 - [x] Decide who the portal is assigned to — assigned to role `ALL` in Prod 2026-07-27.
 - [ ] `kb-replacement-tracker.csv` — log the two dropped `kb_fn_get_*` references. **The tracker file
-      could not be found on disk**; path needs to be re-established.
+      could not be found on disk**; path needs to be re-established. Unrelated to this ticket's closure.
