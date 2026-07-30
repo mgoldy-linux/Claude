@@ -97,14 +97,28 @@
 //     P21 render memo as HTML or plain text? Check the delivered email's
 //     HTMLBody (not just .Body) -- if the tag renders (bold text) HTML is
 //     supported; if it shows literal "<b>...</b>" it's plain text only.
+// 2026-07-30  Bus App Team
+//   - RECONFIRMED DEAD END (2nd time, UNC path made no difference as
+//     predicted): this run threw the same u_dw_core "Invalid DataWindow
+//     row/column specified" error AND a second, distinct client-side
+//     error -- "Modify statement failed in '1' / Modify Expression:
+//     attachment_fullname.Visible='1' / DataObject: d_dw_email_info" --
+//     P21's own window logic trying to reveal the attachment_fullname
+//     field once it sees a value, and that Modify() call fails too.
+//     Removed TryAttachTestImage/DumpAttachmentFields/TestImagePath for
+//     good -- this mechanism cannot attach a file, full stop. Left in
+//     place only to keep the confirmed-working memo/HtmlTestTag write.
+// 2026-07-30  Bus App Team
+//   - CONFIRMED: HtmlTestTag showed up in the delivered email as literal
+//     text, not rendered bold -- memo is plain-text only, no HTML support.
+//     Question answered; removed HtmlTestTag entirely so it stops
+//     appearing in test emails.
 // ============================================================
 
 using P21.Extensions.BusinessRule;
 using System;
 using System.Data;
 using System.Data.SqlClient;
-using System.IO;
-using System.Text;
 
 namespace asi_OeEmailCloseDiag
 {
@@ -113,16 +127,6 @@ namespace asi_OeEmailCloseDiag
         // Distinctive and safe -- if this text shows up in the delivered
         // email body, writes made here reach the real send.
         private const string TestMarker = "\r\n\r\n[DIAG-MARKER-7A29 -- asi_oe_email_close_diag test write]";
-
-        // Plain <b> tag -- if the delivered email's HTMLBody shows this
-        // rendered bold, memo supports HTML. If it shows the literal tag
-        // text, memo is plain-text only.
-        private const string HtmlTestTag = "\r\n\r\n<b>[HTML-TEST-9F21]</b>";
-
-        // Moved to a UNC path per user request (was a local OneDrive path).
-        // Expected to fail the same way regardless -- the write target
-        // fields are readOnly="Y", which is not affected by file location.
-        private const string TestImagePath = @"\\asp21fs1.ahi.local\BusinessRules\Test-image.png";
 
         public override RuleResult Execute()
         {
@@ -148,21 +152,11 @@ namespace asi_OeEmailCloseDiag
                     {
                         DataRow row = table.Rows[0];
                         string originalMemo = row["memo"] as string ?? string.Empty;
-                        string newMemo = originalMemo + TestMarker + HtmlTestTag;
+                        string newMemo = originalMemo + TestMarker;
                         row["memo"] = newMemo;
 
-                        LogRuleInfo($"Original memo='{originalMemo}' New memo='{newMemo}'. Check the delivered email's Body for TestMarker and HTMLBody for whether HtmlTestTag rendered.");
+                        LogRuleInfo($"Original memo='{originalMemo}' New memo='{newMemo}'. Check the delivered email's Body for TestMarker.");
                     }
-
-                    LogRuleInfo("Attachment fields BEFORE: " + DumpAttachmentFields(table));
-
-                    // Re-added at user request for a firsthand confirmation
-                    // test with the new UNC path. Expected to fail the same
-                    // way as before (readOnly="Y" on these fields) -- this
-                    // is deliberately being re-tried, not a regression.
-                    TryAttachTestImage(table);
-
-                    LogRuleInfo("Attachment fields AFTER: " + DumpAttachmentFields(table));
                 }
             }
             catch (Exception ex)
@@ -174,75 +168,6 @@ namespace asi_OeEmailCloseDiag
             // sending, regardless of what the test above found.
             ruleResult.Success = true;
             return ruleResult;
-        }
-
-        // Separate try/catch per field so a failure on one doesn't stop the
-        // others from being attempted. Expected to fail -- attachment/
-        // attachment_fullname/b_add_attachments were confirmed readOnly="Y"
-        // on 2026-07-29. Kept for a firsthand re-confirmation with the new
-        // UNC path per user request.
-        private void TryAttachTestImage(DataTable table)
-        {
-            DataRow row = table.Rows[0];
-
-            try
-            {
-                if (table.Columns.Contains("attachment_fullname"))
-                    row["attachment_fullname"] = TestImagePath;
-                if (table.Columns.Contains("attachment"))
-                    row["attachment"] = Path.GetFileName(TestImagePath);
-
-                LogRuleInfo($"Set attachment/attachment_fullname to '{TestImagePath}'.");
-            }
-            catch (Exception ex)
-            {
-                LogRuleError("attachment/attachment_fullname write failed: " + ex);
-            }
-
-            try
-            {
-                if (table.Columns.Contains("b_add_attachments"))
-                {
-                    row["b_add_attachments"] = true;
-                    LogRuleInfo("Set b_add_attachments = true (bool).");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogRuleError("b_add_attachments bool write failed, retrying as string 'Y': " + ex);
-
-                try
-                {
-                    row["b_add_attachments"] = "Y";
-                    LogRuleInfo("Set b_add_attachments = 'Y' (string fallback).");
-                }
-                catch (Exception ex2)
-                {
-                    LogRuleError("b_add_attachments string write also failed: " + ex2);
-                }
-            }
-        }
-
-        private string DumpAttachmentFields(DataTable table)
-        {
-            string[] fieldsToCheck = { "attachment", "attachment_fullname", "b_add_attachments" };
-            StringBuilder sb = new StringBuilder();
-
-            foreach (string fieldName in fieldsToCheck)
-            {
-                if (!table.Columns.Contains(fieldName))
-                {
-                    sb.Append(fieldName).Append("=<not selected in Field Selector> ");
-                    continue;
-                }
-
-                object val = table.Rows[0][fieldName];
-                sb.Append(fieldName).Append("=")
-                  .Append(val == DBNull.Value || val == null ? "<null>" : val.ToString())
-                  .Append(" ");
-            }
-
-            return sb.ToString();
         }
 
         private void LogRuleInfo(string details)
@@ -296,7 +221,7 @@ namespace asi_OeEmailCloseDiag
 
         public override string GetDescription()
         {
-            return "DIAGNOSTIC -- appends TestMarker + an HTML tag to memo, and retries attaching TestImagePath (now UNC) via attachment/attachment_fullname/b_add_attachments, on Email Order Acknowledgment window close (cb_ok).";
+            return "DIAGNOSTIC -- appends TestMarker to memo on Email Order Acknowledgment window close (cb_ok). Attachment-write attempt removed (confirmed dead end); HTML tag removed (confirmed memo is plain-text only).";
         }
 
         public override string GetName()
