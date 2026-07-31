@@ -119,6 +119,17 @@ Notes:
 - **Regenerate a fresh sample** from the current Play alert and send to Evan — the sample he reviewed was stale (Sell Price merged, price page blank); the current build fixes both.
 - The **Sales Margins tab reconciliation** has not been done (the tab shows Standard Cost only — there is no MAC on it anywhere).
 
+## Duplicate — Low PAD Margin Alert (2026-07-31, Play only so far)
+
+Duplicate of the Team/Purchasing split, scoped to the PAD product group that the original alert deliberately **excludes**. Replaces (eventually) the older, separate `Low PAD Margin Alert` (active since 2025-12-18) that fires on the legacy `line_item_profit_percentage < -5` column with `Taker` "does not begin with" ESTORE — that alert stays **untouched** for now, same pattern as uid 97.
+
+Confirmed with user before building:
+- **Trigger:** reuse the new `low_margin_flag` / `percent_profit_off_mac` columns (NOT the legacy `line_item_profit_percentage` measure) — keeps one consistent margin definition across every Low Margin variant.
+- **Recipients:** same Team + Purchasing Escalation split as the non-PAD alert.
+- **Taker filter:** `NOT LIKE '%ESTORE%'` (does not *contain*) — matching the non-PAD alert, not the old PAD alert's "does not begin with."
+
+**Script:** `04-create-pad-alerts-PLAY.sql` — built and run in **Play only** (uid 105 "Low PAD Margin Alert - Team", uid 106 "...Purchasing Escalation (MAC)"), `row_status_flag = 704`, `mgoldyn`-only recipients, same as the original Play-first build pattern. Both `where_clause`s verified to parse cleanly against the view. **User is reviewing in Play before this goes to Prod** — do not deploy to Prod without that review.
+
 ## Rollback
 1. **Deactivate the two new alerts first** (stops email immediately) — **`704 = ACTIVE, 705 = INACTIVE`**, so set 705:
    ```sql
