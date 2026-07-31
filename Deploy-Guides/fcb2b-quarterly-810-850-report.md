@@ -90,7 +90,9 @@ Email the generated file to **Lewis Davis** (`ldavis@wfca.org`) at WFCA.
 
 ## Known issue (historical, not a script bug)
 
-`FYQ4 2025.xlsx` (in the OneDrive folder) shows headers reading "July/August/September **2026**" — a full year off from what `FYQ4 2025` should mean (Jul–Sep **2025**). That file predates this script; it used an older manual Excel template (a `Sheet2` helper table with a hand-typed `Year` cell driving the header via `VLOOKUP`/`CONCAT` formulas, with the monthly counts pasted in separately). The year cell was almost certainly a manual typo, disconnected from the pasted data. Since this script now generates the header text directly from the fiscal year/quarter parameters (no separate hand-typed year cell to get out of sync), this class of mistake isn't possible going forward. Left as-is; not re-investigated further per 2026-07-31 discussion.
+`FYQ4 2025.xlsx` (in the OneDrive folder) shows headers reading "July/August/September **2026**" — a full year off from what `FYQ4 2025` should mean (Jul–Sep **2025**). That file predates this script; it used an older manual Excel template (a `Sheet2` helper table with a hand-typed `Year` cell driving the header via `VLOOKUP`/`CONCAT` formulas, with the monthly counts pasted in separately). The year cell was almost certainly a manual typo, disconnected from the pasted data. Since this script now generates the header text directly from the fiscal year/quarter parameters (no separate hand-typed year cell to get out of sync), this class of mistake isn't possible going forward.
+
+**CLOSED 2026-07-31 — not worth the effort.** Already-submitted historical file, root cause not reproducible with current tooling, no further action.
 
 ## FYQ2 2026 generated 2026-07-31
 
@@ -103,7 +105,9 @@ While spot-checking that FYQ3 2026 (Apr–Jun 2026) numbers were in the same ran
 - Its 850-side counts escalate monotonically across the 3 months (e.g. B2B/EDI: 463 → 3,449 → 51,386; totals 1,688 → 11,319 → 146,003) — that pattern looks like a **cumulative/running total** was pasted in per column instead of independent per-month counts. No real month-over-month order volume moves like that.
 - Its 810-side "Manual" (non-EDI invoice) counts are understated by ~5,000–7,000/month versus a clean re-query.
 
-Root cause not identified — this file predates both the current script and the `f2B2B-lewisreport.sql` / `b2b-report-invoices.sql` draft queries, so whatever produced it isn't in the repo. Not investigated further (not findable with what's on disk).
+Root cause not identified — this file predates both the current script and the `f2B2B-lewisreport.sql` / `b2b-report-invoices.sql` draft queries, so whatever produced it isn't in the repo.
+
+**CLOSED 2026-07-31 — not worth the effort.** Not findable with what's on disk; already recomputed for the record (below), no further digging planned.
 
 **Recomputed correctly for the record** (per-user decision 2026-07-31, not re-submitted to WFCA):
 `C:\_P25\Data-Out\Excel\fcB2B Quarterly 810-850 Metrics Data Request - FYQ3 2025 - RECOMPUTED-2026-07-31.xlsx`
