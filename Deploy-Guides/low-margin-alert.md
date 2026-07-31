@@ -15,7 +15,15 @@
 >
 > **Remaining before Prod (go-live):** (a) Evan's OK on the 7/22 spacing; (b) flip `row_status_flag` 705→704 once (a) is confirmed.
 >
-> **PROVISIONAL DEPLOY (2026-07-31):** ahead of a P21Play refresh (which restores Play FROM Prod and would have wiped the Play-only alert build), ran `01`/`02` against Prod (unchanged) and a new **`03-create-alerts-PROD-INACTIVE.sql`** against Prod — same design, **real recipients baked in, but `row_status_flag = 705` (INACTIVE)**. Nothing fires. This is a preservation step, not the go-live deploy; Evan's spacing sign-off is still open. ⚠ **After the Play refresh completes, Play's copy of this alert will also carry the real recipients** (since Play now restores from this Prod state) — the `mgoldyn`-only safety hack from the original Play build is gone. Before resuming any alert testing in Play, re-apply mgoldyn-only recipients there first, or the next test fire will email real people through Play's live SMTP.
+> **PROVISIONAL DEPLOY — EXECUTED 2026-07-31** ahead of the Monday P21Play refresh (which restores Play FROM Prod and would have wiped the Play-only alert build). Ran, against **P21** (Prod):
+> - `01-alter-view-add-margin-columns-PROD.sql` (copy of 01 with `USE P21`) — all 8 columns confirmed present.
+> - `02-register-tokens-PROD.sql` (copy of 02 with `USE P21`) — all 8 new tokens + the 2 repointed existing tokens confirmed.
+> - `03-create-alerts-PROD-INACTIVE.sql` — created **uid 104 "Team"** and **uid 105 "Purchasing Escalation (MAC)"** at `row_status_flag = 705` (INACTIVE, does not fire), with the **real recipient list** baked in (Alex Sivongsay/Order Taker/Justine Daugherty/Sales Rep; Pam Dundas/Alex Boeve).
+> - Verified full structural parity against Play with `PowerShell\Compare-LowMarginAlert-Prod-vs-Play.ps1` (view columns, `where_clause`, filter counts, message bodies, token registration all match; only `row_status_flag` and recipients differ, as designed).
+>
+> This is a preservation step, not the go-live deploy — Evan's final spacing sign-off is still open; do not flip `row_status_flag` to 704 until he confirms.
+>
+> ⚠ **After the Play refresh completes, Play's copy of this alert will also carry the real recipients** (since Play now restores from this Prod state) — the `mgoldyn`-only safety hack from the original Play build is gone. Before resuming any alert testing in Play, re-apply mgoldyn-only recipients there first, or the next test fire will email real people through Play's live SMTP.
 
 ## Artifact(s)
 All under `C:\Claude\Alerts\Low-Margin-Alert\`, run **in numbered order**:
