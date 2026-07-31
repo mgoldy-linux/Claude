@@ -13,7 +13,9 @@
 >
 > **Price-page demo recipe (2026-07-22):** to show a populated Price Page Description on a low-margin line, use customer **Flooring Systems Inc (1020066)** + item **MAP36163000** (auto-matches page 93854). Let the page price fill in, *then* override the sell price down to force margin < 5% — a manual override keeps `price_page_uid` on ~⅓ of lines (55,784 / 173,104 over 120d), verified live on order 5923022. The old blank sample (`MAP1785142`) simply had no price page → correct `(no price page)` fallback, not a bug.
 >
-> **Remaining before Prod:** (a) Evan's OK on the 7/22 spacing; (b) Prod deploy with real recipients (all now known).
+> **Remaining before Prod (go-live):** (a) Evan's OK on the 7/22 spacing; (b) flip `row_status_flag` 705→704 once (a) is confirmed.
+>
+> **PROVISIONAL DEPLOY (2026-07-31):** ahead of a P21Play refresh (which restores Play FROM Prod and would have wiped the Play-only alert build), ran `01`/`02` against Prod (unchanged) and a new **`03-create-alerts-PROD-INACTIVE.sql`** against Prod — same design, **real recipients baked in, but `row_status_flag = 705` (INACTIVE)**. Nothing fires. This is a preservation step, not the go-live deploy; Evan's spacing sign-off is still open. ⚠ **After the Play refresh completes, Play's copy of this alert will also carry the real recipients** (since Play now restores from this Prod state) — the `mgoldyn`-only safety hack from the original Play build is gone. Before resuming any alert testing in Play, re-apply mgoldyn-only recipients there first, or the next test fire will email real people through Play's live SMTP.
 
 ## Artifact(s)
 All under `C:\Claude\Alerts\Low-Margin-Alert\`, run **in numbered order**:
