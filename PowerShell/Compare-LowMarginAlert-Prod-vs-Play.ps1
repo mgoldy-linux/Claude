@@ -17,7 +17,8 @@ Import-Module dbatools -ErrorAction Stop
 $ProdSrv = 'P21.allsurfaces.com';    $ProdDb = 'P21'
 $PlaySrv = 'P21Dev.allsurfaces.com'; $PlayDb = 'P21Play'
 
-$AlertNames = @('Low Margin Alert - Team', 'Low Margin Alert - Purchasing Escalation (MAC)')
+$AlertNames = @('Low Margin Alert - Team', 'Low Margin Alert - Purchasing Escalation (MAC)',
+                'Low PAD Margin Alert - Team', 'Low PAD Margin Alert - Purchasing Escalation (MAC)')
 $NewColumns = @('price_page_description','unit_mac','unit_standard_cost',
                 'percent_profit_off_mac','percent_profit_off_standard_cost',
                 'low_margin_flag','sales_location_name','ship_location_name')

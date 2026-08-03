@@ -128,7 +128,9 @@ Confirmed with user before building:
 - **Recipients:** same Team + Purchasing Escalation split as the non-PAD alert.
 - **Taker filter:** `NOT LIKE '%ESTORE%'` (does not *contain*) — matching the non-PAD alert, not the old PAD alert's "does not begin with."
 
-**Script:** `04-create-pad-alerts-PLAY.sql` — built and run in **Play only** (uid 105 "Low PAD Margin Alert - Team", uid 106 "...Purchasing Escalation (MAC)"), `row_status_flag = 704`, `mgoldyn`-only recipients, same as the original Play-first build pattern. Both `where_clause`s verified to parse cleanly against the view. **User is reviewing in Play before this goes to Prod** — do not deploy to Prod without that review.
+**Script:** `04-create-pad-alerts-PLAY.sql` — built and run in **Play only** (uid 105 "Low PAD Margin Alert - Team", uid 106 "...Purchasing Escalation (MAC)"), `row_status_flag = 704`, `mgoldyn`-only recipients, same as the original Play-first build pattern. Both `where_clause`s verified to parse cleanly against the view.
+
+**PROD DEPLOY — EXECUTED 2026-08-03**, after user reviewed the Play build. Ran `05-create-pad-alerts-PROD-INACTIVE.sql` against **P21** — created **uid 106 "Team"** / **uid 107 "Purchasing Escalation (MAC)"** at `row_status_flag = 705` (INACTIVE — no PAD-alert-equivalent stakeholder sign-off yet, confirmed with user before deploying) with the real recipient list. View/tokens already present from the 2026-07-31 deploy, reused as-is. Parity vs. Play confirmed via `Compare-LowMarginAlert-Prod-vs-Play.ps1` (now checks all 4 alerts). Same warning applies: once Play refreshes from Prod, Play's copy will carry real recipients too.
 
 ## Rollback
 1. **Deactivate the two new alerts first** (stops email immediately) — **`704 = ACTIVE, 705 = INACTIVE`**, so set 705:
