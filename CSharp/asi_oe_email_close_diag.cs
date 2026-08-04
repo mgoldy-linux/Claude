@@ -113,6 +113,18 @@
 //     text, not rendered bold -- memo is plain-text only, no HTML support.
 //     Question answered; removed HtmlTestTag entirely so it stops
 //     appearing in test emails.
+// 2026-08-03  Bus App Team
+//   - FOUND: w_email_response is P21's shared email window -- Packing List
+//     Transfer (and presumably other document emails) use the exact same
+//     window and cb_ok button, so this rule was appending TestMarker to
+//     every email type, not just Order Acknowledgment. Confirmed via the
+//     Field Selector for this attach point that d_dw_email_info has no
+//     form_type/document_nos column to filter on directly. Added a gate:
+//     before appending, this rule now reads asi_email_context_flag (see
+//     Create-asi-email-context-flag.sql) for the current user and only
+//     appends if is_order_ack = 1. That flag is written by the new
+//     asi_email_context_flag rule on the FormPreEmail event, which fires
+//     earlier in the same window's lifecycle and does know form_type.
 // ============================================================
 
 using P21.Extensions.BusinessRule;
@@ -134,28 +146,38 @@ namespace asi_OeEmailCloseDiag
 
             try
             {
-                DataSet ds = this.Data.Set;
+                bool isOrderAck = IsOrderAckEmail(out string flagDetails);
+                LogRuleInfo("Context flag check: " + flagDetails);
 
-                if (ds == null || !ds.Tables.Contains("d_dw_email_info"))
+                if (!isOrderAck)
                 {
-                    LogRuleError("d_dw_email_info table not found in Data.Set.");
+                    LogRuleInfo("Skipping memo append -- asi_email_context_flag says this is not an Order Acknowledgment email.");
                 }
                 else
                 {
-                    DataTable table = ds.Tables["d_dw_email_info"];
+                    DataSet ds = this.Data.Set;
 
-                    if (table.Rows.Count < 1 || !table.Columns.Contains("memo"))
+                    if (ds == null || !ds.Tables.Contains("d_dw_email_info"))
                     {
-                        LogRuleError("d_dw_email_info missing memo column or has no rows.");
+                        LogRuleError("d_dw_email_info table not found in Data.Set.");
                     }
                     else
                     {
-                        DataRow row = table.Rows[0];
-                        string originalMemo = row["memo"] as string ?? string.Empty;
-                        string newMemo = originalMemo + TestMarker;
-                        row["memo"] = newMemo;
+                        DataTable table = ds.Tables["d_dw_email_info"];
 
-                        LogRuleInfo($"Original memo='{originalMemo}' New memo='{newMemo}'. Check the delivered email's Body for TestMarker.");
+                        if (table.Rows.Count < 1 || !table.Columns.Contains("memo"))
+                        {
+                            LogRuleError("d_dw_email_info missing memo column or has no rows.");
+                        }
+                        else
+                        {
+                            DataRow row = table.Rows[0];
+                            string originalMemo = row["memo"] as string ?? string.Empty;
+                            string newMemo = originalMemo + TestMarker;
+                            row["memo"] = newMemo;
+
+                            LogRuleInfo($"Original memo='{originalMemo}' New memo='{newMemo}'. Check the delivered email's Body for TestMarker.");
+                        }
                     }
                 }
             }
@@ -168,6 +190,48 @@ namespace asi_OeEmailCloseDiag
             // sending, regardless of what the test above found.
             ruleResult.Success = true;
             return ruleResult;
+        }
+
+        // Reads the flag asi_email_context_flag (see FormPreEmail rule
+        // asi_email_context_flag.cs) written earlier in this same window's
+        // lifecycle -- w_email_response itself has no form_type/
+        // document_nos field exposed at this attach point (confirmed
+        // 2026-08-03), so this is the only way this rule can tell an Order
+        // Acknowledgment email apart from Packing List Transfer and other
+        // document emails that share this same window and OK button.
+        private bool IsOrderAckEmail(out string details)
+        {
+            const string selectSql =
+                @"SELECT is_order_ack, form_type, updated_at
+                  FROM asi_email_context_flag
+                  WHERE user_id = @User";
+
+            using (SqlCommand cmd = new SqlCommand(selectSql, P21SqlConnection))
+            {
+                cmd.Parameters.Add("@User", SqlDbType.VarChar, 30).Value = GetUserId();
+
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        bool isOrderAck = (bool)reader["is_order_ack"];
+                        string formType = reader["form_type"] as string ?? string.Empty;
+                        DateTime updatedAt = (DateTime)reader["updated_at"];
+                        details = $"is_order_ack={isOrderAck} form_type='{formType}' updated_at={updatedAt:O}";
+                        return isOrderAck;
+                    }
+
+                    details = "No asi_email_context_flag row found for this user -- treating as not an Order Ack.";
+                    return false;
+                }
+            }
+        }
+
+        private string GetUserId()
+        {
+            return this.Session != null && !string.IsNullOrEmpty(this.Session.UserID)
+                ? this.Session.UserID
+                : "unknown";
         }
 
         private void LogRuleInfo(string details)
@@ -199,9 +263,7 @@ namespace asi_OeEmailCloseDiag
 
                 using (SqlCommand logCmd = new SqlCommand(logSql, P21SqlConnection))
                 {
-                    string userId = this.Session != null && !string.IsNullOrEmpty(this.Session.UserID)
-                        ? this.Session.UserID
-                        : "unknown";
+                    string userId = GetUserId();
 
                     logCmd.Parameters.Add("@User", SqlDbType.VarChar, 255).Value = userId;
                     logCmd.Parameters.Add("@Action", SqlDbType.VarChar, 50).Value = logAction;
@@ -221,7 +283,7 @@ namespace asi_OeEmailCloseDiag
 
         public override string GetDescription()
         {
-            return "DIAGNOSTIC -- appends TestMarker to memo on Email Order Acknowledgment window close (cb_ok). Attachment-write attempt removed (confirmed dead end); HTML tag removed (confirmed memo is plain-text only).";
+            return "DIAGNOSTIC -- appends TestMarker to memo on w_email_response window close (cb_ok), gated on asi_email_context_flag so it only fires for Order Acknowledgment emails (that window is shared by Packing List Transfer and other document emails). Attachment-write attempt removed (confirmed dead end); HTML tag removed (confirmed memo is plain-text only).";
         }
 
         public override string GetName()
