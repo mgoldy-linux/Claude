@@ -119,7 +119,8 @@ Root cause (reproduced and measured against P21Play, not guessed):
 *(Next steps to be added as they're performed.)*
 
 ## Verification
-- RMA tab of Transaction Master Inquiry shows a Reason Code column; a known RMA (e.g. order `6000380` in Play → "Shipping Error or Wrong Item Shipped") displays the correct text; an Open/unreceived RMA still shows a value (unlike the superseded receipt-line approach, since this is captured at RMA entry).
+- RMA tab of Transaction Master Inquiry shows a Reason Code column; a known RMA (e.g. order `6000380` in Play → "Shipping Error or Wrong Item Shipped") displays the correct text.
+- **Reason is a required field at RMA entry — blanks should NOT occur, for Open or received RMAs alike.** Confirmed against Play: **163,083 of 163,084** RMA orders have a `lost_sales_transaction` row at code 2145; the single exception is a legacy 2018-12-17 record predating the requirement. A blank Reason Code on any current RMA is a data anomaly worth investigating, not an expected display state — don't treat it as "working as intended" the way the superseded receipt-line approach's blanks-until-received would have been.
 
 ### Testing status (P21Play)
 Tested so far:
@@ -134,8 +135,9 @@ Tested so far:
 
 **Hidden `lost_sales_uid` column — CONFIRMED (2026-08-05).** User confirmed the `width=-1` hide trick behaves the same on both desktop and web — no stray blank column on either client.
 
+**Open/unreceived RMA behavior — CORRECTED (2026-08-05).** Originally assumed blank was expected/acceptable for RMAs without a match. **Wrong** — reason is a required field at RMA entry, so essentially every RMA (163,083/163,084 in Play) has one regardless of receipt status. Nothing to "confirm" here beyond the data check above; a genuinely blank Reason Code on a current RMA would indicate a real data problem, not normal behavior.
+
 Still not yet confirmed — worth covering before calling Play sign-off complete:
-- **Open/unreceived RMA behavior** — confirm an RMA with no `lost_sales_transaction` row shows blank (not an error), per the Verification note above.
 - **Long description truncation** — confirm the column is wide enough that longer `lost_sales_desc` values aren't cut off (some are noticeably longer than "Doesn't Need," e.g. "Shipping Error or Wrong Item Shipped").
 - **Performance sanity check** — the join chain includes an unindexed scan on `lost_sales_transaction` (~3,082 logical reads per lookup, see Performance note above); worth a quick check that opening the RMA tab with a normal date range doesn't feel noticeably slower than before.
 - **Changelog comment** — the `custom_objects.version_desc` dated-history convention (used throughout this session, e.g. for the `ds_view_open_rma_value` work) hasn't been logged yet for the Reason Code change itself on either tested role.
