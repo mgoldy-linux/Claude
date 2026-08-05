@@ -132,9 +132,10 @@ Tested so far:
 - **Root cause: stale/cached report pull, not a data or join-logic bug.** A fresh single-RMA pull of 6051092 immediately after showed "Shipping Error or Wrong It..." — matching the live database. The field/join logic is correct; the first report pull just showed a cached value.
 - **Net result: 25/25 confirmed correct** once re-verified. No fix needed to the field itself.
 
+**Hidden `lost_sales_uid` column — CONFIRMED (2026-08-05).** User confirmed the `width=-1` hide trick behaves the same on both desktop and web — no stray blank column on either client.
+
 Still not yet confirmed — worth covering before calling Play sign-off complete:
 - **Open/unreceived RMA behavior** — confirm an RMA with no `lost_sales_transaction` row shows blank (not an error), per the Verification note above.
-- **Hidden `lost_sales_uid` column in web specifically** — the `width=-1` trick was found/confirmed on desktop; web (EVA/UI Server) has rendered DynaChange customizations differently before (see `feedback_p21_uiserver_stale_cache`) — worth explicitly checking the hidden column doesn't reappear as a stray blank column in the web grid.
 - **Long description truncation** — confirm the column is wide enough that longer `lost_sales_desc` values aren't cut off (some are noticeably longer than "Doesn't Need," e.g. "Shipping Error or Wrong Item Shipped").
 - **Performance sanity check** — the join chain includes an unindexed scan on `lost_sales_transaction` (~3,082 logical reads per lookup, see Performance note above); worth a quick check that opening the RMA tab with a normal date range doesn't feel noticeably slower than before.
 - **Changelog comment** — the `custom_objects.version_desc` dated-history convention (used throughout this session, e.g. for the `ds_view_open_rma_value` work) hasn't been logged yet for the Reason Code change itself on either tested role.
