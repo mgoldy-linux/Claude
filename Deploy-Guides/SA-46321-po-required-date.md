@@ -1,6 +1,6 @@
 # Deployment Guide — SA-46321 PO Required Date (Line + Header)
 
-> Produced during development (built + fully tested in P21Play same day, 2026-08-06). Update as the artifact changes; commit with the code.
+> Status: **Built and fully tested in P21Play, awaiting user acceptance testing.** UAT request sent 2026-08-06 via SysAid to Mike Learned (coordinating), Chad (EDI-driven POs), Pamela (manual PO creation), plus PORG testing. Jere signs off once the team's satisfied — Prod not yet started.
 
 ## Artifact(s)
 - `dbo.asi_fn_po_next_business_day` — scalar SQL function, slides a date past weekends/holidays
