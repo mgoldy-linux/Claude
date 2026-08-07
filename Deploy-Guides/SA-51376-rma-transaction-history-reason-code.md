@@ -176,7 +176,7 @@ Tested so far:
 Still not yet confirmed — worth covering before calling Play sign-off complete:
 - **Long description truncation** — confirm the column is wide enough that longer `lost_sales_desc` values aren't cut off (some are noticeably longer than "Doesn't Need," e.g. "Shipping Error or Wrong Item Shipped").
 - **Performance sanity check** — the join chain includes an unindexed scan on `lost_sales_transaction` (~3,082 logical reads per lookup, see Performance note above); worth a quick check that opening the RMA tab with a normal date range doesn't feel noticeably slower than before.
-- **Changelog comment** — the `custom_objects.version_desc` dated-history convention (used throughout this session, e.g. for the `ds_view_open_rma_value` work) hasn't been logged yet for the Reason Code change itself on either tested role.
+- ~~**Changelog comment**~~ — **DONE 2026-08-07.** Missed during the 8/6 rollout (client Comments-box step was skipped for all 21 roles, not just the 2 Play ones). Backfilled via SQL (`Sql-Scripts\Update-SA51376-Version-Desc-Prod.sql`): appended `20260806 - SA 51376 Add RMA Reason Code` to `custom_objects.version_desc` on all 21 Prod role versions, verified before/after.
 - **Only 2 of the 21 Prod role versions tested so far.** Fine for Play proof-of-concept, but the Deploy steps section still calls for repeating the build across all 21 in Prod — worth deciding whether any other roles should get a Play test pass first, or whether these 2 are sufficient to greenlight the full Prod rollout.
 - ~~**Explicit requestor sign-off**~~ — **RECEIVED 2026-08-06.** User confirmed verbally with the requestor: good to put in production.
 
