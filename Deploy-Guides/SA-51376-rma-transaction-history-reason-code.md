@@ -8,10 +8,10 @@ On the **Transaction Master Inquiry** screen, **RMA** tab, add a **Reason Code**
 ## Data source (confirmed against P21Play — corrected 2026-08-05)
 User supplied and validated the real query:
 ```sql
-SELECT lst.transaction_no AS [RMA No], ls.lost_sales_desc
-FROM lost_sales_transaction lst
-JOIN lost_sales ls ON lst.lost_sales_uid = ls.lost_sales_uid
-WHERE lst.transaction_no = 6000380
+SELECT lost_sales_transaction.transaction_no AS [RMA No], lost_sales.lost_sales_desc
+FROM lost_sales_transaction
+JOIN lost_sales ON lost_sales_transaction.lost_sales_uid = lost_sales.lost_sales_uid
+WHERE lost_sales_transaction.transaction_no = 6000380
 ```
 - `lost_sales_transaction.transaction_code_no = 2145` is P21's stock code for **"Order - RMA"** (confirmed via `p21_view_code_p21`; `2143` = "Order - Cancel Order" — same table is reused across transaction types). This is **header-grain**, keyed directly on `oe_hdr.order_no = lost_sales_transaction.transaction_no` — captured at RMA entry, not at receipt.
 - Validated: order `6000380` → "Shipping Error or Wrong Item Shipped". Sampled 10 more RMAs at code 2145, all clean single rows (e.g. `DN`/"Doesn't Need", `WCB`/"Wrong Customer Billed", `DEFECTIVE`/"Defective").
@@ -20,10 +20,13 @@ WHERE lst.transaction_no = 6000380
 - **Superseded finding, kept for the record:** `rma_receipt_line.reason_adjustment_id` → `p21_view_reason.reason` is a *real, populated* field (141,574/240,198 rows in Play) but is **receipt-line grain, not what this screen uses** — do not build against it. Also ruled out `oe_line.reason_id` (0 of 262,251 rows populated anywhere in Play — a red herring, not what drives the value shown in P21's UI).
 - "Reason Code" and "Lost Sales Desc" turn out to be **the same field** on this screen — the original SA text wasn't conflating two different things.
 
-## Performance note (measured against P21Play)
+## Performance note (measured against P21Play) — RESOLVED, index built
 The user's query filters only on `transaction_no`, but the existing index on `lost_sales_transaction` is keyed `(lost_sales_uid, transaction_code_no, transaction_no)` — `transaction_no` is the last key column, so SQL Server can't seek on it. Measured **3,082 logical reads** for a single-order lookup on a 752K-row table (a scan, not a seek). If DynaChange evaluates this per visible grid row, cost adds up on a screen showing hundreds of RMAs at once.
 - Recommend: add `AND lst.transaction_code_no = 2145` to the query (matches the RMA tab's own scope, cheap to add).
-- Recommend (bigger win, needs a decision — new index on a stock P21 table): `CREATE INDEX ... ON lost_sales_transaction (transaction_no, transaction_code_no) INCLUDE (lost_sales_uid)` to allow a seek. Not yet built or requested.
+- **Built 2026-08-06** (script: `Sql-Scripts\Create-Index-LostSalesTransaction-TransactionNo.sql`): `CREATE INDEX ix_lost_sales_transaction_transaction_no ON lost_sales_transaction (transaction_no, transaction_code_no) INCLUDE (lost_sales_uid)`.
+  - **P21Play:** 2,905 → 3 logical reads (scan → seek), measured via `STATISTICS IO`.
+  - **P21 (Prod):** 2,951 → 3 logical reads (scan → seek), measured via `STATISTICS IO`.
+  - Index is live in both environments now, ahead of the Prod DynaChange rollout below.
 
 ## Trap to watch for (learned the hard way on SA-47981)
 If this is added as a DynaChange **screen-only column**, P21 auto-prefixes the real field name with `ufc_p21soc_` (e.g. a column named `reasoncode` becomes `ufc_p21soc_reasoncode`). Confirm the real name via a `Data.Fields` dump if any rule/SQL ever needs to reference it — the un-prefixed name will silently never match. See `feedback_p21_dynachange_screen_only_columns`.
@@ -61,6 +64,39 @@ This also explains the earlier "Open item" below — searching the classic `dyna
 ## Deploy steps
 1. Build and verify the column once in **P21Play**.
 2. Once the requestor approves in Play, repeat the same column addition in **Prod**, once per version in the 21-item list above. Track completion against that list so none are missed.
+
+## Prod rollout status (2026-08-06)
+Verified directly against Prod: `fc_dataobject_table`/`fc_dataobject_column` have **zero rows** for `lost_sales_transaction`/`lost_sales` — nothing built in Prod yet. (The "2 of 21" Play build used the same role-name `version_id` labels as Prod, which is easy to mistake for Prod progress — it wasn't.)
+
+Plan: build the field via Field Chooser **New Field** (full wizard, Steps 1-8 above) on the **first** Prod role only — this creates the shared `fc_dataobject_table`/`fc_dataobject_column` definition. Every other role then just needs the **existing definition placed** via Field Chooser (no New Field, much faster). All **21** roles still need the placement step done individually — DynaChange Version Manager customizations are per-role, not shared.
+
+Progress checklist — **ALL 21 COMPLETE, verified 2026-08-06:**
+- [x] `_all`
+- [x] `warehouse office`
+- [x] `warehouse manager`
+- [x] `warehouse`
+- [x] `system admin`
+- [x] `sales manager`
+- [x] `purchasing`
+- [x] `product manager`
+- [x] `outside sales`
+- [x] `marketing`
+- [x] `management`
+- [x] `customer service manager`
+- [x] `customer service`
+- [x] `claims`
+- [x] `branch manager`
+- [x] `accounts receivable manager`
+- [x] `accounts receivable`
+- [x] `accounts payable`
+- [x] `accounting`
+- [x] `accounts_receivable_admin_accounts receivable admin`
+- [x] `vendor maintenance`
+
+**Post-rollout fix (2026-08-06):** verified both field placement (`ufc_lost_sales_lost_sales_desc`) and the hidden join-key column's `width=-1` across all 21 roles. Found 2 roles — `system admin` (913) and `product manager` (917) — where the join-key column (`ufc_lost_sales_transaction_lost_sales_uid`) was left visible at `width=500` instead of hidden. Fixed via `Sql-Scripts\Fix-LostSalesUid-HiddenWidth-Prod.sql`. Re-verified after: all 21 roles clean, both checks pass.
+
+## Status: COMPLETE (2026-08-06)
+SA-51376 fully deployed to Prod — Reason Code column live on all 21 role versions of Transaction Master Inquiry Orders, RMA tab. Supplemental index live in Play and Prod. Join-key column hidden correctly on all 21 roles.
 
 ## Build steps (documented live, per version — P21Play)
 **Step 1 — Open DynaChange Screen, select the DynaChange, update the comment.**
@@ -109,7 +145,7 @@ Root cause (reproduced and measured against P21Play, not guessed):
       AND lost_sales_transaction.transaction_code_no = 2145
   ```
   Must be `LEFT JOIN` (not `JOIN`), and `transaction_code_no = 2145` must be part of the **ON clause**, not a `WHERE` filter (a `WHERE` filter would turn the outer join back into an inner join for non-matching rows).
-- Apply the same fix to the `lost_sales` join once it's added in Step 8 (the earlier validated query already carries `ON lst.lost_sales_uid = ls.lost_sales_uid`, which is fine as-is — no code filter needed there since `lost_sales_uid` is already the exact row from the filtered `lost_sales_transaction` join).
+- Apply the same fix to the `lost_sales` join once it's added in Step 8 (the earlier validated query already carries `ON lost_sales_transaction.lost_sales_uid = lost_sales.lost_sales_uid`, which is fine as-is — no code filter needed there since `lost_sales_uid` is already the exact row from the filtered `lost_sales_transaction` join).
 
 **Step 8 — Add `lost_sales`, same inner-join bug recurred, then a wizard-only trap around hiding the join key.**
 - Hit the identical bug shape again: `lost_sales` was added as a plain `join`, dropping ~3.7M rows (3,864,424 → 163,083 modified). Fix: `LEFT JOIN` (no extra code filter needed here — `lost_sales.lost_sales_uid` is that table's own PK, one-to-one, no fan-out risk).
@@ -142,7 +178,10 @@ Still not yet confirmed — worth covering before calling Play sign-off complete
 - **Performance sanity check** — the join chain includes an unindexed scan on `lost_sales_transaction` (~3,082 logical reads per lookup, see Performance note above); worth a quick check that opening the RMA tab with a normal date range doesn't feel noticeably slower than before.
 - **Changelog comment** — the `custom_objects.version_desc` dated-history convention (used throughout this session, e.g. for the `ds_view_open_rma_value` work) hasn't been logged yet for the Reason Code change itself on either tested role.
 - **Only 2 of the 21 Prod role versions tested so far.** Fine for Play proof-of-concept, but the Deploy steps section still calls for repeating the build across all 21 in Prod — worth deciding whether any other roles should get a Play test pass first, or whether these 2 are sufficient to greenlight the full Prod rollout.
-- **Explicit requestor sign-off** — `island2` testing it is a strong signal, but worth getting an explicit "looks good, ready for Prod" before proceeding, per your usual ticket-closure practice.
+- ~~**Explicit requestor sign-off**~~ — **RECEIVED 2026-08-06.** User confirmed verbally with the requestor: good to put in production.
+
+## Status as of 2026-08-06
+Sign-off received; supplemental index built and measured in both Play and Prod (see Performance note above). **Remaining work: repeat the Field Chooser column build across the 19 not-yet-done Prod role versions** (2 of 21 were already built/tested in Play — `_all` and `customer service manager`). Track completion against the 21-item list above as each role is done.
 
 ## Rollback
 - Remove the DynaChange screen-only column / revert via DynaChange Version Manager if it needs to come out.

@@ -1,6 +1,6 @@
 # Deployment Guide — Remove `ds_view_open_rma_value`
 
-> Status: **Validated in P21Training, deploying to P21Play.** Independent legacy/non-P21 view cleanup task — **not part of SA-51376.** It was noticed while working nearby on that ticket, but this is its own initiative (removing custom views that add nothing over the native P21 view underneath). See `Deploy-Guides\SA-51376-rma-transaction-history-reason-code.md` only for background on how the `fc_dataobject`/`custom_objects` schema was mapped — the two tasks are otherwise unrelated and track separately.
+> Status: **DONE in P21Training and Prod (2026-08-06). P21Play deliberately left mid-progress** — will resolve on its next refresh-from-Prod, not a gap. Independent legacy/non-P21 view cleanup task — **not part of SA-51376.** It was noticed while working nearby on that ticket, but this is its own initiative (removing custom views that add nothing over the native P21 view underneath). See `Deploy-Guides\SA-51376-rma-transaction-history-reason-code.md` only for background on how the `fc_dataobject`/`custom_objects` schema was mapped — the two tasks are otherwise unrelated and track separately.
 
 ## Goal
 Remove the custom (non-P21) view `ds_view_open_rma_value` from the database, as part of a broader push to eliminate non-P21 views. It's a thin wrapper with no logic of its own:
@@ -49,20 +49,31 @@ Went with retargeting rather than pure removal — the 6 roles keep seeing Open 
 5. **Header alignment — attempted, DID NOT WORK, dropped from deployment.** Tried matching Carrier/Class 1's header-centering (they have an explicit `alignment=2` override row layered on their base `alignment=1`/`0`; ours only had the base `alignment=1`, no override). Inserted a matching `alignment=2` override row for `_all`/158 (`Sql-Scripts\Fix-Open-Total-Value-Header-Alignment-Training.sql`) via the counter-safe path (`p21_set_counter` resync — `seq_custom_objects_detail` was drifted, 319020 vs. real max 319025) — **did not visibly fix it**, so the inserted row (uid 319041) was deleted again. **Not part of this rollout.** Headers stay as the client's own default rendering.
 6. **Comments logged**: `Sql-Scripts\Update-Open-Total-Value-Version-Comments-Training.sql` appended `| 20260805 - restored open_total_value sourced from p21_view_open_rma_report (native), 2-decimal format fixed` to all 6 `custom_objects.version_desc`, matching the existing dated-history convention.
 
-## P21Play — IN PROGRESS
-Same sequence as Training, minus the alignment attempt.
+## P21Play — INTENTIONALLY LEFT MID-PROGRESS (2026-08-06 decision)
+Same sequence as Training, minus the alignment attempt. SQL-level steps (remove + retarget) done for all 6 roles; Field Chooser rebuild done on only 2 of 6 (`_all`, `customer service manager`). **User's call 2026-08-06: don't finish the remaining 4** — Play gets refreshed from Prod periodically, and Prod is now done (see below), so the next refresh resolves Play automatically without manual rework. Not a gap to chase unless Play is needed for something sooner than the next refresh.
 - **Side finding before starting:** Play's *current* (pre-change) state isn't uniform — 4 of the 6 roles (922, 929, 930, 2990) already carry a 2-decimal format override on the *old* `ds_view_open_rma_value`-sourced field (someone fixed this previously), but 2 (158/`_all`, 923/customer service manager) still show the raw 9-decimal mask. End state is the same either way (all 6 clean at 2 decimals, natively sourced).
-1. `Sql-Scripts\Remove-ds_view_open_rma_value-Column-Play.sql` — ready, not yet run.
-2. `Sql-Scripts\Retarget-ds_view_open_rma_value-to-P21-Native-Play.sql` — ready, not yet run.
-3. Re-add via Field Chooser in the client for each of the 6 roles (same as Training — GUI-driven, not raw SQL, to avoid hand-typing PowerBuilder `create column(...)` blobs against a shared environment).
-4. Then re-run the decimal-format-fix and version-comment scripts, retargeted to `P21Play` (same pattern as Training's, not yet written for Play).
-5. Once Play is clean and confirmed, deploy the same sequence to **Prod** (same IDs confirmed matching), then `DROP VIEW ds_view_open_rma_value` everywhere it's no longer referenced.
+1. `Sql-Scripts\Remove-ds_view_open_rma_value-Column-Play.sql` — run, confirmed.
+2. `Sql-Scripts\Retarget-ds_view_open_rma_value-to-P21-Native-Play.sql` — run, confirmed.
+3. Re-add via Field Chooser in the client for each of the 6 roles — **done on 2 of 6** (`_all`, `customer service manager`). 4 roles remain unfinished by design: management (922), AR manager (929), AR (930), vendor maintenance (2990).
+4. Decimal-format-fix and version-comment scripts for Play — not run for the remaining 4 (moot, see above).
+
+## Prod — DONE (2026-08-06)
+Prioritized ahead of finishing the remaining 4 Play roles, per the reasoning above. Verified Prod's pre-change state matched Training/Play (all 6 roles still on the old field, `fc_dataobject_table` 80/`fc_dataobject_column` 222 still on `ds_view_open_rma_value`) before running anything.
+1. `Sql-Scripts\Remove-ds_view_open_rma_value-Column-Prod.sql` — run; confirmed 0 rows remain across all 6 roles afterward.
+2. `Sql-Scripts\Retarget-ds_view_open_rma_value-to-P21-Native-Prod.sql` — run; confirmed `fc_dataobject_table` 80 → `p21_view_open_rma_report`, `fc_dataobject_column` 222 → `ufc_p21_view_open_rma_report_open_total_value`.
+3. Re-added via Field Chooser in the P21 client on all 6 Prod roles (158, 922, 923, 929, 930, 2990) — verified via SQL afterward that exactly these 6 (no extras, no misses) have `ufc_p21_view_open_rma_report_open_total_value` placed.
+4. `Sql-Scripts\Fix-Open-Total-Value-Decimal-Format-Prod.sql` — same inherited 9-decimal mask bug confirmed present on all 6, fixed; confirmed `.00` mask on all 6 after.
+5. `Sql-Scripts\Update-Open-Total-Value-Version-Comments-Prod.sql` — changelog appended to all 6 (role 158 already had a manual note from the user dated 2026-08-06 — script appended after it, nothing overwritten).
+6. Header-alignment fix **not attempted** in Prod either — already proven not to work in Training.
+
+`DROP VIEW ds_view_open_rma_value` **not yet done anywhere** — held until Play/Training are also clean (Play via its next refresh), so the view isn't dropped out from under an environment still referencing it.
 
 ## Verification
 - Transaction Master Inquiry Orders (all 21 role versions, but especially the 6 above) opens without error.
-- Open Total Value column still populates correctly on the 6 affected roles, formatted to 2 decimals.
-- Eventually (after Prod): `SELECT * FROM sys.views WHERE name = 'ds_view_open_rma_value'` returns 0 rows.
+- Open Total Value column still populates correctly on the 6 affected roles, formatted to 2 decimals. **Confirmed via SQL in Prod** (all 6 roles: field present, `.00` mask, changelog updated) — not yet visually confirmed in the P21 client by a user.
+- Eventually (after view drop): `SELECT * FROM sys.views WHERE name = 'ds_view_open_rma_value'` returns 0 rows. Not done yet — view is still in place, just no longer referenced by any of the 6 Prod roles.
 
 ## Rollback
 - Training: pre-change `custom_objects_detail` rows for the old field were captured in this session's query output before deletion (not saved to a file) — if needed, the PowerBuilder `create column(...)`/`create text(...)` blobs can be reconstructed from the conversation history, or simply re-run Field Chooser "New Field" against `ds_view_open_rma_value` again (view itself hasn't been dropped yet).
-- Play: not yet changed.
+- Play: 2 of 6 roles changed (see above); 4 unchanged (never touched).
+- Prod: all 6 roles changed. Same recovery path as Training — view hasn't been dropped, so `ds_view_open_rma_value` can still be rejoined manually via Field Chooser "New Field" if a rollback is ever needed. `Remove-ds_view_open_rma_value-Column-Prod.sql`'s BEFORE query output (this session) has the exact pre-change `custom_objects_detail` rows if a byte-for-byte restore is needed instead.
