@@ -84,6 +84,47 @@ $filesToArchive = @(
     'kb_Order_SaleDay_202009_InsApp.dll'
     'kb_Order_SaleDay_202305.dll'
     'kb_Order_SaleDay_202405.dll'
+
+    # Added 2026-08-07: 3 orphaned files confirmed via fresh query on P21Dev to have NO
+    # business_rule row in any environment, ever -- same "orphaned, safe" pattern as
+    # DirectShipPriceCheck above. Held back on 8/5 pending an explicit decision; confirmed 8/7.
+    'kb_Order_SaleDay_201906.dll'
+    'kb_Order_SaleDay_202205.dll'
+    'kb_Order_SaleDay.dll'
+
+    # Added 2026-08-07: cross-referenced every live DLL against P21BusinessRules.dbo.business_rule
+    # (grouped by rule_name) to find files that are purely Inactive (705) with no Active (704) row
+    # sharing the same rule_name -- ruled out RMA_RestockAdjustment_V3.dll (has BOTH an active and
+    # an inactive row) and left OrderEntry_salesrep/OrderEntryFund_LIVE_V3/RebatePriceTracker alone
+    # (no confident filename match). OrderLineSalesRepAddition_LIVE was the real miss from 8/5's
+    # pass -- its business_rule row (uid 44) was deleted that day but the DLL itself was never
+    # archived (the file list only had the differently-named OrderEntry_SalesRepAddition* trio).
+    # kb_Shipping_IBFSurcharge.dll REMOVED 2026-08-07 -- confirmed via Prod scan + re-check of the
+    # archived BusinessRules copy that this file ALSO embeds "kb_RMA_IBFSurcharge_Add", an ACTIVE
+    # rule (RMA Entry, On-Demand surcharge). Archived in error on BusinessRules at 12:23 PM, caught
+    # and restored same day (zero business_rule_log activity during the gap, no real impact). Do
+    # NOT re-add without re-verifying it has no Active match on every rule name, not just the two
+    # kb_Shipping_IBFSurcharge_Add/_Update names it was originally guessed against.
+    'kb_ValidateOO_BlockSave.dll'
+    'kb_Customer_Closed_r1.dll'
+    'kb_Customer_Closed.dll'
+    'kb_Order_WelcomeBack_202006.dll'
+    'OrderLineSalesRepAddition.dll'
+    'OrderLineSalesRepAddition_LIVE.dll'
+
+    # Added 2026-08-07 (2nd pass): resolved via actual .cs source in C:\Business_Rules and the
+    # OneDrive dev backup tree, not filename guessing. business_rule.rule_name has NO stored link
+    # to a class/assembly -- it's a free-text label typed once in P21's Import Rule picker
+    # (confirmed: RebatePriceTracker.cs's class is "RebatePriceTracker_Update" in namespace
+    # "RebatePricingTracker", three different spellings of the same rule). Each of these was
+    # confirmed either by rule_name appearing in source (case-insensitive) or by the source's own
+    # class name having zero business_rule rows under ANY name.
+    'OrderEntryFund.dll'              # class OrderEntryFund_LIVE_V3 -> rule 705-only
+    'RebatePricingTracker.dll'        # class RebatePriceTracker_Update -> rule 705-only
+    'rewardRules.dll'                 # class/namespace rewardFormat -> rule 705-only
+    'RMA_RestockAdjustment.dll'       # class RMA_RestockAdj (no version) -- zero rows, only _V3 ever wired up
+    'RMA_RestockAdjustment_V2.dll'    # class RMA_RestockAdj_V2 -- zero rows, same reason
+    'AddSalesRepToOrder.dll'          # zero rows under class name; source is a hardcoded-test stub, real logic commented out, sits in Archive/Old-Projects
 )
 
 $i = 0

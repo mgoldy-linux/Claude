@@ -21,12 +21,32 @@ A second, related problem surfaced while investigating: the P21 client's "Rules"
 
 ## Target environments — DLL archive
 All 6, one at a time, lower environments first:
-- ✅ **BusinessRules** — done 2026-08-04/05, all 24 files (see list below), verified via login (zero log rows)
+- ✅ **BusinessRules** — done 2026-08-04/05 (24 files) + a 2nd pass 2026-08-07 (13 more files,
+  evidence-based via `Get-BusinessRuleDllStatus.ps1` + source-code review — see below)
 - ✅ Dev — done 2026-08-05, all 24 files
 - ✅ Play — done 2026-08-05, all 24 files
 - ✅ Training — done 2026-08-05, all 24 files
 - ✅ Upgrade — done 2026-08-05, all 24 files
-- ⬜ Prod (last) — not yet run
+- 🔵 **Prod (last) — started 2026-08-07.** 9 files archived so far: `P21.Accounting.MX.dll`
+  (re-verified zero rows in live `sat_invoice_auxfoliorep_mx`/`sat_payment_transfer_mx` on Prod
+  itself, not just carried over from lower envs) + the 8-file `kb_Order_SaleDay*`/`kb_Order_Sale_*`
+  family (6 confirmed via rule-name match, 2 orphans re-confirmed zero `business_rule` rows on
+  Prod). The original 24-file dev-iteration batch (`DirectShipPriceCheck*`, `OrderEntry_SalesRepAddition*`)
+  has **not** been run against Prod yet — full audit via `Get-BusinessRuleDllStatus.ps1 -Instance Prod`
+  is in `C:\_P25\Data-Out\CSV\Get-BusinessRuleDllStatus.ps1-20260807-Prod.csv`.
+
+## ⚠ Incident — kb_Shipping_IBFSurcharge.dll archived in error (2026-08-07, caught same day)
+Archived on `BusinessRules` at 12:23 PM based only on matching `kb_Shipping_IBFSurcharge_Add`/
+`_Update` (both Inactive) — the two names it was originally guessed against. A later full-rule-list
+scan on **Prod** showed the same file also embeds `kb_RMA_IBFSurcharge_Add`, which is **Active**
+(RMA Entry, On-Demand surcharge) on both environments. Re-checked the archived BusinessRules copy
+directly and confirmed the same string is present. **Restored to the live BusinessRules folder the
+same day** (~2.5 hours later); `business_rule_log` showed zero activity for RMA surcharge during
+the gap, so no real-world impact. `kb_Shipping_IBFSurcharge.dll` removed from
+`Archive-BusinessRulesDLL-Duplicates.ps1`'s file list for good — **lesson: a file matching
+multiple rule names needs every match checked against `has_active`, not just the ones you went
+looking for.** Same root cause as `kb_Order_Validator_v2.dll` legitimately bundling 4 rule names —
+bundling itself isn't rare here, assuming single-rule-per-file is what caused this miss.
 
 ## Target environments — dead business_rule row deletion
 - ✅ **BusinessRules** — done 2026-08-05, 15 rows deleted manually via P21 client (traced), verified gone
@@ -84,6 +104,46 @@ Cross-checked against `sys.foreign_keys` to confirm completeness — only those 
 **BusinessRules (2026-08-05):** user deleted 15 rows manually via the P21 client while the trace ran: uid 44 (`OrderLineSalesRepAddition_LIVE`) plus 14 `kb_Order_Sale*` rows (uids 109,110,113,114,116,117,122,123,124,129,130,131,132,146). Confirmed gone afterward via direct query. Matching DLL files (8 of the 15) archived — see Files archived above.
 
 **Remaining 4 environments:** `Delete-BusinessRules-Batch.sql` targets the same 15 `business_rule_uid` values (confirmed identical across environments — verified rule names match on `P21Dev` before building the script). **Not yet run** — paused after the DLL archive step per the user's request to verify no adverse effects first; confirmed none, next action is to run the batch delete.
+
+## Individual rule review — BusinessRules (in progress, 2026-08-07)
+
+Shifted approach: rather than only archiving DLLs by name/content evidence, going through every
+remaining Inactive `business_rule` row on **BusinessRules** one at a time in the P21 client's
+"Edit Business Rule" screen, which shows a live-resolved **Assembly Name** column (`AssemblyName,
+Version=..., Culture=..., PublicKeyToken=...`) for whatever currently loads for that row's
+window/field/event context — the real ground truth, not a filename guess. Rows with a DLL already
+archived in an earlier pass show blank here (confirmed on `kb_Order_WelcomeBack_202006` and
+`kb_Customer_Closed_Workflow_r1`), same as a row with no file at all — blank is not an error.
+
+Once Assembly Name is confirmed (or confirmed blank) for a row, delete it via the P21 client
+("Rules" screen), same traced cascade as the original 15-row deletion: `business_rule_data_element`
+→ `business_rule_x_roles` → `business_rule_x_users` → `business_rule`.
+
+**Already deleted (before this checklist was built, presumably by user directly):**
+- `kb_Customer_Closed_r1`
+- `kb_Order_RequiredDate` (bare/predecessor row only — confirmed the **active** `kb_Order_RequiredDate_r3`, uid 126, is untouched, still `row_status_flag=704`, `last_maintained_by=mgoldyn` — SA-46321 unaffected)
+
+**Remaining 17 Inactive rows to review:**
+
+| uid | rule_name | Window / Field | Assembly Name | Status |
+|---|---|---|---|---|
+| 55 | kb_Order_Validator | Order Entry / oe_hdr_carrier_id | not checked | pending — PROTECTED family, confirm before deleting |
+| 56 | kb_Order_Workflow | Order Entry / order_no | not checked | pending |
+| 77 | OrderEntry_salesrep | Event: Order Updated | didn't open | pending |
+| 79 | OrderEntry_salesrep | Event: Order Updated | not checked | pending |
+| 78 | kb_ValidateOO_BlockSave | Validate Open Orders | not checked (DLL already archived) | pending |
+| 80 | OrderEntry_salesrep_UPD_319_949 | Event: Order Updated | not checked | pending |
+| 91 | kb_Shipping_IBFSurcharge_Add | Shipping | not checked (DLL already archived) | pending |
+| 92 | kb_Shipping_IBFSurcharge_Update | Shipping | not checked (DLL already archived) | pending |
+| 93 | kb_Shipping_IBFSurcharge_Update | Shipping | not checked (DLL already archived) | pending |
+| 101 | kb_Shipping_IBFSurcharge_Update | Shipping | not checked (DLL already archived) | pending |
+| 111 | kb_Order_WelcomeBack_202006 | Front Counter Order | **blank (confirmed)** | ready to delete |
+| 112 | kb_Order_WelcomeBack_202006 | Order Entry | not checked (sibling of 111, DLL already archived) | pending |
+| 43 | OrderEntryFund_LIVE_V3 | Order Entry | not checked (DLL already archived) | pending |
+| 45 | RebatePriceTracker | Event: Order Updated | not checked (DLL already archived) | pending |
+| 36 | rewardFormat | Order Entry | not checked (DLL already archived) | pending |
+| 53 | RMA_RestockAdj_V3 | Front Counter Order | not checked | ⚠ has an ACTIVE sibling row elsewhere on the same rule_name — verify uid 53 specifically before deleting, do not touch the active one |
+| 60 | kb_Customer_Closed_Workflow_r1 | Customer Maintenance | **blank (confirmed)** | ready to delete |
 
 ## Open items
 - Run `Delete-BusinessRules-Batch.sql` against Dev/Play/Training/Upgrade, then Prod (DLL archive + row deletion both, last).
