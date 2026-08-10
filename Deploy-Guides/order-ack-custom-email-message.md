@@ -10,7 +10,14 @@
 
 ## Target environments
 - **P21 Business Rules** (mgoldyn's own testing) → **Play** (user-facing testing) → Prod
-- Currently registered: `t2` **active** in P21 Business Rules (`business_rule.row_status_flag = 704`), plus the diagnostic `asi_oe_email_close_diag` (On-Demand, attached to `cb_ok` on `w_email_response`). Nothing registered in Play or Prod.
+- **Currently registered (as of 2026-08-10, post-refresh recovery):** `asi_email_context_flag` (uid 163, On-Event/FormPreEmail, Synchronous) and `asi_oe_email_close_diag` (uid 164, On-Demand/`cb_ok` on `w_email_response`, Synchronous — see 2026-08-10 note below). `t2` is **NOT currently registered** — see below, open decision. Nothing registered in Play or Prod.
+
+## 2026-08-10 — refresh wiped all 3 rules, 2 of 3 manually recovered
+The P21BusinessRules refresh-from-Prod deleted `asi_email_context_flag`, `asi_oe_email_close_diag`, and `t2` outright — `business_rule` is not part of either refresh script's capture/restore (a known, still-unfixed gap; see `project_p21businessrules_refresh.md`).
+- **Recovered:** `asi_email_context_flag` table (`Create-asi-email-context-flag.sql`, re-run clean) and both rule registrations, verified via direct SQL (single row each, `row_status_flag=704`), then proven with a real controlled test send — the delivered email contained the marker.
+- **Open, unexplained:** `asi_oe_email_close_diag` came back registered as **Synchronous** (`run_type_cd=3424`). Every prior confirmed-working test of this exact rule (2026-07-29/30) was **Asynchronous** (3423), and this guide's own "Dependencies" section below states the dropdown always reverts to Asynchronous for this attach path regardless of selection. It didn't revert this time, and the rule still worked in the live test. Not proven safe long-term, just proven to work once — re-verify on the next registration cycle rather than assuming this is now the expected value.
+- **NOT recovered, decision pending:** `t2` (the FormPreEmail pre-fill fallback) was also deleted and was **not** re-registered as part of this recovery. Its `CustomMessage` constant is still test placeholder text ("Life is basically just opening 40 tabs..."), so its absence isn't actively harmful — with it gone, that placeholder can no longer land in a real customer's Order Ack email through this environment's live SMTP. Decide whether to restore it (resumes the same latent placeholder-text risk) or leave it out until the real message/design is finalized with Matt.
+- `t1` was never live at this point (already superseded before the refresh) — not affected.
 
 ## Dependencies & deploy order
 **Preferred design (OK-button, once built for real):**
