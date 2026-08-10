@@ -6,6 +6,8 @@
 - `C:\Claude\PowerShell-Scripts\Archive-BusinessRulesDLL-Duplicates.ps1` — moves confirmed stale/dead rule DLLs out of a P21 environment's live `BusinessRulesDLL` share into a new `_Archive` subfolder (never deletes)
 - `C:\Claude\Sql-Scripts\Delete-BusinessRule-By-Name.sql` — deletes a single `business_rule` row (and dependents) by name
 - `C:\Claude\Sql-Scripts\Delete-BusinessRules-Batch.sql` — deletes a batch of `business_rule` rows (and dependents) by `business_rule_uid`
+- `C:\Claude\PowerShell-Scripts\Get-BusinessRuleDllStatus-Reflection.ps1` (new 2026-08-10) — companion to `Get-BusinessRuleDllStatus.ps1`; real .NET reflection (loads each DLL, finds every `P21.Extensions.BusinessRule.Rule`-derived class, calls its actual `GetName()`/`GetDescription()`) instead of byte-scanning for evidence. Report-only, no move capability — a higher-confidence cross-check to run alongside the byte-scan script, not a replacement. See `project_2026_08_10_br_flow_diagram` for the bugs found/fixed getting it working against the live share.
+- `C:\Claude\PowerShell-Scripts\Test-BusinessRuleDll.ps1` (new 2026-08-10) — same reflection method, scoped to one specific DLL (local path or UNC), checks Active/Inactive/Not Found across environments.
 - Ticket: none (internal cleanup, found via `business_rule_log` noise analysis 2026-08-04/05)
 
 ## Background
@@ -146,6 +148,7 @@ Once Assembly Name is confirmed (or confirmed blank) for a row, delete it via th
 | 60 | kb_Customer_Closed_Workflow_r1 | Customer Maintenance | **blank (confirmed)** | ready to delete |
 
 ## Open items
+- **New reflection-based tooling available for the 17-row checklist above** (`Get-BusinessRuleDllStatus-Reflection.ps1`/`Test-BusinessRuleDll.ps1`, 2026-08-10) — gives the exact `GetName()`/`GetDescription()` a DLL's class declares, cross-referenced against `business_rule` by exact match, as a second opinion alongside the byte-scan script and the manual Edit Business Rule review. Confirmed 2026-08-10: `business_rule_log` does **not** record ordinary rule executions (only ~150 `Invoke` rows total on Prod since 2018, none of them order-entry logic) — don't rely on that table to confirm whether any of these 17 rows is actually still firing.
 - Run `Delete-BusinessRules-Batch.sql` against Dev/Play/Training/Upgrade, then Prod (DLL archive + row deletion both, last).
 - Decide whether to archive the 3 orphaned `kb_Order_SaleDay` files (201906/202205/generic) the same way as the others.
 - Broader `kb_` rule list from the P21 "Rules" screen has many more entries beyond the sale-day family (`kb_Customer_Closed_r1`, `kb_Customer_Closed_Workflow_r1`, `kb_Order_Workflow`, `kb_Shipping_IBFSurcharge_Add`/`_Update` ×3, etc., all Inactive) — candidate for a future dedicated diligence pass under the 2026 kb_/js_ retirement goal, not started.
