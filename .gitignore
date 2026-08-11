@@ -9,6 +9,9 @@ Claude-resume.txt.bak
 [Bb]in/
 [Oo]bj/
 
+# Postman environments (may contain credentials/tokens)
+*.postman_environment.json
+
 # OS / editor
 Thumbs.db
 .DS_Store
