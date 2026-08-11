@@ -35,6 +35,7 @@ All under `C:\Claude\Alerts\Low-Margin-Alert\`, run **in numbered order**:
 | 3 | `03-create-alerts.sql` | Creates the 2 alert definitions (impl + filters + message + recipients) |
 | — | `ROLLBACK-p21_view_alert_oe_OrderEntry-Play-BEFORE.sql` | The pre-change view definition — **the rollback artifact** |
 | — | `Analyze-Cost-Buckets.sql` | Read-only analysis; not part of the deploy |
+| 6 | `06-harden-oe-view-null-tokens.sql` | Wraps 6 previously-unwrapped OE-token columns in `ISNULL`/`COALESCE` — defense against the `p21_sp_alert_generation` NULL-token-collapse bug (see 2026-08-11 note below). `CREATE OR ALTER VIEW`, run standalone against the view already deployed by script 01 |
 
 - Request: `REQUIREMENTS-Evan-2026-06-30.md` · Plan: `PLAN.md`
 - Ticket: *none assigned*
@@ -134,6 +135,16 @@ Confirmed with user before building:
 
 **⚠ PLAY REFRESH SAME DAY (2026-08-03, later) — the Prod-inactive deploy above never reached Play.** Confirmed via `msdb..restorehistory`: the backup used for that refresh was taken 12:01–12:28 AM, roughly 7 hours *before* the 7:49 AM deploy above. A same-day deploy is not automatically safe against a same-day refresh — check the actual backup timestamp, not just the calendar date. Rebuilt the pair directly in Play (`04-create-pad-alerts-PLAY.sql`) — **it never fired** across multiple confirmed-tripping test orders. Root cause narrowed but not proven: rebuilding manually in the P21 client surfaced that `Low Margin Flag` is missing from the filter grid's Column dropdown despite being correctly registered in `token`/`alert_type_x_token` — signature of a stale AHI-API1 client-side metadata cache, not a data problem. Per the user's standing preference (SQL-built alerts have a real history of not firing reliably), the SQL-built Play copy was deleted and **both alerts are being rebuilt manually in the P21 client** using the field export at `Alerts\Low-Margin-Alert\PAD-Alert-Fields-For-Manual-Rebuild.txt`. Not yet confirmed firing as of this note. See [[project_2026_07_13_low_margin_alert]] for the full investigation.
 
+## Hardening — NULL-token collapse bug in `p21_sp_alert_generation` (2026-08-11)
+
+Unrelated blank-email incident (`uid 102 "Test Verify Alerts"`, a leftover diagnostic — deactivated, not part of this alert family) led to reading `p21_sp_alert_generation`'s actual definition for the first time. Confirmed: it chains `REPLACE(@PX, '<column>', @value)` once per token registered for the alert's **type** (all 5 OE alerts share the same token pool, not just the tokens each one's own template references), and `REPLACE()` returns NULL if any argument is NULL — **even when the search pattern isn't present in the string.** So a single NULL token anywhere in the OE pool can blank this alert's email too, regardless of whether its own template mentions that token.
+
+Audited `p21_view_alert_oe_OrderEntry` for every OE-token column not already guarded; found 6: `order_profit_percentage`, `extended_price`, `total_amount`, `line_item_profit_percentage`, `fill_quantity`, `fill_extended_price`. **Measured against 90 days of real order lines (~1.5M rows) in Play/Training/BusinessRules** with filters matching the view's own WHERE clause exactly — zero actual NULLs or divide-by-zero conditions in any of them today. This is insurance against a future edge case, not a fix for an observed failure (the triggering incident's own order had no NULLs in these fields either).
+
+**Applied via `06-harden-oe-view-null-tokens.sql` (`CREATE OR ALTER VIEW`) to P21Play, P21Training, P21BusinessRules** — confirmed byte-identical view definitions across all three before patching; verified equivalent on existing data first (0 diffs), then confirmed all three compile/query cleanly post-patch. **NOT yet applied to Prod** — user wants that done after hours, since Prod's copy of this view is live for other real, currently-firing alerts (not just this still-inactive Low Margin/PAD family). Before running there: diff Prod's view against Play's first (per the standing rule two sections up) since Prod's Low Margin columns were added via a separate PROD-suffixed script and may have drifted.
+
+**Status: PAD pair mid-rebuild in the client, not yet confirmed firing. RESUME: confirm manual rebuild fires on a fresh test order; separately, run the after-hours Prod diff/deploy for script 06.**
+
 ## Rollback
 1. **Deactivate the two new alerts first** (stops email immediately) — **`704 = ACTIVE, 705 = INACTIVE`**, so set 705:
    ```sql
@@ -149,3 +160,5 @@ Confirmed with user before building:
    DELETE FROM token                      WHERE token_uid IN (<uids>)
    ```
 - The live alert (uid 97) is untouched throughout, so rollback fully restores prior behavior.
+
+**Rolling back script 06 alone** (the NULL-token hardening, independent of the rest): `CREATE OR ALTER VIEW` back to the pre-06 definition saved when each environment was patched (Play/Training/BusinessRules — no separate backup file was taken since script 06 is provably a no-op on all existing data; the pre-06 text is recoverable from git history on `06-harden-oe-view-null-tokens.sql`'s parent commit, or from `OBJECT_DEFINITION` on any environment not yet patched).
