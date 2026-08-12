@@ -7,10 +7,11 @@
 - `P21VendorInvoiceReport.rpt` — Crystal report; gets a **new subreport** ("Additional Charges") in the invoice footer. Baseline P21 objects untouched.
 - Ticket: SA-48124
 
-## Current status (2026-07-28)
+## Current status (2026-07-28, layout note added 2026-08-12)
 - **View `asi_view_vendor_invoice_edi_charges`: deployed to BOTH Play and Prod** (with grants). Includes `invoice_amount`.
 - **Subreport in `P21VendorInvoiceReport.rpt`: built and working in Play ONLY.** Not yet in Prod.
 - 🟡 Awaiting A/P validation in Play. Then: deploy the `.rpt` to Prod (the view is already there).
+- **⚠️ 2026-08-12: the Play `.rpt` also picked up unrelated page-header/group-header layout changes** (column headers now repeat every page via a relocated Page Header section; invoice info block relocated into a Group Header so it only shows once per invoice; see `project_2026_08_12_vendor_invoice_page_headers.md`) plus the start of a broader **SA 52078 redesign** (`project_2026_08_12_sa52078_vendor_invoice_redesign.md`, not yet built). Whoever deploys SA-48124's subreport to Prod needs to decide whether to bring these layout changes along too, or extract just the subreport piece — they're now in the same Play `.rpt` file.
 
 ## Target environments
 - Build/test: **Play** (P21Play @ P21Dev.allsurfaces.com) → then **Prod** (P21 @ P21.allsurfaces.com)
