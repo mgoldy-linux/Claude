@@ -1,0 +1,656 @@
+{
+  "info": {
+    "name": "P21 Dynachanges",
+    "description": "P21 Extensibility / DynaChange API — every operation listed at {{base_url}}/uiserver0/extensibility/dynachange (the docs page reachable from Transaction API Services > extensibility/dynachange).\n\nPrerequisite: select the 'AS BRR' environment (base_url = https://p21businessrules.allsurfaces.com:3444), fill in {{password}}, then run 'Get Token' first — it saves the bearer token as a collection variable.\nIMPORTANT: Disable SSL certificate verification in Postman Settings (internal cert). Force HTTP/1.1 if you see NGHTTP2_CANCEL errors.\n\nGET/DELETE query params below are taken directly from the P21 operations doc page (confirmed). POST/PUT request bodies are NOT documented on that page — the bodies here are best-guess shapes inferred from the schema (design/assignment/modification tables) and the GET response shapes. Each request with an inferred body is marked ⚠ UNCONFIRMED in its description; expect to adjust the body after seeing the first real response/error.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://p21businessrules.allsurfaces.com:3444" },
+    { "key": "token", "value": "" },
+    { "key": "token_expires_at", "value": "" },
+    { "key": "username", "value": "mgoldyn" },
+    { "key": "consumer_key", "value": "73844b21-3b37-4d24-9db5-2bf9e143c53c" },
+    { "key": "password", "value": "" },
+
+    { "key": "designId", "value": "" },
+    { "key": "location", "value": "" },
+    { "key": "windowId", "value": "" },
+    { "key": "dwName", "value": "" },
+    { "key": "table", "value": "" },
+    { "key": "columnName", "value": "" },
+    { "key": "op", "value": "" },
+    { "key": "field", "value": "" },
+    { "key": "newColumn", "value": "" },
+    { "key": "fc", "value": "" },
+    { "key": "externalObjectId", "value": "" },
+    { "key": "modificationId", "value": "" },
+    { "key": "versionType", "value": "detail" },
+    { "key": "versionName", "value": "" },
+    { "key": "assigneeName", "value": "" },
+    { "key": "assignmentType", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Get Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var xml2js = require('xml2js');",
+              "",
+              "var opts = {",
+              "    explicitArray: false,",
+              "    ignoreAttrs: true,",
+              "    tagNameProcessors: [xml2js.processors.stripPrefix]",
+              "};",
+              "",
+              "function findKey(node, key) {",
+              "    if (node === null || typeof node !== 'object') { return undefined; }",
+              "    if (Object.prototype.hasOwnProperty.call(node, key)) { return node[key]; }",
+              "    for (var k in node) {",
+              "        var hit = findKey(node[k], key);",
+              "        if (hit !== undefined) { return hit; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "",
+              "xml2js.parseString(pm.response.text(), opts, function(err, result) {",
+              "    if (err) {",
+              "        console.error('XML parse error: ' + err);",
+              "        console.log('Raw response: ' + pm.response.text());",
+              "        return;",
+              "    }",
+              "",
+              "    var accessToken = findKey(result, 'AccessToken');",
+              "    var expiresIn   = findKey(result, 'ExpiresIn');",
+              "",
+              "    if (!accessToken) {",
+              "        console.warn('AccessToken not found. Parsed response: ' + JSON.stringify(result));",
+              "        return;",
+              "    }",
+              "",
+              "    pm.collectionVariables.set('token', accessToken);",
+              "    console.log('Token saved: ' + accessToken.substring(0, 30) + '...');",
+              "",
+              "    var secs = parseInt(expiresIn, 10);",
+              "    if (!isNaN(secs)) {",
+              "        var expiresAt = Date.now() + (secs * 1000);",
+              "        pm.collectionVariables.set('token_expires_at', expiresAt.toString());",
+              "        console.log('Token expires at: ' + new Date(expiresAt).toLocaleString());",
+              "    }",
+              "",
+              "    pm.test('Token captured', function() {",
+              "        pm.expect(accessToken).to.be.a('string').and.not.empty;",
+              "    });",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "username", "value": "{{username}}" },
+          { "key": "password", "value": "{{password}}" },
+          { "key": "appKey",   "value": "{{consumer_key}}" }
+        ],
+        "url": "{{base_url}}/api/security/token/",
+        "description": "Run this first. Saves {{token}} as a collection variable used by every other request's Bearer auth."
+      }
+    },
+    {
+      "name": "Design",
+      "item": [
+        {
+          "name": "Get a Design",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Design:', pm.response.text());"] } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/design?id={{designId}}",
+            "description": "Get a design by id. Query param confirmed from docs page."
+          }
+        },
+        {
+          "name": "Add a Design",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Add design response:', pm.response.text());"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"MyNewDesign\",\n  \"location\": \"{{location}}\",\n  \"description\": \"Created via Postman\",\n  \"designType\": \"S\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/design",
+            "description": "⚠ UNCONFIRMED body. Field names inferred from the `design` table: name, location (dotted window.tab.tabpage.dataobject.dwobject path for Screen designs), description, designType ('S' = Screen; Popup/Menu codes not yet enumerated). Adjust once you see the actual validation error."
+          }
+        },
+        {
+          "name": "Update a Design",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Update design response:', pm.response.text());"] } }],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{designId}}\",\n  \"name\": \"MyNewDesign\",\n  \"location\": \"{{location}}\",\n  \"description\": \"Updated via Postman\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/design",
+            "description": "⚠ UNCONFIRMED body. Same shape as Add, plus id."
+          }
+        },
+        {
+          "name": "Remove a Design",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Remove design response:', pm.response.status, pm.response.text());"] } }],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/design?id={{designId}}",
+            "description": "Query param confirmed from docs page. Removes the design row only — modification/assignment rows may or may not cascade; verify with a throwaway design before trusting on anything real."
+          }
+        },
+        {
+          "name": "Search for Designs",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Design search results:', pm.response.text());"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location\": \"{{location}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/design/search",
+            "description": "⚠ UNCONFIRMED body. Guessing a location filter; try an empty body {} first to see if it returns everything."
+          }
+        },
+        {
+          "name": "Get DynaChange Versions for User",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('DynaChange versions:', pm.response.text());"] } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/design/versions?userId={{username}}&location={{location}}",
+            "description": "Query params confirmed from docs page. NOTE: {{location}} here should be the dotted screen path used by the `design` table (e.g. oe_orderentry.header.oe_line_dtl.d_oe_line_dtl), NOT a numeric warehouse/location id — the P21-Users collection's older copy of this request was pointed at {{locationId}}=100, which is almost certainly the wrong kind of value for this param. Verify empirically before trusting an empty result as 'no versions'."
+          }
+        },
+        {
+          "name": "Get Applied Design for Location",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Applied design:', pm.response.text());"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location\": \"{{location}}\",\n  \"userId\": \"{{username}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/applied/design",
+            "description": "⚠ UNCONFIRMED body. 'Get applied design for the location' — guessing it needs the same location+userId shape as design/versions, just returning the single currently-active version instead of a list."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Assignment",
+      "item": [
+        {
+          "name": "Get Assignees to a Design",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Assignees:', pm.response.text());"] } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/assignment?id={{designId}}",
+            "description": "Query param confirmed from docs page."
+          }
+        },
+        {
+          "name": "Make Assignments to a Design",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Assign response:', pm.response.text());"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"designId\": \"{{designId}}\",\n  \"assignments\": [\n    {\n      \"assignee\": \"{{assigneeName}}\",\n      \"assignmentType\": {{assignmentType}}\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/assignment",
+            "description": "⚠ UNCONFIRMED body. Field names inferred from the `assignment` table: assignmentType 1=role-based (assignee=role display name), 0=user-based (assignee=user id). See [[reference_p21_wwms_web_dynachange_schema]] equivalent notes."
+          }
+        },
+        {
+          "name": "Update Assignments to a Design",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Update assignments response:', pm.response.text());"] } }],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"designId\": \"{{designId}}\",\n  \"assignments\": [\n    {\n      \"assignee\": \"{{assigneeName}}\",\n      \"assignmentType\": {{assignmentType}}\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/assignment",
+            "description": "⚠ UNCONFIRMED body. Same shape as Make Assignments — likely a full-replace of the assignee list for the design, not a delta. Confirm before running against a real design."
+          }
+        },
+        {
+          "name": "Remove Assignments from a Design",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Remove assignments response:', pm.response.status, pm.response.text());"] } }],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/assignment?id={{designId}}",
+            "description": "Query param confirmed from docs page."
+          }
+        },
+        {
+          "name": "Get Available User/Role for a Design",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Available assignees:', pm.response.text());"] } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/available/assignee?id={{designId}}",
+            "description": "Query param confirmed from docs page. Returns candidates NOT yet assigned to this design — useful before calling Make Assignments."
+          }
+        },
+        {
+          "name": "Search Available Designs for Location/User",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Assignee search results:', pm.response.text());"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location\": \"{{location}}\",\n  \"userId\": \"{{username}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/assignee/search",
+            "description": "⚠ UNCONFIRMED body. NOTE the naming oddity: this URI is 'assignee/search' but the doc's own description says it returns 'all available design for the design location and user' — i.e. designs, not assignees. Kept name/URI as documented; verify the response shape before assuming which entity it actually returns."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fields",
+      "item": [
+        {
+          "name": "Get Available Fields in Field Chooser",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Available fields:', pm.response.text());"] } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/fields/available?id={{windowId}}&dw={{dwName}}",
+            "description": "Query params confirmed from docs page. id = an OPEN window's windowId (from the Interactive API's POST /window), dw = dataobject/DataWindow name shown on that window."
+          }
+        },
+        {
+          "name": "Get Field Chooser Extensibility Info",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Field chooser info:', pm.response.text());"] } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/fields/fieldchooser?id={{windowId}}&ds={{dwName}}&op={{op}}&table={{table}}",
+            "description": "Query params confirmed from docs page. op = the extensibility right being checked (exact enum values not documented — capture a live value via Postman Console while using Field Chooser in the P21 client)."
+          }
+        },
+        {
+          "name": "Process Field Chooser Extensibility",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Process field chooser response:', pm.response.text());"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/fields/process/fieldchooser?id={{windowId}}&ds={{dwName}}&op={{op}}",
+            "description": "⚠ UNCONFIRMED body — query params confirmed, body shape not documented. Try empty {} first; the server error (if any) will usually name the missing required field."
+          }
+        },
+        {
+          "name": "Get Extensibility Properties",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Extensibility properties:', pm.response.text());"] } }],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/fields/state?id={{windowId}}&dw={{dwName}}&newcolumn={{newColumn}}&table={{table}}&designid={{designId}}",
+            "description": "Query params confirmed from docs page. GET-like PUT (no body expected) — this is what the Field Chooser wizard calls when you pick a new related table/column, before it's saved."
+          }
+        },
+        {
+          "name": "Test Field Designer Add Related Table",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Test field designer response:', pm.response.text());"] } }],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/fields/test/fieldchooser?id={{windowId}}&ds={{dwName}}&op={{op}}",
+            "description": "Query params confirmed from docs page."
+          }
+        },
+        {
+          "name": "Get Tooltip Info",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Tooltip info:', pm.response.text());"] } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/fields/tooltip?id={{windowId}}&dw={{dwName}}&field={{field}}",
+            "description": "Query params confirmed from docs page."
+          }
+        },
+        {
+          "name": "Verify Computed Field Expression",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Verify expression response:', pm.response.text());"] } }],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/fields/verify?id={{windowId}}&dw={{dwName}}&fc={{fc}}",
+            "description": "Query params confirmed from docs page. fc = 'ISFIELDCHOOSER' flag per docs — likely a bool ('true'/'false'), unconfirmed which literal it expects."
+          }
+        },
+        {
+          "name": "Get Screen Designer Extensibility Info",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Screen designer info:', pm.response.text());"] } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/fields/wizard?id={{windowId}}&dw={{dwName}}&op={{op}}&table={{table}}&field={{field}}",
+            "description": "Query params confirmed from docs page."
+          }
+        },
+        {
+          "name": "Process Screen Designer Extensibility",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Process screen designer response:', pm.response.text());"] } }],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/fields/wizard?id={{windowId}}&dw={{dwName}}&op={{op}}",
+            "description": "⚠ UNCONFIRMED body — query params confirmed, body shape not documented. Try empty {} first."
+          }
+        },
+        {
+          "name": "Test Wizard Add Related Table",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Wizard test response:', pm.response.text());"] } }],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/fields/wizard/test?id={{windowId}}&dw={{dwName}}&op={{op}}",
+            "description": "Query params confirmed from docs page."
+          }
+        },
+        {
+          "name": "Get Extensibility Rights",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Extensibility rights:', pm.response.text());"] } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/rights?id={{windowId}}&dw={{dwName}}",
+            "description": "Query params confirmed from docs page. Good starting point: shows which of the fields/* extensibility rights your logged-in user actually has on this window before you try to use them."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Full Design",
+      "item": [
+        {
+          "name": "Add Design + Save Custom Objects",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Add full design response:', pm.response.text());"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"design\": {\n    \"name\": \"MyNewDesign\",\n    \"location\": \"{{location}}\",\n    \"description\": \"Created via Postman\",\n    \"designType\": \"S\"\n  },\n  \"customObjects\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/full/design",
+            "description": "⚠ UNCONFIRMED body. Combines Add a Design + a customobjectslayout save in one call per the doc description; structure guessed by nesting both. This is the request the Screen Designer 'Save' button most likely calls."
+          }
+        },
+        {
+          "name": "Update Design + Save Custom Objects",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Update full design response:', pm.response.text());"] } }],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"design\": {\n    \"id\": \"{{designId}}\",\n    \"name\": \"MyNewDesign\",\n    \"location\": \"{{location}}\"\n  },\n  \"customObjects\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/full/design?id={{windowId}}&dw={{dwName}}&designid={{designId}}",
+            "description": "⚠ UNCONFIRMED body. Query params (id/dw/designid) confirmed from docs page; body guessed."
+          }
+        },
+        {
+          "name": "Remove Design + Unlink Custom Objects",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Remove full design response:', pm.response.status, pm.response.text());"] } }],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/full/design?id={{windowId}}&dw={{dwName}}&designid={{designId}}",
+            "description": "Query params confirmed from docs page."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Modification",
+      "item": [
+        {
+          "name": "Get Modification Details",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Modification detail:', pm.response.text());"] } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/modification?id={{modificationId}}",
+            "description": "Query param confirmed from docs page."
+          }
+        },
+        {
+          "name": "Add List of Modifications",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Add modifications response:', pm.response.text());"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"designId\": \"{{designId}}\",\n  \"modifications\": [\n    {\n      \"objectName\": \"c_example_field\",\n      \"propertyName\": \"IsDisabled\",\n      \"propertyValue\": \"true\"\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/modification",
+            "description": "⚠ UNCONFIRMED body. Field names (objectName/propertyName/propertyValue) are confirmed from the `modification` table itself — this is the direct API equivalent of a row in Version Manager's Object Name / Property Name / Property Value grid. Only the wrapper/envelope shape (designId + array key name) is guessed."
+          }
+        },
+        {
+          "name": "Update List of Modifications",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Update modifications response:', pm.response.text());"] } }],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"designId\": \"{{designId}}\",\n  \"modifications\": [\n    {\n      \"objectName\": \"c_example_field\",\n      \"propertyName\": \"IsDisabled\",\n      \"propertyValue\": \"false\"\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/modification",
+            "description": "⚠ UNCONFIRMED body. Same shape as Add — likely a full-replace of the modification list for the design."
+          }
+        },
+        {
+          "name": "Remove a Modification",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Remove modification response:', pm.response.status, pm.response.text());"] } }],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/modification?id={{modificationId}}",
+            "description": "Query param confirmed from docs page."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Version Manager",
+      "item": [
+        {
+          "name": "Get All Assignments",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Version manager assignments:', pm.response.text());"] } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/versionmanager/assignments",
+            "description": "No query params documented — returns all assignees across all designs. This is what the Version Manager list screen loads first."
+          }
+        },
+        {
+          "name": "Get Version Detail Objects",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Version detail objects:', pm.response.text());"] } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/versionmanager/versiondetailobjects?id={{designId}}&type={{versionType}}",
+            "description": "Query params confirmed from docs page. This is the request that returns the full Object/Property/Value modification grid for a design — same data as the Modification endpoints but pre-joined for display."
+          }
+        },
+        {
+          "name": "Get Version Objects for User/Role",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Version objects for user/role:', pm.response.text());"] } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/versionmanager/versionobjects?name={{versionName}}&type={{versionType}}",
+            "description": "Query params confirmed from docs page. name = a user id or role name; type distinguishes which (exact literal values not documented — capture live via Postman Console while switching the Version Manager 'Assignee' picker between User/Role)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Misc",
+      "item": [
+        {
+          "name": "Verify Table/Column Exists",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Exist check:', pm.response.text());"] } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/exist?table={{table}}&column={{columnName}}",
+            "description": "Query params confirmed from docs page. Handy sanity check before wiring a new field into a design — confirms the table/column name is real before you reference it."
+          }
+        },
+        {
+          "name": "Get External Object by ID",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('External object:', pm.response.text());"] } }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/externalobject?id={{externalObjectId}}",
+            "description": "Query param confirmed from docs page. Note the `external_object` table had 0 rows on Prod as of 2026-08-14 (see [[reference_p21_wwms_web_dynachange_schema]]) — not currently used for WWMS there, so expect empty results unless BRR has test data."
+          }
+        },
+        {
+          "name": "Add External Object",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Add external object response:', pm.response.text());"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"designId\": \"{{designId}}\",\n  \"metadata\": \"\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/externalobject",
+            "description": "⚠ UNCONFIRMED body. `external_object` table has a design_uid FK and a metadata varchar(8000) column — guessed field names accordingly."
+          }
+        },
+        {
+          "name": "Update External Object",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Update external object response:', pm.response.text());"] } }],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{externalObjectId}}\",\n  \"designId\": \"{{designId}}\",\n  \"metadata\": \"\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/externalobject",
+            "description": "⚠ UNCONFIRMED body."
+          }
+        },
+        {
+          "name": "Remove External Object",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Remove external object response:', pm.response.status, pm.response.text());"] } }],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/externalobject?id={{externalObjectId}}",
+            "description": "Query param confirmed from docs page."
+          }
+        },
+        {
+          "name": "Save Custom Objects Layout",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Save layout response:', pm.response.text());"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"designId\": \"{{designId}}\",\n  \"customObjects\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/customobjectslayout",
+            "description": "⚠ UNCONFIRMED body. Likely the same customObjects array used inside Full Design's Add/Update, saved standalone — probably drives the desktop custom_objects/custom_objects_detail tables per [[reference_p21_fieldchooser_dynachange_schema]] rather than the web `design`/`modification` tables."
+          }
+        },
+        {
+          "name": "Get All Available User/Role",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Role search results:', pm.response.text());"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/role/search",
+            "description": "⚠ UNCONFIRMED body. Try empty {} first — this may just return the full role/user picker list with no filter needed, mirroring the `roles` lookup table."
+          }
+        },
+        {
+          "name": "Process User Defined Menu",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('UD menu response:', pm.response.text());"] } }],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/uiserver0/extensibility/dynachange/udmenu",
+            "description": "⚠ UNCONFIRMED body — unclear how this relates to the DynaChange design/assignment/modification tables at all; may be a separate user-defined-menu feature that just happens to share this endpoint's base path. Capture a live body via Postman Console while editing a UD menu in P21 before relying on this."
+          }
+        }
+      ]
+    }
+  ]
+}
