@@ -1,0 +1,1 @@
+EXEC sp_Blitz @CheckUserDatabaseObjects = 0;

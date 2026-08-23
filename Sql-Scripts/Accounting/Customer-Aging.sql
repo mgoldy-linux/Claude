@@ -1,0 +1,2 @@
+select *
+from p21_view_asst_customer_aging

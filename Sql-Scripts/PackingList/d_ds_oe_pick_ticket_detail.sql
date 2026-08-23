@@ -1,0 +1,12 @@
+--DS d_ds_oe_pick_ticket_detail
+SELECT oe_pick_ticket_detail.company_id,oe_pick_ticket_detail.pick_ticket_no,oe_pick_ticket_detail.line_number,inv_mast.item_id,oe_pick_ticket_detail.print_quantity,oe_pick_ticket_detail.ship_quantity,oe_pick_ticket_detail.freight_in,oe_pick_ticket_detail.date_created,oe_pick_ticket_detail.date_last_modified,oe_pick_ticket_detail.last_maintained_by,oe_pick_ticket_detail.unit_of_measure,oe_pick_ticket_detail.unit_size,oe_pick_ticket_detail.unit_quantity,oe_pick_ticket_detail.oe_line_no,oe_pick_ticket_detail.qty_requested,oe_pick_ticket_detail.qty_to_pick,oe_pick_ticket_detail.staged,oe_pick_ticket_detail.release_no,oe_pick_ticket_detail.inv_mast_uid,oe_pick_ticket_detail.invoice_line_uid,revision_transaction.item_revision_uid,oe_line.lot_bill,oe_line.oe_line_uid,oe_line.parent_oe_line_uid,oe_line.detail_type,oe_pick_ticket_detail.original_freight_in,oe_pick_ticket_detail.rfnav_pick_status_cd 
+FROM oe_pick_ticket_detail
+INNER JOIN inv_mast 
+ON inv_mast.inv_mast_uid = oe_pick_ticket_detail.inv_mast_uid
+INNER JOIN oe_pick_ticket 
+ON oe_pick_ticket.pick_ticket_no = oe_pick_ticket_detail.pick_ticket_no
+LEFT JOIN oe_line 
+ON oe_line.line_no = oe_pick_ticket_detail.oe_line_no AND oe_line.order_no = oe_pick_ticket.order_no
+LEFT JOIN revision_transaction 
+ON revision_transaction.transaction_no = oe_pick_ticket_detail.pick_ticket_no   AND revision_transaction.transaction_line_no = oe_pick_ticket_detail.line_number   AND revision_transaction.transaction_code_no = 1000 
+WHERE  oe_pick_ticket_detail.pick_ticket_no = 2229624 --and  oe_pick_ticket_detail.oe_line_no = 3

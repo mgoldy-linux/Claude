@@ -1,0 +1,1 @@
+SELECT value FROM STRING_SPLIT('This is test string', ' ');

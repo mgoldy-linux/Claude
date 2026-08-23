@@ -1,0 +1,2 @@
+--DS d_ds_inv_mast_inv_scan
+  SELECT inv_mast.item_id,              inv_mast.item_desc,            inv_loc.location_id         FROM inv_mast        JOIN inv_loc on ( inv_loc.inv_mast_uid = inv_mast.inv_mast_uid )     WHERE ( inv_mast.delete_flag = 'N' )          and (inv_loc.delete_flag = 'N' OR inv_loc.delete_flag IS NULL)   AND (inv_mast.item_id = '2101052581')

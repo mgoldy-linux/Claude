@@ -1,0 +1,1 @@
+sp_spaceused 'audit_trail'

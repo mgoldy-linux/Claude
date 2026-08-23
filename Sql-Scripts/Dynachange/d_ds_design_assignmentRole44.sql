@@ -1,0 +1,2 @@
+--DS d_ds_design_assignment
+SELECT design.design_uid    ,design.name    ,design.location    ,design.description    ,assignment.assignment_type    ,assignment.assignee    ,assignment.role_uid    ,(SUBSTRING(location, 1, CHARINDEX('.', location)-1) + '.' + REVERSE(SUBSTRING(REVERSE(location), 1, CHARINDEX('.', REVERSE(location))- 1))) AS windowname_dwname  FROM design  INNER JOIN assignment ON (design.design_uid = assignment.design_uid)  WHERE assignee = 'MGOLDYN'  

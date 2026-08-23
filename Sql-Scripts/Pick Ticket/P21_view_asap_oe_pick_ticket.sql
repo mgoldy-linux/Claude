@@ -1,0 +1,3 @@
+select pick_ticket_no,order_no,print_quantity,oe_line_no,inv_mast_uid,item_id,location_id
+from p21_view_asap_oe_pick_ticket
+order by order_no desc
