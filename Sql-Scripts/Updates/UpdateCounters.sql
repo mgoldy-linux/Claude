@@ -1,0 +1,18 @@
+--Orders
+--exec p21_set_counter @counter_id='WO', @counter_num='1068600'
+--Pick tickets
+--exec p21_set_counter @counter_id='PICK', @counter_num='2056700'
+--Invoices
+--exec p21_set_counter @counter_id='INV', @counter_num='3053400'
+--Purchases Orders
+--exec p21_set_counter @counter_id='PO', @counter_num='4002800'
+--inventory Receipts
+--exec p21_set_counter @counter_id='RECPT', @counter_num='5003300'
+--Vouchers
+--exec p21_set_counter @counter_id='VOU', @counter_num='6005000'
+--Inventory Adjustments
+--exec p21_set_counter @counter_id='ADJ', @counter_num='7002000'
+--Transfers
+--exec p21_set_counter @counter_id='TRNNO', @counter_num='8001100'
+--Production Orders
+--exec p21_set_counter @counter_id='PPO', @counter_num='9005200'

@@ -1,0 +1,24 @@
+SELECT        dbo.invoice_line.invoice_no, dbo.invoice_line.qty_requested, dbo.invoice_line.qty_shipped, dbo.invoice_line.unit_of_measure, dbo.invoice_line.item_id, dbo.invoice_line.item_desc, dbo.invoice_line.unit_price, 
+                         dbo.invoice_line.extended_price, dbo.invoice_line.gl_revenue_account_no, dbo.invoice_line.gl_salse_tax_account_no, dbo.invoice_line.gl_cogs, dbo.invoice_line.gl_inventory, dbo.invoice_line.date_created, 
+                         dbo.invoice_line.date_last_modified, dbo.invoice_line.last_maintained_by, dbo.invoice_line.order_no, dbo.invoice_line.cogs_amount, dbo.invoice_line.job_id, dbo.invoice_line.customer_part_number, 
+                         dbo.invoice_line.company_id, dbo.invoice_line.tax_item, dbo.invoice_line.pricing_quantity, dbo.invoice_line.net_quantity, dbo.invoice_line.line_no, dbo.invoice_line.sales_cost, dbo.invoice_line.commission_cost, 
+                         dbo.invoice_line.other_cost, dbo.invoice_line.oe_line_number, dbo.invoice_line.other_charge_item, dbo.invoice_line.exceptional_sales, dbo.invoice_line.pricing_unit, dbo.invoice_line.invoice_line_uid, 
+                         dbo.invoice_line.invoice_line_uid_parent, dbo.invoice_line.inv_mast_uid, dbo.invoice_line.invoice_line_type, dbo.invoice_line.sales_unit_size, dbo.invoice_line.pricing_unit_size, dbo.invoice_line.product_group_id, 
+                         dbo.invoice_line.supplier_id, dbo.invoice_line.created_by, dbo.invoice_line.job_price_line_uid, dbo.invoice_line.cost_center, dbo.invoice_line.budget_cd, dbo.invoice_line.customer_contract_uid, 
+                         dbo.invoice_line.gl_applied_labor, dbo.invoice_line.labor_amount, dbo.invoice_line.one_time_price_flag, dbo.invoice_line.mac_for_special_items, dbo.invoice_line.special_purchase_qty_received, 
+                         dbo.invoice_line.suggested_retail_price, dbo.invoice_line.hours_worked, dbo.invoice_line.core_price, dbo.invoice_line.environmental_fee, dbo.invoice_line.admin_fee, dbo.invoice_line.covered_extended_price, 
+                         dbo.invoice_line.cost_price_page_uid, dbo.invoice_line.buyer, dbo.invoice_line.recipient, dbo.invoice_line.verified_flag, dbo.invoice_line.verified_code, dbo.invoice_line.sku_exceptional_qty, 
+                         dbo.invoice_line.last_reviewed_date, dbo.invoice_line.processed_flag, dbo.invoice_line.cogs_markup_amount, dbo.invoice_line.sales_discount_group_id, dbo.invoice_line.price_family_uid, dbo.invoice_line.unit_pick_fee, 
+                         dbo.invoice_line.cost_carrier_contract_line_uid, dbo.invoice_line.price_carrier_contract_line_uid, dbo.invoice_line.cost_carrier_contract_z_line_uid, dbo.invoice_line.target_price, 
+                         dbo.invoice_line.tax_amount_paid_on_dp_applied, dbo.invoice_line.sent_to_carrier_date, dbo.invoice_line.net_billing_flag, dbo.invoice_line.haz_num_of_packages, dbo.invoice_line.print_part_no, 
+                         dbo.invoice_line.discount_item_flag, dbo.invoice_line.distributor_funding, dbo.invoice_line.supplier_funding, dbo.invoice_line.prior_authorization_cd, dbo.invoice_line.claim_start_date, dbo.invoice_line.claim_end_date, 
+                         dbo.invoice_line.gl_distributor_funding_acct_no, dbo.invoice_line.gl_supplier_funding_acct_no, dbo.invoice_line.exclude_from_edi_844_867_flag, dbo.invoice_line.other_charge_credit_rebill_flag, 
+                         dbo.invoice_line.sub_invoice_no, dbo.invoice_hdr.order_no AS Expr1, dbo.invoice_hdr.order_date, dbo.invoice_hdr.invoice_date, dbo.invoice_hdr.customer_id, dbo.invoice_hdr.ship2_name, dbo.invoice_hdr.ship2_address2, 
+                         dbo.invoice_hdr.ship2_address1, dbo.invoice_hdr.ship2_city, dbo.invoice_hdr.ship2_state, dbo.invoice_hdr.ship2_postal_code, dbo.invoice_hdr.salesrep_id, dbo.invoice_hdr.salesrep_name, dbo.invoice_hdr.period, 
+                         dbo.invoice_hdr.year_for_period, dbo.invoice_hdr.invoice_type, dbo.invoice_hdr.ship_to_id, dbo.invoice_hdr.ship_date, dbo.invoice_hdr.total_amount, dbo.invoice_hdr.amount_paid, dbo.invoice_hdr.paid_in_full_flag, 
+                         dbo.invoice_hdr.paid_by_check_no, dbo.invoice_hdr.date_paid, dbo.invoice_hdr.company_no, dbo.invoice_hdr.customer_id_number, dbo.invoice_hdr.corp_address_id, dbo.invoice_hdr.year_fully_paid, 
+                         dbo.invoice_hdr.period_fully_paid, dbo.invoice_hdr.branch_id, dbo.invoice_hdr.sold_to_customer_id, dbo.invoice_hdr.sales_location_id, dbo.invoice_hdr.invoice_period, dbo.invoice_hdr.commission_cost AS Expr2, 
+                         dbo.contacts.id, dbo.contacts.first_name, dbo.contacts.last_name, dbo.contacts.salesrep, dbo.contacts.sales_manager_id
+FROM            dbo.invoice_line INNER JOIN
+                         dbo.invoice_hdr ON dbo.invoice_line.invoice_no = dbo.invoice_hdr.invoice_no LEFT OUTER JOIN
+                         dbo.contacts ON dbo.invoice_hdr.salesrep_id = dbo.contacts.id

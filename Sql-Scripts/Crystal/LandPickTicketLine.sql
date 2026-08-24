@@ -1,0 +1,124 @@
+SELECT p21_fnt_all_pick_ticket_line.script_id,
+	   p21_fnt_all_pick_ticket_line.qty_ordered,
+       p21_fnt_all_pick_ticket_line.qty_allocated,
+       p21_fnt_all_pick_ticket_line.qty_to_pick,
+       p21_fnt_all_pick_ticket_line.qty_remaining,
+       p21_fnt_all_pick_ticket_line.ext_price,
+       p21_fnt_all_pick_ticket_line.sales_tax,
+       p21_fnt_all_pick_ticket_line.item_id,
+       p21_fnt_all_pick_ticket_line.extended_desc,
+       p21_fnt_all_pick_ticket_line.order_uom,
+       p21_fnt_all_pick_ticket_line.order_unit_size,
+       p21_fnt_all_pick_ticket_line.original_qty_allocated,
+       p21_fnt_all_pick_ticket_line.qty_on_pick_tickets,
+       p21_fnt_all_pick_ticket_line.qty_invoiced,
+       p21_fnt_all_pick_ticket_line.item_desc,
+       p21_fnt_all_pick_ticket_line.order_line_number,
+       p21_fnt_all_pick_ticket_line.company_no,
+       p21_fnt_all_pick_ticket_line.front_counter_tax,
+       p21_fnt_all_pick_ticket_line.net_weight,
+       p21_fnt_all_pick_ticket_line.disposition,
+       p21_fnt_all_pick_ticket_line.unit_price,
+       p21_fnt_all_pick_ticket_line.extended_price,
+       p21_fnt_all_pick_ticket_line.oe_pick_tick_dtl_line_no,
+       p21_fnt_all_pick_ticket_line.print_quantity,
+       p21_fnt_all_pick_ticket_line.oe_line_sales_tax,
+       p21_fnt_all_pick_ticket_line.qty_canceled,
+       p21_fnt_all_pick_ticket_line.will_call,
+       p21_fnt_all_pick_ticket_line.pricing_uom,
+       p21_fnt_all_pick_ticket_line.pricing_unit_size,
+       p21_fnt_all_pick_ticket_line.original_qty_to_pick,
+       p21_fnt_all_pick_ticket_line.staged,
+       p21_fnt_all_pick_ticket_line.qty_staged,
+       p21_fnt_all_pick_ticket_line.release_no,
+       p21_fnt_all_pick_ticket_line.release_date,
+       p21_fnt_all_pick_ticket_line.ship_loc_id,
+       p21_fnt_all_pick_ticket_line.ship_loc_name,
+       CAST (p21_fnt_all_pick_ticket_line.pick_ticket_no AS varchar(20)),
+       p21_fnt_all_pick_ticket_line.other_charge,
+       p21_fnt_all_pick_ticket_line.ordered_as,
+       p21_fnt_all_pick_ticket_line.assembly,
+       p21_fnt_all_pick_ticket_line.oe_line_uid,
+       p21_fnt_all_pick_ticket_line.order_number,
+       p21_fnt_all_pick_ticket_line.tix_total_tax,
+       p21_fnt_all_pick_ticket_line.primary_bin,
+       p21_fnt_all_pick_ticket_line.expedite_date,
+       p21_fnt_all_pick_ticket_line.required_date,
+       p21_fnt_all_pick_ticket_line.track_bins,
+       p21_fnt_all_pick_ticket_line.customer_id,
+       p21_fnt_all_pick_ticket_line.pricing_option,
+       p21_fnt_all_pick_ticket_line.parent_oe_line_uid,
+       p21_fnt_all_pick_ticket_line.release_qty,
+       p21_fnt_all_pick_ticket_line.item_source,
+       p21_fnt_all_pick_ticket_line.freight_in,
+       p21_fnt_all_pick_ticket_line.freight_out,
+       p21_fnt_all_pick_ticket_line.detail_type,
+       p21_fnt_all_pick_ticket_line.lot_bill,
+       p21_fnt_all_pick_ticket_line.oe_line_scheduled,
+       p21_fnt_all_pick_ticket_line.lot_bin_integration,
+       p21_fnt_all_pick_ticket_line.inv_mast_uid,
+		 p21_fnt_all_pick_ticket_line.currency_desc,
+		 ' ' pick_zone_id,
+		 0 pick_zone_sequence,
+		 0 bin_sequence,
+		 1 first_bin,
+		 p21_fnt_all_pick_ticket_line.bin_label,
+		 p21_fnt_all_pick_ticket_line.bin_id,
+		 p21_fnt_all_pick_ticket_line.serial_number
+		 , p21_fnt_all_pick_ticket_line.cust_po_no
+ 		 , p21_fnt_all_pick_ticket_line.contract_bin_id
+ 		 , p21_fnt_all_pick_ticket_line.bin_notes
+ 		 , p21_fnt_all_pick_ticket_line.line
+ 		 , p21_fnt_all_pick_ticket_line.line_feed
+ 		 , p21_fnt_all_pick_ticket_line.line_station
+ 		 , p21_fnt_all_pick_ticket_line.contract_part_no
+		 , CASE inv_mast.other_charge_item
+           WHEN 'Y' THEN
+               NULL
+           ELSE
+               inv_mast.haz_mat_flag
+       	END hazmat_flag
+		 , CASE inv_mast.other_charge_item
+           WHEN 'Y' THEN
+               NULL
+           ELSE
+               CASE inv_mast.haz_mat_flag
+                   WHEN 'Y' THEN
+                       hazmat_code.hazmat_code_desc
+                   ELSE
+                      NULL
+               END
+       	END hazmat_code_description
+		 , p21_fnt_all_pick_ticket_line.promise_date
+		 , p21_fnt_all_pick_ticket_line.original_promise_date
+       , inv_mast_msds.msds_flag
+       , inv_mast_msds.revision_date
+		 , dbo.p21_fn_item_last_invoice_date(p21_fnt_all_pick_ticket_line.company_no,
+                                           p21_fnt_all_pick_ticket_line.customer_id,
+                                           p21_fnt_all_pick_ticket_line.order_number,
+                                           p21_fnt_all_pick_ticket_line.inv_mast_uid
+                                          ) item_last_invoice_date
+       , 'N' dea_restriction_failed
+		,COALESCE(p21_fnt_all_pick_ticket_line.line_seq_no, p21_fnt_all_pick_ticket_line.order_line_number) line_seq_no
+		,0 sort_line_seq_no
+		,0 total_eco_fee
+		,p21_fnt_all_pick_ticket_line.upc_code
+		,p21_fnt_all_pick_ticket_line.ean_code
+		,p21_fnt_all_pick_ticket_line.gtin_code
+		,p21_fnt_all_pick_ticket_line.returned_cylinder_quantity
+		,inv_loc.qty_on_hand
+		,inv_loc_stock_status.qty_non_pickable
+		,inv_loc_stock_status.qty_quarantined
+		,inv_loc_stock_status.qty_frozen
+		,p21_fnt_all_pick_ticket_line.primary_bin
+FROM   p21_fnt_all_pick_ticket_line(2111111, 2115715, 100)
+       INNER JOIN inv_mast ON (inv_mast.inv_mast_uid = p21_fnt_all_pick_ticket_line.inv_mast_uid)
+       LEFT JOIN inv_mast_msds ON (inv_mast_msds.inv_mast_uid = p21_fnt_all_pick_ticket_line.inv_mast_uid)
+       LEFT JOIN hazmat_code ON (hazmat_code.hazmat_code_uid = inv_mast_msds.hazmat_code_uid)
+	   join inv_loc 
+	   on inv_loc.inv_mast_uid = p21_fnt_all_pick_ticket_line.inv_mast_uid
+	   join inv_loc_stock_status
+	   on inv_loc_stock_status.inv_mast_uid = p21_fnt_all_pick_ticket_line.inv_mast_uid
+
+	   
+                        

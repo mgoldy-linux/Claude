@@ -15,3 +15,6 @@ Claude-resume.txt.bak
 # OS / editor
 Thumbs.db
 .DS_Store
+
+# Backup task log
+Scripts/Backup-SqlScripts.log

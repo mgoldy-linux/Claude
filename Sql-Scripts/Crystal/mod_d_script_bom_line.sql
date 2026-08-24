@@ -1,0 +1,126 @@
+SELECT p21_bill_of_materials_view.LINEXXXDEF,   
+       p21_bill_of_materials_view.qty_ordered,   
+       p21_bill_of_materials_view.qty_allocated,   
+       p21_bill_of_materials_view.qty_to_pick,   
+       p21_bill_of_materials_view.qty_remaining,   
+       p21_bill_of_materials_view.ext_price,   
+       p21_bill_of_materials_view.line_tax,   
+       p21_bill_of_materials_view.item_id,   
+       p21_bill_of_materials_view.extended_description,   
+       p21_bill_of_materials_view.order_uom,   
+       p21_bill_of_materials_view.order_unit_size,   
+       p21_bill_of_materials_view.original_qty_allocated,   
+       p21_bill_of_materials_view.qty_on_pick_tickets,   
+       p21_bill_of_materials_view.qty_invoiced,   
+       p21_bill_of_materials_view.item_desc,   
+       p21_bill_of_materials_view.order_line_number,   
+       p21_bill_of_materials_view.company_id,   
+       p21_bill_of_materials_view.front_counter_tax,   
+       p21_bill_of_materials_view.weight,   
+       p21_bill_of_materials_view.disposition,   
+       p21_bill_of_materials_view.unit_price,   
+       p21_bill_of_materials_view.extended_price,   
+       p21_bill_of_materials_view.line_number,   
+       p21_bill_of_materials_view.print_quantity,   
+       p21_bill_of_materials_view.sales_tax,   
+       p21_bill_of_materials_view.qty_canceled,   
+       p21_bill_of_materials_view.will_call,   
+       p21_bill_of_materials_view.pricing_uom,   
+       p21_bill_of_materials_view.pricing_unit_size,   
+       p21_bill_of_materials_view.original_qty_to_pick,   
+       p21_bill_of_materials_view.staged,   
+       p21_bill_of_materials_view.qty_staged,   
+       p21_bill_of_materials_view.release_number,   
+       p21_bill_of_materials_view.release_date,   
+       p21_bill_of_materials_view.ship_loc_id,   
+       p21_bill_of_materials_view.ship_loc_name,   
+       p21_bill_of_materials_view.header_number,   
+       p21_bill_of_materials_view.other_charge,   
+       p21_bill_of_materials_view.ordered_as,   
+       p21_bill_of_materials_view.assembly,   
+       p21_bill_of_materials_view.oe_line_uid,   
+       p21_bill_of_materials_view.order_number,   
+       p21_bill_of_materials_view.tix_total_tax,   
+       p21_bill_of_materials_view.primary_bin,   
+       p21_bill_of_materials_view.expedite_date,   
+       p21_bill_of_materials_view.required_date,   
+       p21_bill_of_materials_view.track_bins,   
+       p21_bill_of_materials_view.customer_id,   
+       p21_bill_of_materials_view.pricing_option,   
+       p21_bill_of_materials_view.parent_oe_line_uid,   
+       p21_bill_of_materials_view.release_qty,   
+       p21_bill_of_materials_view.item_source,
+       p21_bill_of_materials_view.freight_in,
+       p21_bill_of_materials_view.freight_out,
+       p21_bill_of_materials_view.detail_type,
+       p21_bill_of_materials_view.lot_bill,
+       p21_bill_of_materials_view.oe_line_scheduled,
+       p21_bill_of_materials_view.lot_bin_integration,
+	 	 p21_bill_of_materials_view.inv_mast_uid,
+	 	 p21_bill_of_materials_view.currency_desc,
+       p21_bill_of_materials_view.pick_zone_id,
+       p21_bill_of_materials_view.pick_zone_sequence,
+       p21_bill_of_materials_view.bin_sequence,
+       p21_bill_of_materials_view.first_bin,
+		 p21_bill_of_materials_view.bin_label,
+		 p21_bill_of_materials_view.bin_id,
+		 p21_bill_of_materials_view.serial_number,
+		 p21_bill_of_materials_view.cust_po_no,
+		 p21_bill_of_materials_view.contract_bin_id,
+		 p21_bill_of_materials_view.bin_notes,
+		 p21_bill_of_materials_view.line,
+		 p21_bill_of_materials_view.line_feed,
+		 p21_bill_of_materials_view.line_station,
+		 p21_bill_of_materials_view.contract_part_no,
+		 CASE inv_mast.other_charge_item
+		 	 WHEN 'Y' THEN
+				NULL
+		 	 ELSE
+				inv_mast.haz_mat_flag
+		 END hazmat_flag,
+     	 CASE inv_mast.other_charge_item
+			WHEN 'Y' THEN
+					NULL
+		 	 ELSE
+					CASE inv_mast.haz_mat_flag
+						WHEN 'Y' THEN
+						  	hazmat_code.hazmat_code_desc
+					 ELSE
+						 	NULL
+					END
+		 END hazmat_code_description,
+		 p21_bill_of_materials_view.promise_date,
+		 p21_bill_of_materials_view.original_promise_date
+       , inv_mast_msds.msds_flag
+       , inv_mast_msds.revision_date
+		 , dbo.p21_fn_item_last_invoice_date(p21_bill_of_materials_view.company_id,
+                                           p21_bill_of_materials_view.customer_id,
+                                           p21_bill_of_materials_view.order_number,
+                                           p21_bill_of_materials_view.inv_mast_uid
+                                          ) item_last_invoice_date
+		 , p21_bill_of_materials_view.dea_restriction_failed
+
+		, p21_bill_of_materials_view.line_seq_no
+,0 sort_line_seq_no
+,0 total_eco_fee
+		,p21_bill_of_materials_view.upc_code
+		,p21_bill_of_materials_view.ean_code
+		,p21_bill_of_materials_view.gtin_code
+,NULL
+ 
+/*Below column(s) added by CDS. DWOBJECT_UID = 5*/
+, inv_loc.qty_on_hand,inv_loc.qty_allocated,inv_loc_stock_status.qty_non_pickable,inv_loc_stock_status.qty_quarantined,inv_loc_stock_status. qty_frozen
+ FROM p21_bill_of_materials_view 
+       INNER JOIN inv_mast ON (inv_mast.inv_mast_uid = p21_bill_of_materials_view.inv_mast_uid)
+       LEFT JOIN inv_mast_msds ON (inv_mast_msds.inv_mast_uid = p21_bill_of_materials_view.inv_mast_uid)
+       LEFT JOIN hazmat_code ON (hazmat_code.hazmat_code_uid = inv_mast_msds.hazmat_code_uid)
+
+
+/*Below join added by CDS. DWOBJECT_UID = 5*/
+join inv_loc
+on inv_mast.inv_mast_uid = inv_loc.inv_mast_uid
+join inv_loc_stock_status
+on inv_mast.inv_mast_uid = inv_loc_stock_status.inv_mast_uid
+ WHERE (p21_bill_of_materials_view.pick_ticket_no BETWEEN 2031145 AND 2031511)
+    AND p21_bill_of_materials_view.company_id = 1
+    AND p21_bill_of_materials_view.order_number in (1036670)

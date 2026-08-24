@@ -1,0 +1,11 @@
+select customer_id,trading_partner_name
+from customer
+where class_2id = 'KAMAN'
+
+select customer_edi_setting_uid,company_id,customer_id,trading_partner_name,edi_interchange_id_qualifier,edi_interchange_id,application_code,element_separator,functional_ack_flag,validate_x12_document_flag,testing_mode_flag
+from customer_edi_setting
+where customer_edi_setting_uid > 3613
+
+select customer_edi_transaction_uid,company_id,customer_id,edi_transaction,row_status_flag,date_created,date_last_modified
+from customer_edi_transaction
+where customer_edi_transaction_uid > 5127

@@ -1,0 +1,3 @@
+--DS d_ds_dwobject_dependency
+SELECT dwobject_dependency.dwobject_dependency_uid, dwobject_dependency.primary_object_name, dwobject_dependency.secondary_object_name, dwobject_dependency.date_created, dwobject_dependency.created_by, dwobject_dependency.date_last_modified, dwobject_dependency.last_maintained_by 
+FROM dwobject_dependency 

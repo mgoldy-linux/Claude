@@ -1,0 +1,12 @@
+MGtest Table customer_edi_setting 
+customer_edi_setting_uid (PK, it, not null)
+company_id, varchar(8), not null
+customer_id, decimal(19,0), not null
+trading_partner_name, varchar(255), null
+edi_interchange_id_qualifier, varchar(255), null
+edi_interchange_id, varchar(255), null
+application_code, varchar(255), null
+element_separator, varchar(255), null
+functional_ack_flag, char(1), not null
+validate_x12_document_flag, char(1), not null
+testing_mode_flag, char(1),not null

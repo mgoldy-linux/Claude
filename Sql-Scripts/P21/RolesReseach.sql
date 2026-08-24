@@ -1,0 +1,2 @@
+--DS d_ds_roles_dynachange_tv
+SELECT DISTINCT roles.role_uid 'role_id', roles.role , roles.delete_flag , roles.date_created , roles.date_last_modified , roles.last_maintained_by FROM roles INNER JOIN custom_objects ON ( roles.role_uid = custom_objects.role_id AND custom_objects.type = 'R' ) WHERE (roles.delete_flag <> 'Y' ) ORDER BY roles.role

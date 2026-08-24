@@ -1,0 +1,4 @@
+use P21Local2020;
+
+insert into bin (company_id,location_id,bin_id,delete_flag,date_created,date_last_modified,last_maintained_by,created_by,pick_locked_flag,put_locked_flag,full_flag,frozen_flag,max_weight,current_weight,current_volume,putaway_zone_sequence,pick_zone_sequence,warehouse_sequence,bin_length,bin_height,bin_width,bin_uid,rf_bin_flag,consolidation_bin_flag,stage_bin_flag,door_bin_flag,master_bin_flag,pick_confirmed_flag)
+values(1,100,'108-9-03-3','N','2022-03-10 09:48:57.313','2022-03-10 09:48:57.313','RWHITTINGTON','RWHITTINGTON','N','N','N','N',0,0,0,0,0,0,0,0,0,3630,'N','N','N','N','Y','N')

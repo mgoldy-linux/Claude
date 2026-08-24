@@ -1,0 +1,122 @@
+SELECT p21_fnt_all_pick_ticket_hdr.hdrxxxxdef,
+		case when h.third_party_billing_flag = 'B' then 'Bill Recipient'
+		when  h.third_party_billing_flag = 'C' then 'Consignee'
+		when  h.third_party_billing_flag = 'F' then 'Fedex Consignee'
+		when  h.third_party_billing_flag = 'S' then 'Standard'
+		when  h.third_party_billing_flag = 'T' then 'Third Party'
+		End[Billing]
+		, p21_fnt_all_pick_ticket_hdr.title
+		, p21_fnt_all_pick_ticket_hdr.company_id
+		, p21_fnt_all_pick_ticket_hdr.order_number
+		, p21_fnt_all_pick_ticket_hdr.customer_id
+		, p21_fnt_all_pick_ticket_hdr.order_date
+		, p21_fnt_all_pick_ticket_hdr.ship2_name
+		, p21_fnt_all_pick_ticket_hdr.format_ship2_addr1
+		, p21_fnt_all_pick_ticket_hdr.format_ship2_addr2
+		, p21_fnt_all_pick_ticket_hdr.format_ship2_addr3
+		, p21_fnt_all_pick_ticket_hdr.format_ship2_addr4
+		, p21_fnt_all_pick_ticket_hdr.ship2_address1
+		, p21_fnt_all_pick_ticket_hdr.ship2_address2
+		, p21_fnt_all_pick_ticket_hdr.ship2_city
+		, p21_fnt_all_pick_ticket_hdr.ship2_state
+		, p21_fnt_all_pick_ticket_hdr.ship2_zip
+		, p21_fnt_all_pick_ticket_hdr.ship2_country
+		, current_timestamp oe_hdr_ship_date
+		, p21_fnt_all_pick_ticket_hdr.requested_date
+		, p21_fnt_all_pick_ticket_hdr.date_created
+		, p21_fnt_all_pick_ticket_hdr.date_last_modified
+		, p21_fnt_all_pick_ticket_hdr.last_maintained_by
+		, p21_fnt_all_pick_ticket_hdr.oe_hdr_packing_basis
+		, p21_fnt_all_pick_ticket_hdr.ship_route
+		, p21_fnt_all_pick_ticket_hdr.company_name
+		, p21_fnt_all_pick_ticket_hdr.oe_hdr_approved
+		, p21_fnt_all_pick_ticket_hdr.pick_ticket_print_flag
+		, p21_fnt_all_pick_ticket_hdr.address_id
+		, p21_fnt_all_pick_ticket_hdr.location_id
+		, p21_fnt_all_pick_ticket_hdr.location_name
+		, p21_fnt_all_pick_ticket_hdr.format_loc_addr1
+		, p21_fnt_all_pick_ticket_hdr.format_loc_addr2
+		, p21_fnt_all_pick_ticket_hdr.format_loc_addr3
+		, p21_fnt_all_pick_ticket_hdr.format_loc_addr4
+		, p21_fnt_all_pick_ticket_hdr.format_loc_addr5
+		, p21_fnt_all_pick_ticket_hdr.location_address1
+		, p21_fnt_all_pick_ticket_hdr.location_address2
+		, p21_fnt_all_pick_ticket_hdr.location_city
+		, p21_fnt_all_pick_ticket_hdr.location_state
+		, p21_fnt_all_pick_ticket_hdr.location_zip
+		, p21_fnt_all_pick_ticket_hdr.location_country
+		, p21_fnt_all_pick_ticket_hdr.location_phone
+		, p21_fnt_all_pick_ticket_hdr.bill2_address1
+		, p21_fnt_all_pick_ticket_hdr.bill2_name
+		, p21_fnt_all_pick_ticket_hdr.format_bill2_addr1
+		, p21_fnt_all_pick_ticket_hdr.format_bill2_addr2
+		, p21_fnt_all_pick_ticket_hdr.format_bill2_addr3
+		, p21_fnt_all_pick_ticket_hdr.format_bill2_addr4
+		, p21_fnt_all_pick_ticket_hdr.format_bill2_addr5
+		, p21_fnt_all_pick_ticket_hdr.bill2_address2
+		, p21_fnt_all_pick_ticket_hdr.bill2_city
+		, p21_fnt_all_pick_ticket_hdr.bill2_state
+		, p21_fnt_all_pick_ticket_hdr.bill2_zip
+		, p21_fnt_all_pick_ticket_hdr.bill2_country
+		, p21_fnt_all_pick_ticket_hdr.bill2_phone
+		, p21_fnt_all_pick_ticket_hdr.po_no
+		, p21_fnt_all_pick_ticket_hdr.order_taker   
+		, p21_fnt_all_pick_ticket_hdr.delivery_instructions 
+		, p21_fnt_all_pick_ticket_hdr.ship2_id
+		, p21_fnt_all_pick_ticket_hdr.ship2_phone
+		, p21_fnt_all_pick_ticket_hdr.front_counter_tax
+		, p21_fnt_all_pick_ticket_hdr.tix_total_tax
+		, p21_fnt_all_pick_ticket_hdr.front_counter
+		, p21_fnt_all_pick_ticket_hdr.pick_and_hold
+		, p21_fnt_all_pick_ticket_hdr.oe_hdr_validation_status
+		, p21_fnt_all_pick_ticket_hdr.auxiliary
+		, p21_fnt_all_pick_ticket_hdr.header_number
+		, p21_fnt_all_pick_ticket_hdr.pick_ticket_type
+		, p21_fnt_all_pick_ticket_hdr.print_date
+		, p21_fnt_all_pick_ticket_hdr.ship2_contact_id
+		, p21_fnt_all_pick_ticket_hdr.carrier_id
+		, p21_fnt_all_pick_ticket_hdr.carrier_tracking_no
+		, p21_fnt_all_pick_ticket_hdr.terms_desc
+		, p21_fnt_all_pick_ticket_hdr.descending_combined_name
+		, p21_fnt_all_pick_ticket_hdr.carrier_name
+		, p21_fnt_all_pick_ticket_hdr.reprint_indicator
+		, p21_fnt_all_pick_ticket_hdr.completed
+		, p21_fnt_all_pick_ticket_hdr.order_complete_message
+		, p21_fnt_all_pick_ticket_hdr.job_name
+		, p21_fnt_all_pick_ticket_hdr.cod_label
+		, p21_fnt_all_pick_ticket_hdr.will_call_label
+		, p21_fnt_all_pick_ticket_hdr.po_no_append
+		, p21_fnt_all_pick_ticket_hdr.first_name
+		, p21_fnt_all_pick_ticket_hdr.mi
+		, p21_fnt_all_pick_ticket_hdr.last_name
+		, p21_fnt_all_pick_ticket_hdr.source_location_id
+		, p21_fnt_all_pick_ticket_hdr.order_contact_salutation
+		, p21_fnt_all_pick_ticket_hdr.order_contact_first_name  
+		, p21_fnt_all_pick_ticket_hdr.order_contact_mi
+		, p21_fnt_all_pick_ticket_hdr.order_contact_last_name
+		, p21_fnt_all_pick_ticket_hdr.order_contact_name
+		, p21_fnt_all_pick_ticket_hdr.billing_contact_salutation
+		, p21_fnt_all_pick_ticket_hdr.billing_contact_first_name  
+		, p21_fnt_all_pick_ticket_hdr.billing_contact_mi
+		, p21_fnt_all_pick_ticket_hdr.billing_contact_last_name
+		, p21_fnt_all_pick_ticket_hdr.billing_contact_name
+		, p21_fnt_all_pick_ticket_hdr.invoice_no
+		, p21_fnt_all_pick_ticket_hdr.order_type
+		, p21_fnt_all_pick_ticket_hdr.oe_pick_ticket_type_cd
+		, p21_fnt_all_pick_ticket_hdr.promise_date
+		, p21_fnt_all_pick_ticket_hdr.original_promise_date
+		, p21_fnt_all_pick_ticket_hdr.ups_code
+		, p21_fnt_all_pick_ticket_hdr.shipping_route_stop
+		, p21_fnt_all_pick_ticket_hdr.ups_driver
+		, p21_fnt_all_pick_ticket_hdr.routed_eta_date
+		, p21_fnt_all_pick_ticket_hdr.geocom_routed_eta_date
+		, p21_fnt_all_pick_ticket_hdr.vat_type
+		, p21_fnt_all_pick_ticket_hdr.exchange_rate
+		, p21_fnt_all_pick_ticket_hdr.ship2_address3
+		, p21_fnt_all_pick_ticket_hdr.location_address3
+		, p21_fnt_all_pick_ticket_hdr.bill2_address3
+,'N' eco_fee_enabled_flag
+FROM	p21_fnt_all_pick_ticket_hdr(2064800,2068000,1,100,0,2020-07-09)
+join oe_hdr h
+on p21_fnt_all_pick_ticket_hdr.order_number = h.order_no
+ 
