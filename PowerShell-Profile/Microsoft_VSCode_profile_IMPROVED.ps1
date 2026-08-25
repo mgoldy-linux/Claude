@@ -48,7 +48,8 @@ try {
     # SQL Server instances
     $Script:SqlInst22 = 'DESKTOP-2ELUN3U'
     $Script:SqlInst19 = 'DESKTOP-2ELUN3U\SQLEXPRESS'
-    
+    $Script:SsrsInstance = 'ASDWDB01.ahi.local'
+
     # VSCode-optimized color scheme (compatible with dark themes)
     $Script:Colors = @{
         Success = 'Green'
@@ -393,6 +394,85 @@ function Connect-SQLServer {
     }
 }
 
+function Get-SSRSSubscriptionSummary {
+    <#
+    .SYNOPSIS
+        Summarizes SSRS subscription (scheduled email) report sends, largest first
+    .DESCRIPTION
+        Queries ExecutionLog3 on the ReportServer catalog for subscription-driven
+        report executions in the given window and lists them by rendered size,
+        so an oversized nightly send (mail relay bait) stands out immediately.
+    .PARAMETER Hours
+        How many hours back to look. Default 24.
+    .PARAMETER Top
+        Max rows to return. Default 15.
+    .PARAMETER MinSizeMB
+        Only show sends at or above this rendered size in MB. Default 0 (show all).
+    .PARAMETER Instance
+        SSRS catalog SQL instance. Defaults to $Script:SsrsInstance.
+    .EXAMPLE
+        Get-SSRSSubscriptionSummary
+    .EXAMPLE
+        Get-SSRSSubscriptionSummary -Hours 12 -MinSizeMB 5
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$false)]
+        [int]$Hours = 24,
+
+        [Parameter(Mandatory=$false)]
+        [int]$Top = 15,
+
+        [Parameter(Mandatory=$false)]
+        [double]$MinSizeMB = 0,
+
+        [Parameter(Mandatory=$false)]
+        [string]$Instance = $Script:SsrsInstance
+    )
+
+    try {
+        if (-not (Get-Module -ListAvailable -Name dbatools)) {
+            Write-Warning "dbatools module not installed. Run: Install-Module dbatools -Scope CurrentUser"
+            return
+        }
+        Import-Module dbatools -ErrorAction Stop
+
+        $since = (Get-Date).AddHours(-$Hours).ToString('yyyy-MM-dd HH:mm:ss')
+        $minBytes = [long]($MinSizeMB * 1MB)
+
+        $query = @"
+SELECT TOP $Top ItemPath, UserName, Format, ByteCount, [RowCount], TimeStart, Status
+FROM dbo.ExecutionLog3
+WHERE TimeStart >= '$since'
+  AND RequestType = 'Subscription'
+  AND ByteCount >= $minBytes
+  AND ItemPath NOT LIKE '/Datasets/%'
+ORDER BY ByteCount DESC
+"@
+
+        $results = Invoke-DbaQuery -SqlInstance $Instance -Database ReportServer -Query $query -As PSObject
+
+        if (-not $results) {
+            Write-Host "No subscription sends found in the last $Hours hour(s)." -ForegroundColor $Script:Colors.Info
+            return
+        }
+
+        $results |
+            Select-Object ItemPath, UserName,
+                @{N='SizeMB'; E={[math]::Round($_.ByteCount / 1MB, 2)}},
+                RowCount, TimeStart, Status |
+            Format-Table -AutoSize
+
+        $biggest = $results | Select-Object -First 1
+        if ($biggest.ByteCount -ge 20MB) {
+            Write-Host "⚠ Largest send was $([math]::Round($biggest.ByteCount/1MB,1)) MB ($($biggest.ItemPath)) — check it isn't hanging the mail relay." -ForegroundColor $Script:Colors.Warning
+        }
+    }
+    catch {
+        Write-Error "Get-SSRSSubscriptionSummary failed: $_"
+    }
+}
+
 function Update-ProfileModules {
     <#
     .SYNOPSIS
@@ -400,7 +480,7 @@ function Update-ProfileModules {
     #>
     [CmdletBinding()]
     param()
-    
+
     $modules = @('dbatools', 'SqlServer', 'ImportExcel', 'PSReadLine', 'PowerShellGet')
     
     Write-Host "`nChecking for module updates..." -ForegroundColor Cyan
@@ -515,7 +595,11 @@ function Show-ProfileHelp {
     Write-Host "  Connect-SQLServer        - Connect to SQL Server instance"
     Write-Host "  `$SqlInst22              - SQL Server 2022 instance"
     Write-Host "  `$SqlInst19              - SQL Server 2019 instance"
-    
+
+    Write-Host "`n📧 SSRS:" -ForegroundColor Yellow
+    Write-Host "  Get-SSRSSubscriptionSummary - Summarize subscription report sends by size"
+    Write-Host "  `$SsrsInstance            - SSRS ReportServer catalog instance"
+
     Write-Host "`n⚡ Aliases:" -ForegroundColor Yellow
     Write-Host "  npp                      - Notepad++"
     Write-Host "  ll                       - Get-ChildItem (Linux-style)"
