@@ -33,7 +33,7 @@
     { "key": "versionType", "value": "detail" },
     { "key": "versionName", "value": "" },
     { "key": "assigneeName", "value": "" },
-    { "key": "assignmentType", "value": "1" }
+    { "key": "assignmentType", "value": "Role" }
   ],
   "item": [
     {
@@ -122,17 +122,103 @@
         },
         {
           "name": "Add a Design",
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Add design response:', pm.response.text());"] } }],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function findArray(node) {",
+                  "    if (Array.isArray(node)) { return node; }",
+                  "    if (node && typeof node === 'object') {",
+                  "        for (var k in node) {",
+                  "            var hit = findArray(node[k]);",
+                  "            if (hit) { return hit; }",
+                  "        }",
+                  "    }",
+                  "    return null;",
+                  "}",
+                  "",
+                  "function escapeHtml(v) {",
+                  "    var s = (v === null || v === undefined) ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v));",
+                  "    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');",
+                  "}",
+                  "",
+                  "function buildTableHtml(rows) {",
+                  "    if (!rows || !rows.length) { return '<p>No rows found — see raw JSON below.</p>'; }",
+                  "    var cols = Object.keys(rows[0]);",
+                  "    var html = '<table><thead><tr>';",
+                  "    cols.forEach(function(c) { html += '<th>' + escapeHtml(c) + '</th>'; });",
+                  "    html += '</tr></thead><tbody>';",
+                  "    rows.forEach(function(r) {",
+                  "        html += '<tr>';",
+                  "        cols.forEach(function(c) { html += '<td>' + escapeHtml(r[c]) + '</td>'; });",
+                  "        html += '</tr>';",
+                  "    });",
+                  "    html += '</tbody></table>';",
+                  "    return html;",
+                  "}",
+                  "",
+                  "function render(result) {",
+                  "    console.log('=== Design: Add a Design ===');",
+                  "    console.log(JSON.stringify(result, null, 2));",
+                  "",
+                  "    var rows = findArray(result);",
+                  "    if (rows) { console.log('Row count:', rows.length); }",
+                  "",
+                  "    var template = [",
+                  "        '<style>',",
+                  "        'body { font-family: -apple-system, Segoe UI, sans-serif; font-size: 13px; }',",
+                  "        'table { border-collapse: collapse; width: 100%; }',",
+                  "        'th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; vertical-align: top; }',",
+                  "        'th { background: #f0f0f0; position: sticky; top: 0; }',",
+                  "        'tr:nth-child(even) { background: #fafafa; }',",
+                  "        '</style>',",
+                  "        '<h3>{{title}}</h3>',",
+                  "        '<p>{{count}} row(s)</p>',",
+                  "        '{{{tableHtml}}}',",
+                  "        '<h4>Raw parsed response</h4>',",
+                  "        '<pre>{{rawJson}}</pre>'",
+                  "    ].join('');",
+                  "",
+                  "    pm.visualizer.set(template, {",
+                  "        title: 'Design: Add a Design',",
+                  "        count: rows ? rows.length : 0,",
+                  "        tableHtml: buildTableHtml(rows),",
+                  "        rawJson: escapeHtml(JSON.stringify(result, null, 2))",
+                  "    });",
+                  "}",
+                  "",
+                  "var parsedJson = null;",
+                  "try { parsedJson = pm.response.json(); } catch (jsonErr) { parsedJson = null; }",
+                  "",
+                  "if (parsedJson) {",
+                  "    render(parsedJson);",
+                  "} else {",
+                  "    var xml2js = require('xml2js');",
+                  "    var opts = { explicitArray: false, ignoreAttrs: true, tagNameProcessors: [xml2js.processors.stripPrefix] };",
+                  "    xml2js.parseString(pm.response.text(), opts, function(err, result) {",
+                  "        if (err) {",
+                  "            console.log('Response is neither JSON nor XML (raw):', pm.response.text());",
+                  "            return;",
+                  "        }",
+                  "        render(result);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"MyNewDesign\",\n  \"location\": \"{{location}}\",\n  \"description\": \"Created via Postman\",\n  \"designType\": \"S\"\n}",
+              "raw": "{\n  \"DatawindowName\": \"\",\n  \"Description\": \"Created via Postman\",\n  \"DesignType\": \"S\",\n  \"ExternalObjects\": [],\n  \"Id\": 0,\n  \"IsVersionManagerCall\": false,\n  \"Location\": \"{{location}}\",\n  \"Modifications\": [],\n  \"Name\": \"PostmanTestDesign\",\n  \"RemovedColumns\": [],\n  \"SourceId\": 0\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": "{{base_url}}/uiserver0/extensibility/dynachange/design",
-            "description": "⚠ UNCONFIRMED body. Field names inferred from the `design` table: name, location (dotted window.tab.tabpage.dataobject.dwobject path for Screen designs), description, designType ('S' = Screen; Popup/Menu codes not yet enumerated). Adjust once you see the actual validation error."
+            "description": "Body shape CONFIRMED 2026-08-25 from P21's official schema reference PDF for this endpoint (saved to Documents\\API locally) — this is the real `DesignModel` contract, not a guess. Fields: DatawindowName, Description, DesignType (a .NET char — serializes as a single-CHARACTER JSON string, e.g. \"S\"; actual code values beyond 'S'=Screen not enumerated), ExternalObjects[]/Modifications[]/RemovedColumns[] (all optional per schema but sent as empty arrays here rather than omitted — omitting them previously caused a server-side NullReferenceException in AddDesign, likely from unguarded iteration over a null collection), Id, IsVersionManagerCall, Location, Name, SourceId. NOT yet verified with a successful live call — only the shape is confirmed, not runtime behavior (e.g. what Location format is actually required, what DesignType values are valid)."
           }
         },
         {
@@ -143,11 +229,11 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": \"{{designId}}\",\n  \"name\": \"MyNewDesign\",\n  \"location\": \"{{location}}\",\n  \"description\": \"Updated via Postman\"\n}",
+              "raw": "{\n  \"DatawindowName\": \"\",\n  \"Description\": \"Updated via Postman\",\n  \"DesignType\": \"S\",\n  \"ExternalObjects\": [],\n  \"Id\": {{designId}},\n  \"IsVersionManagerCall\": false,\n  \"Location\": \"{{location}}\",\n  \"Modifications\": [],\n  \"Name\": \"PostmanTestDesign\",\n  \"RemovedColumns\": [],\n  \"SourceId\": 0\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": "{{base_url}}/uiserver0/extensibility/dynachange/design",
-            "description": "⚠ UNCONFIRMED body. Same shape as Add, plus id."
+            "description": "Same confirmed `DesignModel` shape as Add a Design (see its description for the source and the empty-array-vs-null NullReferenceException note), with Id set to the design being updated."
           }
         },
         {
@@ -162,7 +248,93 @@
         },
         {
           "name": "Search for Designs",
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Design search results:', pm.response.text());"] } }],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function findArray(node) {",
+                  "    if (Array.isArray(node)) { return node; }",
+                  "    if (node && typeof node === 'object') {",
+                  "        for (var k in node) {",
+                  "            var hit = findArray(node[k]);",
+                  "            if (hit) { return hit; }",
+                  "        }",
+                  "    }",
+                  "    return null;",
+                  "}",
+                  "",
+                  "function escapeHtml(v) {",
+                  "    var s = (v === null || v === undefined) ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v));",
+                  "    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');",
+                  "}",
+                  "",
+                  "function buildTableHtml(rows) {",
+                  "    if (!rows || !rows.length) { return '<p>No rows found — see raw JSON below.</p>'; }",
+                  "    var cols = Object.keys(rows[0]);",
+                  "    var html = '<table><thead><tr>';",
+                  "    cols.forEach(function(c) { html += '<th>' + escapeHtml(c) + '</th>'; });",
+                  "    html += '</tr></thead><tbody>';",
+                  "    rows.forEach(function(r) {",
+                  "        html += '<tr>';",
+                  "        cols.forEach(function(c) { html += '<td>' + escapeHtml(r[c]) + '</td>'; });",
+                  "        html += '</tr>';",
+                  "    });",
+                  "    html += '</tbody></table>';",
+                  "    return html;",
+                  "}",
+                  "",
+                  "function render(result) {",
+                  "    console.log('=== Design: Search for Designs ===');",
+                  "    console.log(JSON.stringify(result, null, 2));",
+                  "",
+                  "    var rows = findArray(result);",
+                  "    if (rows) { console.log('Row count:', rows.length); }",
+                  "",
+                  "    var template = [",
+                  "        '<style>',",
+                  "        'body { font-family: -apple-system, Segoe UI, sans-serif; font-size: 13px; }',",
+                  "        'table { border-collapse: collapse; width: 100%; }',",
+                  "        'th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; vertical-align: top; }',",
+                  "        'th { background: #f0f0f0; position: sticky; top: 0; }',",
+                  "        'tr:nth-child(even) { background: #fafafa; }',",
+                  "        '</style>',",
+                  "        '<h3>{{title}}</h3>',",
+                  "        '<p>{{count}} row(s)</p>',",
+                  "        '{{{tableHtml}}}',",
+                  "        '<h4>Raw parsed response</h4>',",
+                  "        '<pre>{{rawJson}}</pre>'",
+                  "    ].join('');",
+                  "",
+                  "    pm.visualizer.set(template, {",
+                  "        title: 'Design: Search for Designs',",
+                  "        count: rows ? rows.length : 0,",
+                  "        tableHtml: buildTableHtml(rows),",
+                  "        rawJson: escapeHtml(JSON.stringify(result, null, 2))",
+                  "    });",
+                  "}",
+                  "",
+                  "var parsedJson = null;",
+                  "try { parsedJson = pm.response.json(); } catch (jsonErr) { parsedJson = null; }",
+                  "",
+                  "if (parsedJson) {",
+                  "    render(parsedJson);",
+                  "} else {",
+                  "    var xml2js = require('xml2js');",
+                  "    var opts = { explicitArray: false, ignoreAttrs: true, tagNameProcessors: [xml2js.processors.stripPrefix] };",
+                  "    xml2js.parseString(pm.response.text(), opts, function(err, result) {",
+                  "        if (err) {",
+                  "            console.log('Response is neither JSON nor XML (raw):', pm.response.text());",
+                  "            return;",
+                  "        }",
+                  "        render(result);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -223,11 +395,11 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"designId\": \"{{designId}}\",\n  \"assignments\": [\n    {\n      \"assignee\": \"{{assigneeName}}\",\n      \"assignmentType\": {{assignmentType}}\n    }\n  ]\n}",
+              "raw": "{\n  \"AssignmentCustomObjectsList\": [],\n  \"AssignmentList\": [\n    {\n      \"Assignee\": \"{{assigneeName}}\",\n      \"AssignmentType\": \"{{assignmentType}}\",\n      \"DesignUid\": {{designId}},\n      \"Id\": 0,\n      \"IsUniqueAssignee\": false,\n      \"RoleUid\": 0\n    }\n  ],\n  \"UserId\": \"{{username}}\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": "{{base_url}}/uiserver0/extensibility/dynachange/assignment",
-            "description": "⚠ UNCONFIRMED body. Field names inferred from the `assignment` table: assignmentType 1=role-based (assignee=role display name), 0=user-based (assignee=user id). See [[reference_p21_wwms_web_dynachange_schema]] equivalent notes."
+            "description": "Body shape CONFIRMED 2026-08-25 from P21's official schema reference page for this endpoint (saved locally as .htm). Top-level is `AssignmentCollection`: AssignmentCustomObjectsList[], AssignmentList[] (each item: Assignee, AssignmentType, DesignDetail (a full optional DesignModel — omitted here since we're targeting an existing design via DesignUid), DesignUid, Id, IsUniqueAssignee, RoleUid), UserId. IMPORTANT CORRECTION: AssignmentType is a STRING ENUM — \"User\" or \"Role\" — NOT the numeric 1/0 from the `assignment` table's assignment_type column ([[reference_p21_wwms_web_dynachange_schema]] describes the SQL encoding, which is different from this JSON API's contract). Not yet verified with a successful live call — DesignUid needs a real design to exist first (see Add a Design)."
           }
         },
         {
@@ -238,11 +410,11 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"designId\": \"{{designId}}\",\n  \"assignments\": [\n    {\n      \"assignee\": \"{{assigneeName}}\",\n      \"assignmentType\": {{assignmentType}}\n    }\n  ]\n}",
+              "raw": "{\n  \"AssignmentCustomObjectsList\": [],\n  \"AssignmentList\": [\n    {\n      \"Assignee\": \"{{assigneeName}}\",\n      \"AssignmentType\": \"{{assignmentType}}\",\n      \"DesignUid\": {{designId}},\n      \"Id\": 0,\n      \"IsUniqueAssignee\": false,\n      \"RoleUid\": 0\n    }\n  ],\n  \"UserId\": \"{{username}}\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": "{{base_url}}/uiserver0/extensibility/dynachange/assignment",
-            "description": "⚠ UNCONFIRMED body. Same shape as Make Assignments — likely a full-replace of the assignee list for the design, not a delta. Confirm before running against a real design."
+            "description": "Same confirmed `AssignmentCollection` shape as Make Assignments (identical schema for PUT per P21's docs, saved 2026-08-25) — see that request's description for the AssignmentType string-enum correction. Likely a full-replace of the assignee list for the design, not a delta; unconfirmed live."
           }
         },
         {
@@ -512,12 +684,98 @@
       "item": [
         {
           "name": "Get All Assignments",
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["console.log('Version manager assignments:', pm.response.text());"] } }],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function findArray(node) {",
+                  "    if (Array.isArray(node)) { return node; }",
+                  "    if (node && typeof node === 'object') {",
+                  "        for (var k in node) {",
+                  "            var hit = findArray(node[k]);",
+                  "            if (hit) { return hit; }",
+                  "        }",
+                  "    }",
+                  "    return null;",
+                  "}",
+                  "",
+                  "function escapeHtml(v) {",
+                  "    var s = (v === null || v === undefined) ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v));",
+                  "    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');",
+                  "}",
+                  "",
+                  "function buildTableHtml(rows) {",
+                  "    if (!rows || !rows.length) { return '<p>No rows found — see raw JSON below.</p>'; }",
+                  "    var cols = Object.keys(rows[0]);",
+                  "    var html = '<table><thead><tr>';",
+                  "    cols.forEach(function(c) { html += '<th>' + escapeHtml(c) + '</th>'; });",
+                  "    html += '</tr></thead><tbody>';",
+                  "    rows.forEach(function(r) {",
+                  "        html += '<tr>';",
+                  "        cols.forEach(function(c) { html += '<td>' + escapeHtml(r[c]) + '</td>'; });",
+                  "        html += '</tr>';",
+                  "    });",
+                  "    html += '</tbody></table>';",
+                  "    return html;",
+                  "}",
+                  "",
+                  "function render(result) {",
+                  "    console.log('=== Version Manager: All Assignments ===');",
+                  "    console.log(JSON.stringify(result, null, 2));",
+                  "",
+                  "    var rows = findArray(result);",
+                  "    if (rows) { console.log('Row count:', rows.length); }",
+                  "",
+                  "    var template = [",
+                  "        '<style>',",
+                  "        'body { font-family: -apple-system, Segoe UI, sans-serif; font-size: 13px; }',",
+                  "        'table { border-collapse: collapse; width: 100%; }',",
+                  "        'th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; vertical-align: top; }',",
+                  "        'th { background: #f0f0f0; position: sticky; top: 0; }',",
+                  "        'tr:nth-child(even) { background: #fafafa; }',",
+                  "        '</style>',",
+                  "        '<h3>{{title}}</h3>',",
+                  "        '<p>{{count}} row(s)</p>',",
+                  "        '{{{tableHtml}}}',",
+                  "        '<h4>Raw parsed response</h4>',",
+                  "        '<pre>{{rawJson}}</pre>'",
+                  "    ].join('');",
+                  "",
+                  "    pm.visualizer.set(template, {",
+                  "        title: 'Version Manager: All Assignments',",
+                  "        count: rows ? rows.length : 0,",
+                  "        tableHtml: buildTableHtml(rows),",
+                  "        rawJson: escapeHtml(JSON.stringify(result, null, 2))",
+                  "    });",
+                  "}",
+                  "",
+                  "var parsedJson = null;",
+                  "try { parsedJson = pm.response.json(); } catch (jsonErr) { parsedJson = null; }",
+                  "",
+                  "if (parsedJson) {",
+                  "    render(parsedJson);",
+                  "} else {",
+                  "    var xml2js = require('xml2js');",
+                  "    var opts = { explicitArray: false, ignoreAttrs: true, tagNameProcessors: [xml2js.processors.stripPrefix] };",
+                  "    xml2js.parseString(pm.response.text(), opts, function(err, result) {",
+                  "        if (err) {",
+                  "            console.log('Response is neither JSON nor XML (raw):', pm.response.text());",
+                  "            return;",
+                  "        }",
+                  "        render(result);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
             "url": "{{base_url}}/uiserver0/extensibility/dynachange/versionmanager/assignments",
-            "description": "No query params documented — returns all assignees across all designs. This is what the Version Manager list screen loads first."
+            "description": "CONFIRMED live 2026-08-25 (BRR, no params): does NOT return per-design assignment records. Response is XML wrapping `AssignmentResponse.UserRoles.UserRoles[]` — a flat {Name, Type} list of all assignable users (Type='U') and roles (Type='R'), 52 rows on BRR. No designId anywhere. Also returned Success=false with an empty Message — unclear if that's meaningful or just this endpoint's normal shape for a no-params call. This is the assignee PICKER list, not the Version Manager grid data — use Version Detail Objects or Design/Search for anything with a real designId."
           }
         },
         {
