@@ -29,6 +29,7 @@ P21  (Production)  -  web 3443
   - Scheduled-job failure "From" address - shared login ADMIN (and ADMINISTRATOR) users.email_address is stale = dsievertsen@allsurfaces.com; that is what the Scheduler uses as the notification sender. Fix identified (UPDATE users SET email_address=... WHERE id='ADMIN') but NOT applied in Prod; other envs not yet checked   [OPEN]
   - Alert-table counter drift - alert_recipient/alert_implementation/Alert_implementation_query/alert_message counters realigned via p21_set_counter 2026-08-24 (4th confirmed instance of this pattern)   [DONE]
   - kbenish (departed 01/2025) - full orphaned DB-user object (131 grant rows incl. db_securityadmin/db_accessadmin) still present in Prod; SQL login disabled since 2025-01-27 so dormant. Deliberately left in place - user's call   [OPEN]
+  - Derek's "Test" DynaChange screen_orders_hdr_date_popup_all - web/Extensibility "Screen" design (design/assignment framework) created by Derek Sievertsen (departed); description only "Test", assigned to role All, hid the option to update the required date on the Order Header date popup. Derek confirmed 2026-08-26 it was no longer needed; deleted from Prod 2026-08-27   [DONE]
 
 ========================================================================
 P21  (Data Warehouse - ASDWDB01)  -  nightly 2:05 restore from Prod
