@@ -1,0 +1,131 @@
+========================================================================
+P21 ENVIRONMENT STATUS - CUSTOMIZATIONS / OPEN ITEMS
+========================================================================
+Source:       C:\Claude\Docs\P21 Env Status-20260827.pdf
+Last updated: 2026-08-27  (reconciled against Work-Log.md + memory)
+Maintainer:   Update this file whenever a customization is added,
+              changed, or closed in any environment.
+
+STANDARD FORMAT
+  - One section per environment, headed:  DBName (Used For) - middleware port
+  - One item per line:  <short title> - <detail>  [STATUS]
+  - STATUS vocabulary:  OPEN | IN TEST | ON HOLD | BROKEN | DONE | RETIRED | REFERENCE
+  - Add new items at the bottom of the section.
+  - Statuses were originally inferred from the source page text - corrected 2026-08-27.
+
+========================================================================
+P21  (Production)  -  web 3443
+========================================================================
+  - Excel report connection string - Provider=SQLOLEDB;Data Source=p21.allsurfaces.com;Trusted_connection=yes;Initial Catalog=P21   [REFERENCE]
+  - SA 51376 RMA Transaction History - "Reason Code" column added to all 21 role versions of Transaction Master Inquiry Orders (RMA tab); source lost_sales_transaction; requestor sign-off 2026-08-06   [DONE]
+  - SA 53301 RMA tab column rename - "Lost Sales Desc" -> "Reason" on Transaction Master Inquiry Orders, all 21 roles; fixed via scoped REPLACE on the serialized PB text blob; ran against Prod 2026-08-27, confirmed clean   [DONE]
+  - ds_view_open_rma_value retirement - legacy/non-P21 view removed from all 6 roles, definition retargeted to native p21_view_open_rma_report; Prod complete 2026-08-06   [DONE]
+  - SA 48124 Vendor Invoice EDI Charges - asi_view_vendor_invoice_edi_charges (SAC charges + invoice_amount) deployed to Prod WITH grants; Crystal sub_AdditionalCharges subreport still Play-only, pending A/P sign-off before .rpt ships   [IN TEST]
+  - SA 48732 CSR Open Order Team portal - view + .srd + container deployed to Prod 2026-07-27, role ALL; closed 2026-07-29   [DONE]
+  - SA 49504 EDI 855 view fix - view + v4 .srd deployed to Prod 2026-07-13, both columns verified; awaiting user feedback   [IN TEST]
+  - Low Margin Alert (Team uid 104 / Purchasing-MAC uid 105) - deployed to Prod INACTIVE (row_status_flag=705) on the 2026-07-31 preservation deploy, real recipients; awaiting Evan Jenkins' sign-off on the Play samples to flip 705->704   [ON HOLD]
+  - Low PAD Margin Alert (uid 106/107) - PAD-scoped duplicate of the split, deployed to Prod INACTIVE (705), real recipients; no PAD stakeholder sign-off yet   [ON HOLD]
+  - price_page_description token for OE alerts (alert_type_uid=12, oe_OrderEntry) - added in Training; NOT yet done in Prod   [OPEN]
+  - Scheduled-job failure "From" address - shared login ADMIN (and ADMINISTRATOR) users.email_address is stale = dsievertsen@allsurfaces.com; that is what the Scheduler uses as the notification sender. Fix identified (UPDATE users SET email_address=... WHERE id='ADMIN') but NOT applied in Prod; other envs not yet checked   [OPEN]
+  - Alert-table counter drift - alert_recipient/alert_implementation/Alert_implementation_query/alert_message counters realigned via p21_set_counter 2026-08-24 (4th confirmed instance of this pattern)   [DONE]
+  - kbenish (departed 01/2025) - full orphaned DB-user object (131 grant rows incl. db_securityadmin/db_accessadmin) still present in Prod; SQL login disabled since 2025-01-27 so dormant. Deliberately left in place - user's call   [OPEN]
+
+========================================================================
+P21  (Data Warehouse - ASDWDB01)  -  nightly 2:05 restore from Prod
+========================================================================
+  - Five Way report acceleration - ASI_ReportCache columnstore-fact pattern built on asdwdb01, 195 cols EXCEPT-equal, BuildLog clean (FACT 3.83M rows, 0/0). Go-live (refresh proc w/ view swap, one-time run, post-restore Agent job, grant SSRS_Users) NOT yet executed - needs explicit go-ahead   [ON HOLD]
+  - SSRS "Inventory Usage 90 Days" - stray daily-1AM test subscription owned by mgoldyn since 2025-07-14 disabled 2026-08-25 (was rendering 72.8MB / 49,236 rows and hanging the mail relay)   [DONE]
+  - 90 Day Usage Report - "mfg" Use Default Value fix (2026-07-27) validated 2026-08-12 across all 44 per-location subscriptions   [DONE]
+  - SA 48715 Five Way Params - Null defaults on the -SA-48715-Fix report verified correct 2026-07-27; awaiting Jim Geerling's validation run (reminder email drafted, not sent)   [IN TEST]
+
+========================================================================
+P21Dev  (Dev)  -  middleware 3448
+========================================================================
+  - websvc-dev user for sales rep tool dev   [BROKEN]
+  - Configure for the web   [OPEN]
+  - Dynachange in Prod - waiting on data to populate UD tables; asi_view_inv_mast built here 2026-06-18 (SA 48237), but the ASI view over the user-defined fields still can't be finalized until Prod's DynaChange data populates   [OPEN]
+  - Web testing users TKIREVA, OBARABANOV, VHIRNYI, LMOLOTIIEVSKYI (AHI-API1) - originally scheduled 2/19/26; all 4 still present and Prod-absent as of the 2026-08-27 audit   [IN TEST]
+  - Unique DynaChanges NOT in Prod: "Sale Price Book Maintenance" and "Sale Price Page Maintenance" - tied to the live Commission App integration; P21Dev is the env that actually holds real designs for the extensibility/dynachange API   [REFERENCE]
+  - SA 50622 Read Only Global Price Level Name - added to Sales Price Book & Page (P21Dev and P21Bus); done by user directly   [DONE]
+  - Missing locations - 500 / 501 / 520 / 540 / 560 do not exist at all in P21Dev (no row, not just an untagged name); deliberately not raw-INSERTed (location has ~150 cols incl. GL/tax linkage)   [OPEN]
+  - asi_proc_copy_p21_user deployed here 2026-08-04 under the standard name (retiring kb_proc_copy_user)   [DONE]
+
+========================================================================
+P21Play  (Dev / QA)  -  middleware 3445
+========================================================================
+  - Custom import settings for EDI   [OPEN]
+  - User Neil Van Walbeck (NVANWALBECK, branch 100, role_uid 1 "All") - SA 51571; lower-env-only contractor account, refresh-fragile (wiped by the 2026-08-03 refresh-from-Prod, since re-added manually via the P21 client; present again as of the 2026-08-27 audit). asi_proc_copy_p21_user has an open bug so re-adds are manual   [OPEN]
+  - SA 46321 PO Required Date BR - update Requested Date on PO header + line items; built and fully tested in Play (5 real POs), committed 52174df; awaiting UAT (Mike/Chad/Pamela + PORG). Prod deploy guide includes the EXECUTE grant step   [IN TEST]
+  - SA 53270 portal "BR Will Call Orders" - new portal, working and confirmed live in Play after an InfoMaker rebuild; Carrier=Will Call (carrier_id 10002), branch-restricted via asi_fnt_get_user_loc (kb_ dependency already swapped out), roles All + Branch Manager. Awaiting Matt's review, then Prod (delete the TEST2 diagnostic element first). PENDING CHANGE: add a "Disp" column after Qty Ordered, sourced from oe_line.disposition   [IN TEST]
+  - SA 53334 ASAP marketing banner image - added to ACKNOWLEDGEMENTS_user.rpt (Group Footer #1i, prints once on the true last page); Play only, pre-edit backup saved. Awaiting Matt's review of placement/sizing   [IN TEST]
+  - SA 53475 Order Ack custom email message - asi_email_context_flag + asi_oe_email_close_diag rebuilt to 1.0.0.8 with Matt's approved "Sign up for ASAP" text, registered fresh in Play 2026-08-26 (uid 165/166, multirow, Synchronous); positive (Order Ack appends once) and negative (RMA Ack appends nothing) tests both verified via the delivered email. Awaiting Matt/UAT, then Prod plan   [IN TEST]
+  - SA 52078 Vendor Invoice Receiving Report redesign - show 810 data instead of PO comparison; full redesign copied to Play, 94-invoice stress test passed, 2 fixes are real bugs in the current Prod report. Awaiting Cindy & Chad's UAT   [IN TEST]
+  - SA 49632 SideMarks on pick tickets (Plan B) - header reworked to Will Call/COD labels only (renamed WillCall_COD), new Page Header d for PO Number + Job Name; submitted to Play for UAT, assigned to Chad   [IN TEST]
+  - Low Margin Alert (uid 104 Team / 105 Purchasing) - live in Play for sample generation; recipients must stay mgoldyn-only. RE-VERIFY recipients are mgoldyn-only after every refresh (real recipients were found reactivated post-refresh 2026-08-26 and had to be stripped again)   [IN TEST]
+  - Low PAD Margin Alert (uid 105/106) - SQL-built pair deleted (SQL-built alerts unreliable per past experience); being rebuilt manually in the P21 client from PAD-Alert-Fields-For-Manual-Rebuild.txt; not firing yet   [BROKEN]
+  - OE alert-view NULL-token hardening - 06-harden-oe-view-null-tokens.sql (6 unwrapped OE token columns) deployed to Play/Training/BusinessRules; NOT yet Prod   [DONE]
+  - Alert uid 102 "Test Verify Alerts" - deactivated (row_status_flag=705) in Play/Training/BusinessRules to stop blank-email noise on p21_view_alert_oe_OrderEntry   [DONE]
+  - alert_message env-tagging - Play already carries the [P21Play] tag protection (reference for the sibling scripts)   [REFERENCE]
+
+========================================================================
+Training  (Project Testing)  -  middleware 3447
+========================================================================
+  - apc_od_apply_surcharge_shipping - modified for LOGISTICS SURCHARGE, unit_quantity = 2   [OPEN]
+  - price_page_description token for OE alerts (alert_type_uid=12) - DONE in Training; Prod run still needed   [DONE]
+  - User Neil Van Walbeck (Jossy) - still present and Prod-absent as of the 2026-08-27 audit   [OPEN]
+  - Mindharbor - Web Location Maintenance, Inventory tab   [OPEN]
+  - OE alert-view NULL-token hardening (06-harden-oe-view-null-tokens.sql) deployed to Training   [DONE]
+  - Alert uid 102 "Test Verify Alerts" deactivated (705) in Training   [DONE]
+  - Alert-table counter drift (5 counters, alert_recipient was causing SQLDBCode 2627) fixed via p21_set_counter 2026-08-07; alert_message env-tag added 44/44   [DONE]
+  - asi_proc_copy_p21_user deployed here 2026-08-04 under the standard name   [DONE]
+
+========================================================================
+Business Rules  (WWMS)  -  middleware 3444   -  last refresh 2026-08-25
+========================================================================
+  - Dynachange changed to System Admin   [DONE]
+  - SA 51186 Location 221 primary-bin bulk update - Update-Loc221-Primary-Bins.sql set primary_bin for 5,042 items (highest-qty bin each) still on NOBIN; BusinessRules run verified via SQL (5,041/5,042, 0 remain NOBIN; 1 item MAP38439 has no inv_mast match). Also run in Play + Prod (user-reported)   [DONE]
+  - BRs for custom message on order ack -> became SA 53475; built and proven end-to-end in BusinessRules (asi_email_context_flag + asi_oe_email_close_diag), now promoted to P21Play for UAT   [DONE]
+  - SA 53301 RMA column rename - generalized Prod script dry-run against BusinessRules 2026-08-25 (refreshed from Prod same morning); caught a real version_desc varchar(255) overflow bug on role uid 2990 before it could hit Prod, fixed with a shorter note + LEFT(...,255) guard; verified end-to-end in BRR (DB + client after clearing the cached DynaChange layout)   [DONE]
+  - Scheduler / "Directs Auto Buy" job setup - Scheduler Location URL set (https://p21businessrules.allsurfaces.com:3444/Scheduler/api), P21API Configuration re-run, app pools recycled - cleared the old "Unknown menu name: m_processscheduledjob" error. Job now fails further in: "UiServerException: Tab page is disabled and cannot be selected" in PoRequirementCustomizationProvider.Process -> ChangeData, with SQL error 15408 (Impersonate Session Security Context collision) firing when Scheduled Task Manager is open watching the run. Parked mid-test; retest in isolation + try a positive-target-value criteria (251 recommended)   [BROKEN]
+  - asi_email_context_flag / asi_oe_email_close_diag - deleted by the 2026-08-10 refresh (business_rule never captured/restored); Order Ack pair manually re-registered; SA-47981 WWMS pick-item-desc pair (_populate_t2 / _t3) deliberately NOT re-registered - WWMS work on hold   [OPEN]
+  - Phase 7 automated business_rule capture/restore in the BRR refresh scripts - still NOT built; every BRR refresh wipes BRR-only rule registrations and needs manual recovery   [OPEN]
+  - Update-P21BusinessRules-Alert-Message-Env-Tag.sql - written (uses [P21BRR] tag, PREVIEW-then-UPDATE, idempotent) but NOT yet run   [OPEN]
+  - default_label_printer = 'print.allsurfaces.com' - set where delete_flag='N' and null in the users table 2026-08-25   [DONE]
+  - Deleted-user cleanup - '**' departed-employee users set delete_flag='Y' (479/479, verified); BusinessRules only. Watch item: EPICORP21USER ("** Req for IIS ** P21 Web App", a service account) got swept in too   [DONE]
+  - OE alert-view NULL-token hardening + alert uid 102 deactivation - both applied to BusinessRules   [DONE]
+  - Bin Replenishment / WWMS Alert "Open" button error post-refresh - fixed by recycling the API-P21BusinessRules P21 SOA IIS app pool on AHI-API1 (stale in-process menu/security cache). Add the app-pool recycle to the after-refresh checklist   [DONE]
+  - ZILLIANTSVC-DEV - user exists only in BusinessRules' users table (Postman/Zilliant Dev service account); Prod-absent by design   [REFERENCE]
+  - SA 50622 Read Only Global Price Level Name - added in P21Bus (with P21Dev)   [DONE]
+  - Scheduled-job "From" address fix (shared ADMIN stale email) - to be applied here when ready   [OPEN]
+
+========================================================================
+P21 Upgrade  (P21 2025.02 Testing)  -  version 25.2.5776.92   -  last refresh 2026-02-15
+========================================================================
+  - Only MG & AZ users enabled   [OPEN]
+  - Need Print Service   [OPEN]
+  - asi_proc_copy_p21_user deployed here 2026-08-04; the pre-existing duplicate asi_copy_p21_user was renamed to remove the collision   [DONE]
+
+========================================================================
+CROSS-ENV USER AUDIT  (2026-08-27)
+========================================================================
+Script: C:\PowerShell-Scripts\Create-Excel\Find-P21Users-LowerEnvs-NotInProd.ps1
+Finds users present in a lower env but absent from Prod, plus any user with
+delete_flag='N' whose name still carries the "**" departed-employee marker.
+
+  Users in a lower env, NOT in Prod:
+    P21Dev            - LMOLOTIIEVSKYI, OBARABANOV, TKIREVA, VHIRNYI   (web-testing four)
+    P21Play           - NVANWALBECK
+    P21Training       - NVANWALBECK
+    P21BusinessRules  - LMOLOTIIEVSKYI, OBARABANOV, TKIREVA, VHIRNYI, ZILLIANTSVC-DEV
+    P21Upgrade        - (none)
+    Accounting        - (none)
+
+  delete_flag='N' but name contains "**":  1 row in every env that is a Prod copy
+    (same single row carried down from Prod - re-check on the next audit).
+
+========================================================================
+Retired / Deleted environments
+========================================================================
+  - Kb-JungleGym (ASP21DB1-DEV) - replaced with P21 Upgrade   [RETIRED]
+  - P21Play2 (ASP21DB1-DEV) - deleted 2026-04-27   [RETIRED]
+  - Accounting / Finance (ASP21DB1-DEV) - refreshed from a Prod backup as needed by Derek; no customizations of its own   [REFERENCE]
