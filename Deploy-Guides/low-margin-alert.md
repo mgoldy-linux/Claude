@@ -24,6 +24,11 @@
 > This is a preservation step, not the go-live deploy — Evan's final spacing sign-off is still open; do not flip `row_status_flag` to 704 until he confirms.
 >
 > ⚠ **After the Play refresh completes, Play's copy of this alert will also carry the real recipients** (since Play now restores from this Prod state) — the `mgoldyn`-only safety hack from the original Play build is gone. Before resuming any alert testing in Play, re-apply mgoldyn-only recipients there first, or the next test fire will email real people through Play's live SMTP.
+>
+> **STATUS (2026-08-26): SAMPLES SENT TO EVAN, awaiting his sign-off before flipping Prod active.** Forwarded live samples of both 104 and 105 from P21Play. Two testing traps worth keeping for next time:
+> - **Test-customer trap:** Empire Today (`3000703`/`1127792`) shares `corp_address_id = 1046538` — the exact value both alerts' `where_clause` excludes — so it silently never fires there. Use **All Tile, Inc. (`1000260`)** instead. Recipe: `MAP1785142` @ 100 EA, sell price overridden to **$16.00** trips both; `ROB7399-1` @ 60 EA, **$19.80** trips Team only. (Default/list price won't trip either — must manually override the Sell Price field.)
+> - **Recipient drift found and fixed:** at some point after the 7/31 refresh, 104's real recipients (Alex Sivongsay, Justine Daugherty, Sales Rep/Order Taker tokens) had gotten reactivated in Play — not mgoldyn-only anymore. Caught it because two test emails to them got stuck in `alert_queued_mail` at status **`1063 = "Email Pending"`** (never actually sent — likely because the Sales Rep token resolved to a blank address on an order with no primary salesrep). Deleted the stuck rows and removed the real recipients in the client before they could send. **Check `alert_queued_mail` for row_status_flag 1063 whenever an expected alert email doesn't show up** — it means P21 generated it but never delivered it, which reads completely differently from "never fired at all."
+> - **Recurring check:** re-verify Play recipients are mgoldyn-only after any future P21Play refresh — this is now the second time real recipients have come back active post-refresh.
 
 ## Artifact(s)
 All under `C:\Claude\Alerts\Low-Margin-Alert\`, run **in numbered order**:
