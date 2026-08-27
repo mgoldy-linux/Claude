@@ -1,0 +1,21 @@
+{
+  // Auto-runs when this folder is opened in VS Code.
+  // First open: click "Allow" on the "tasks that run automatically" prompt,
+  // or run "Tasks: Manage Automatic Tasks" -> "Allow Automatic Tasks in Folder".
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Claude",
+      "type": "shell",
+      "command": "claude",
+      "options": { "cwd": "C:\\Claude" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "runOptions": { "runOn": "folderOpen" },
+      "problemMatcher": []
+    }
+  ]
+}
