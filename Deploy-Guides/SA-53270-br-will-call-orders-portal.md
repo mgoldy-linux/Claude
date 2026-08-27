@@ -2,6 +2,11 @@
 
 > Produced during development. Update as the artifact changes; commit with the code.
 
+**Status: 🟢 Shipped — Matt approved and the user deployed to P21 Prod 2026-08-27** (roles All,
+Branch Manager, Management). Not independently verified against Prod by Claude. Open loose ends:
+verify the Prod deploy directly, confirm the Play TEST2 diagnostic is deleted, and re-sync the
+repo copies (`.srd` + retrieve SQL) which still lack the Disp column and the centered Unit Price.
+
 ## Request
 John is leading a cleanup of open Will Call orders. New portal:
 - Name: `BR Will Call Orders`
@@ -165,19 +170,37 @@ Play (`P21Play` @ `P21Dev.allsurfaces.com`) → Prod (`P21` @ `P21.allsurfaces.c
    test user (`island2`, 4 Ops Regions → 35 locations, confirmed correct — not a bug)
 8. 2026-08-25: Promise Date format/width fixed (see above) — pushed to the same Play share,
    awaiting Matt's review of the full portal
+9. 2026-08-27: "Disp" column added (`oe_line.disposition`, after Qty Ordered) — user, in
+   InfoMaker on the Play share (see "Post-deploy change" above)
+10. 2026-08-27: Unit Price column centered to match Extended Price (Matt's last requested tweak)
 
-### Prod — NOT STARTED
-0. **Re-sync the repo first** — the Play `.srd` has the 2026-08-27 Disp column but the repo copy
-   and retrieve SQL don't (see "Post-deploy change — Disp column" above). Pull the live Play
-   `.srd` and update the retrieve SQL before proceeding.
-1. Copy the **current** `br_will_call_orders.srd` (InfoMaker-built, verify it's the live Play
-   file, not `br_will_call_orders.BROKEN-hand-edited.srd`) to `\\ASP21FS1\Prod\Portals\`
-2. Re-run `Register-BrWillCallOrders-Play.sql` against `P21` @ `P21.allsurfaces.com` with
+### Prod — DEPLOYED 2026-08-27 (per user report; not independently verified by Claude)
+Matt approved the portal in the `Re: Open work - update 8/26` email thread ("Yes, let's move it
+and assign it to the roles we discussed"). The user reports it is **live in P21 Prod, assigned
+to roles All, Branch Manager, and Management** (Management added for Prod — it was only
+All + Branch Manager in Play), with the Disp column and the centered Unit Price included.
+
+**Not confirmed by Claude:** the Prod `portal_element_uid`, that the registration scripts were
+run vs. assigned through Dynachange, that the Prod `.srd` on `\\ASP21FS1\Prod\Portals\` carries
+the Disp column, and whether the Play TEST2 diagnostic was deleted. If any of this needs to be
+certain, verify directly against Prod.
+
+Reference steps (what the promotion should have been):
+1. Copy the current InfoMaker-built `br_will_call_orders.srd` (not `...BROKEN-hand-edited.srd`)
+   to `\\ASP21FS1\Prod\Portals\`
+2. `Register-BrWillCallOrders-Play.sql` against `P21` @ `P21.allsurfaces.com` with
    `@lib = '\\ASP21FS1\Prod\Portals'`
-3. Re-run `Register-BrWillCallOrders-Drill-Play.sql` against Prod (same substitution)
-4. Assign to the same roles (**All**, **Branch Manager**) via Dynachange
-5. Confirm opening the portal renders with no error and shows expected data for a real user
-6. Delete the Play TEST2 diagnostic element/file if not already done (see Open items)
+3. `Register-BrWillCallOrders-Drill-Play.sql` against Prod (same substitution)
+4. Assign to roles **All**, **Branch Manager**, **Management** via Dynachange
+5. Confirm the portal opens with no error and shows expected data for a real user
+6. Delete the Play TEST2 diagnostic element/file (see Open items)
+
+### Repo NOT re-synced (open)
+As of 2026-08-27 the repo copies still do **not** reflect the Disp column:
+`br_will_call_orders.retrieve.sql` has no `disposition` in its SELECT, and
+`br_will_call_orders.srd` is the 2026-08-25 version. The deployed Play (and reportedly Prod)
+`.srd` is ahead of the repo. Re-pull the live `.srd` and add `disposition` to the retrieve SQL
+so the repo is the real source of truth again.
 
 ## Verification
 - Retrieve SQL smoke-tested directly against `P21Play`: 141 rows for a test user, 16 columns,
@@ -195,20 +218,28 @@ Play (`P21Play` @ `P21Dev.allsurfaces.com`) → Prod (`P21` @ `P21.allsurfaces.c
   DELETE FROM dc_nav_drill        WHERE dc_nav_drill_uid = 152;
   ```
   then delete `\\ASP21FS1\Play\Portals\br_will_call_orders.srd`.
-- **Prod:** not yet deployed — nothing to roll back.
+- **Prod:** deployed 2026-08-27. To roll back, run the same three DELETEs against `P21` @
+  `P21.allsurfaces.com` using the **Prod** `portal_element_uid` / `dc_nav_drill_uid` (not the
+  Play 325/152 values — get them from `portal_element WHERE name = 'BR WILL CALL ORDERS'` and
+  the matching `dc_nav_drill` row), then delete `\\ASP21FS1\Prod\Portals\br_will_call_orders.srd`.
 
 ## Open items
+- [ ] **Verify the Prod deploy directly** — Claude did not confirm it. Check
+      `portal_element WHERE name = 'BR WILL CALL ORDERS'` in Prod, the role assignments
+      (All / Branch Manager / Management), the drill row, and that the Prod `.srd` has the Disp
+      column.
 - [ ] **Delete the TEST2 diagnostic** — portal_element_uid 326 (`BR WILL CALL ORDERS TEST2`) +
-      `\\ASP21FS1\Play\Portals\br_will_call_orders_test2.srd`. Safe to remove once UAT wraps.
+      `\\ASP21FS1\Play\Portals\br_will_call_orders_test2.srd`. Status unknown — confirm it's gone.
       ```sql
       DELETE FROM portal_user_defined WHERE portal_element_uid = 326;
       DELETE FROM portal_element      WHERE portal_element_uid = 326;
       ```
-- [ ] Matt's review / user acceptance testing in Play (SysAid ticket update + review-request
-      email drafted and sent 2026-08-22, awaiting reply)
-- [ ] **Re-sync repo for the 2026-08-27 Disp column** — add `disposition` to
-      `br_will_call_orders.retrieve.sql` and re-pull the live Play `br_will_call_orders.srd`.
-      Repo currently lags the deployed Play file.
+- [ ] **Re-sync repo** — add `disposition` to `br_will_call_orders.retrieve.sql` and re-pull the
+      live `br_will_call_orders.srd`. Repo lags the deployed file (no Disp column, no centered
+      Unit Price).
+- [x] Matt's review — approved 2026-08-27 via the `Re: Open work - update 8/26` thread.
+- [x] Ticket update — note placed on clipboard for SA 53270; Outlook draft reply to Matt
+      ("closing SA 53270 as completed") left in Drafts, unsent.
 - [x] `kb-replacement-tracker.csv` — logged 2026-08-22 (the `kb_fnt_get_user_loc` →
       `asi_fnt_get_user_loc` swap was already tracked from its original build; added this
       portal's file to the existing row's `files_updated`)
