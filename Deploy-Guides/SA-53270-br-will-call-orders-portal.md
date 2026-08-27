@@ -113,6 +113,26 @@ Reverted — the deployed `.srd` was never affected by this (the token substitut
 server-side at runtime; this only lived in the standalone reference SQL file in the repo), but
 it would have shipped a broken "source of truth" query if not caught.
 
+## Post-deploy change — "Disp" column added (2026-08-27)
+Follow-up request: add a **Disp** column (order line disposition — `oe_line.disposition`, the
+same value shown on the OE line grid) after Qty Ordered. Done by the user directly in InfoMaker
+against `\\ASP21FS1\Play\Portals\br_will_call_orders.srd`.
+
+**Repo is NOT synced for this change** (as of 2026-08-27):
+- `br_will_call_orders.retrieve.sql` — still has no `disposition` column in its SELECT.
+- `br_will_call_orders.srd` — still the 2026-08-25 version, no Disp column.
+
+So the deployed Play `.srd` is **ahead of the repo**. Before promoting to Prod:
+1. Add `,p21_view_oe_line.disposition` to the retrieve SQL (after `qty_ordered` /
+   `extended_price_home`, to match the on-screen position — confirm exact ordinal against the
+   live InfoMaker layout, since DataWindow columns bind by position).
+2. Re-pull the live `br_will_call_orders.srd` from `\\ASP21FS1\Play\Portals\` into the repo as
+   the current source of truth.
+3. Then follow the Prod steps below with that file.
+
+Source/placement here are taken from the customizations-tracker pending-change note, not
+independently confirmed — verify against the live Play portal before relying on them.
+
 ## Order Id drill-through — not an `.srd` property
 Drill-through is configured in `dc_nav_drill`, a separate DB table, not the `.srd` file:
 `source_window='w_portal'`, `source_datawindow='udp_' + datawindow_name`,
@@ -147,6 +167,9 @@ Play (`P21Play` @ `P21Dev.allsurfaces.com`) → Prod (`P21` @ `P21.allsurfaces.c
    awaiting Matt's review of the full portal
 
 ### Prod — NOT STARTED
+0. **Re-sync the repo first** — the Play `.srd` has the 2026-08-27 Disp column but the repo copy
+   and retrieve SQL don't (see "Post-deploy change — Disp column" above). Pull the live Play
+   `.srd` and update the retrieve SQL before proceeding.
 1. Copy the **current** `br_will_call_orders.srd` (InfoMaker-built, verify it's the live Play
    file, not `br_will_call_orders.BROKEN-hand-edited.srd`) to `\\ASP21FS1\Prod\Portals\`
 2. Re-run `Register-BrWillCallOrders-Play.sql` against `P21` @ `P21.allsurfaces.com` with
@@ -183,6 +206,9 @@ Play (`P21Play` @ `P21Dev.allsurfaces.com`) → Prod (`P21` @ `P21.allsurfaces.c
       ```
 - [ ] Matt's review / user acceptance testing in Play (SysAid ticket update + review-request
       email drafted and sent 2026-08-22, awaiting reply)
+- [ ] **Re-sync repo for the 2026-08-27 Disp column** — add `disposition` to
+      `br_will_call_orders.retrieve.sql` and re-pull the live Play `br_will_call_orders.srd`.
+      Repo currently lags the deployed Play file.
 - [x] `kb-replacement-tracker.csv` — logged 2026-08-22 (the `kb_fnt_get_user_loc` →
       `asi_fnt_get_user_loc` swap was already tracked from its original build; added this
       portal's file to the existing row's `files_updated`)
