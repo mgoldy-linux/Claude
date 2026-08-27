@@ -9,7 +9,9 @@
 ## Target environments
 - **Play** (P21Play @ P21Dev.allsurfaces.com) — done
 - **Business Rules** (P21BusinessRules @ P21Dev.allsurfaces.com) — done, used as a Prod dry run
-- **Prod** (P21 @ P21.allsurfaces.com) — not yet run
+- **Prod** (P21 @ P21.allsurfaces.com) — done 2026-08-27
+
+**Status: CLOSED.** Jessica & Chad signed off on the Play change 2026-08-26; user ran the Prod script 2026-08-27 and confirmed complete, no errors.
 
 ## Dependencies & deploy order
 No cross-artifact dependency — this is a same-database, three-statement rename. Order within a single run matters only in that step 3 (`version_desc`) depends on nothing failing in steps 1–2; all three are independent scopes (`custom_objects_detail`, `fc_dataobject_column`, `custom_objects`) and can run in any order.
@@ -20,7 +22,7 @@ No cross-artifact dependency — this is a same-database, three-statement rename
 ## Deploy steps
 1. **Play:** `Sql-Scripts\Update-SA53301-RMA-ColumnHeader-Play.sql`, then `Update-SA53301-Version-Desc-Play.sql`, then `Update-SA53301-AuditColumns-Play.sql` — all against `USE P21Play`. **Done, verified.**
 2. **Business Rules (dry run):** `Sql-Scripts\Update-SA53301-RMA-ColumnHeader-Prod.sql` against `USE P21BusinessRules`. **Done** — steps 1–2 (header text, shared field description) succeeded on all 21 roles; step 3 (`version_desc`) originally failed on `varchar(255)` truncation (role `uid 2990`, "Vendor Maintenance," already had a 208-char description). Finished via `Sql-Scripts\Update-SA53301-VersionDesc-Fix-BusinessRules.sql` (shortened note + `LEFT(...,255)` guard). **Verified end-to-end** — DB confirmed via SQL, then the P21 client (after closing/reopening the window to clear its cached DynaChange layout).
-3. **Prod:** `Sql-Scripts\Update-SA53301-RMA-ColumnHeader-Prod.sql` against `USE P21`, once run manually by the user (per their explicit "I will run"). Script already carries the shortened-note/`LEFT()` fix proven in step 2, so it should run clean on all 21 Prod roles in one pass — **not yet run**, held pending Jessica & Chad's sign-off on the Play change.
+3. **Prod:** `Sql-Scripts\Update-SA53301-RMA-ColumnHeader-Prod.sql` against `USE P21`, run manually by the user (per their explicit "I will run") on 2026-08-27, after Jessica & Chad signed off on the Play change. Script carried the shortened-note/`LEFT()` fix proven in step 2 — **ran clean on all 21 Prod roles, confirmed complete, no errors.**
 
 ## Verification
 - RMA tab header reads "Reason" instead of "Lost Sales Desc," on every role that has the field placed.
