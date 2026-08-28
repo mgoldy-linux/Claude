@@ -2,6 +2,10 @@
 
 **Environment:** P21 Training (`P21Training`, middleware `p21train.allsurfaces.com:3447`) and P21 Business Rules (`P21BusinessRules`, `p21businessrules.allsurfaces.com:3444`), both on Installer Version `2021.1.4559.0`. Reproduces on both.
 
+> **2026-08-28 — submitted through the Epicor portal as case `CS0005626127`.** The submitted form was cut down from the four questions below to a single lead contrast the user judged Epicor could act on: with identical criteria, the **Save Session** Task Type job (`scheduled_job_type = 1`) generates the PORG output files, while the **Auto-Buy** job (`scheduled_job_type = 2`) generates nothing — no output file, no PO, no notification email — yet still logs `Success`.
+>
+> **This needs reconciling with the "Task Type: Auto-Buy — tested directly" section below**, which concluded "Identical `gpor_run_hdr` signature … regardless of Task Type" — that comparison only checked `po_hdr` creation, not output-file generation. The file-generation difference was reported by the user from observation and has **not been re-verified with SQL / a share check**. Confirm it against `\\asp21fs1\Training\PORG` and `scheduled_job_history`, then fix or qualify that section.
+
 ## Summary
 
 A scheduled task built to run PO Requirements Generation ("Auto Buy") unattended never creates a purchase order, no matter how it's configured — even when the run finds real, positive demand against a supplier with a valid Target Value, and even when explicitly built with the window's own **Task Type: Auto-Buy** option (as opposed to the default "Save Session"). The job type used, `P21.Scheduler.Jobs.SaveWindowJob`, appears to only be able to replay field values into the `m_generatepurchaseorder` window's criteria screen (the "compute requirements" step) and cannot drive the window through to the separate step that actually writes `po_hdr`/`po_line`, regardless of which Task Type is selected.
