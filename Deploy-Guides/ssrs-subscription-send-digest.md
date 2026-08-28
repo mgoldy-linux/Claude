@@ -136,11 +136,16 @@ Expected: a dated section per day; each send shows report name, size, format, ti
 Confirmed 2026-08-28 against `ASDWDB01\ReportServer`:
 - 3-day window: 17 sends, 0 render errors.
 - 7-day window: 67 sends, 1 render error. Surfaced two real problems:
-  - `Changes to Orders by Sales Reps` — `rsAccessDenied` render (0 bytes) on 8/24, and
+  - `Changes to Orders by Sales Reps` — `rsAccessDenied` render (0 bytes) on 8/24,
     `LastStatus` = "the permissions granted to user 'AHI\kbenish' are insufficient…
-    Mail will not be resent" (subscription owned by departed `kbenish`).
-  - `Inventory Value Report` MHTML subscription ≈ 92 MB weekly; `Inventory Usage 90 Days`
-    MHTML ≈ 73 MB — both flagged as mail-relay risk.
+    Mail will not be resent". Root cause: `dbo.Subscriptions.OwnerID` = departed
+    `AHI\kbenish`. A scan of `OwnerID = kbenish` found a 2nd live one
+    (`P21 Users' Last Login Dates` → ITSupport, dead since 2026-08-02). **User reassigned
+    both to `AHI\ssrssvc` on 8/28** (confirmed in `dbo.Subscriptions`); Monday-verify they
+    deliver. See `feedback_kbenish_departed`.
+  - `Inventory Value Report` / "EAV Weekly Inventory Value" MHTML ≈ 92 MB weekly — the one
+    active over-limit send (the ~73 MB MHTML on `Inventory Usage 90 Days` was a disabled
+    stray sub). MHTML → Excel still to do.
 - Also verified under `Set-StrictMode -Version Latest` with `&`, dot-source, and a
   legacy (no-`WindowStart`) state file.
 
