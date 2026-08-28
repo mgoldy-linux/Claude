@@ -5,11 +5,13 @@
 > **Status 2026-08-29:** script built and live-verified against the Prod catalog; **not deployed**.
 > Tony Neuman confirmed the relay attachment limit is **35 MB** (on the base64-encoded
 > size) — the script's `-AttachmentLimitMB` param now defaults to 35 and flags a rendered
-> send in **red as OVER LIMIT** when `rendered × 4/3 ≥ 35 MB`. Two subscriptions are
-> already over and not being delivered: `Inventory Value Report` / "EAV Weekly Inventory
-> Value" (MHTML ~92 MB) and `Inventory Usage 90 Days` (MHTML ~73 MB) — fix is Render
-> Format MHTML → Excel on each (owner: jklitzman). Reply with the SSRS navigation drafted
-> to Tony 2026-08-29 (in Drafts). The three deploy actions below are all the user's to run.
+> send in **red as OVER LIMIT** when `rendered × 4/3 ≥ 35 MB`. **One** active subscription
+> is over and not being delivered: `Inventory Value Report` / **"EAV Weekly Inventory
+> Value"** (MHTML ~92 MB, owner jklitzman) — fix is that subscription's Render Format
+> MHTML → Excel. (The ~73 MB MHTML sends the digest showed for `Inventory Usage 90 Days`
+> were mgoldyn's own already-*disabled* "Test of missing Paramater" stray sub — nothing to
+> change; its active subs are already Excel.) Reply with the SSRS navigation drafted to
+> Tony 2026-08-29 (in Drafts). The deploy actions below are all the user's to run.
 
 ## Artifact(s)
 - `PowerShell/Check-SSRS-Subscription-Sends.ps1` — PowerShell 7 script. Once-per-day
