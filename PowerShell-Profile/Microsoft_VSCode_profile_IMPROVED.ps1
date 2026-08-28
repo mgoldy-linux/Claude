@@ -655,8 +655,19 @@ try {
                 }
             }
         }
+
+        # Daily SSRS subscription-send digest (script self-guards to once per day)
+        $Script:SsrsSendCheckScript = 'C:\PowerShell-Scripts\SSRS\Check-SSRS-Subscription-Sends.ps1'
+        if (Test-Path $Script:SsrsSendCheckScript) {
+            try {
+                & $Script:SsrsSendCheckScript -Quiet
+            }
+            catch {
+                Write-ProfileLog "Check-SSRS-Subscription-Sends.ps1 failed: $_" -Level Warning
+            }
+        }
     }
-    
+
     # Configure dbatools (suppress encryption warnings)
     if (Get-Module -Name dbatools) {
         Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register -ErrorAction SilentlyContinue
