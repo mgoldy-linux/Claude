@@ -2,7 +2,15 @@
 
 > Produced during development. Update as the artifact changes; commit with the code.
 
-> **Status 2026-08-29:** script built and live-verified against the Prod catalog; **not deployed**.
+> **Status 2026-08-28 — DEPLOYED.** Script copied to
+> `C:\PowerShell-Scripts\SSRS\Check-SSRS-Subscription-Sends.ps1`; the call block was
+> surgically pasted into both live profiles (`Microsoft.PowerShell_profile.ps1` after the
+> Check-Job-History block, `Microsoft.VSCode_profile.ps1` inside the non-debug guard).
+> Both live profiles re-parse clean; the deployed script runs end-to-end from its path.
+> Stale test state file removed, so the next real terminal launch does a genuine first run.
+> Tony confirmed the 35 MB relay cap; `-AttachmentLimitMB` defaults to 35.
+> Still open (not part of the tool): the `EAV Weekly Inventory Value` MHTML→Excel change,
+> and the `Changes to Orders by Sales Reps` failing subscription.
 > Tony Neuman confirmed the relay attachment limit is **35 MB** (on the base64-encoded
 > size) — the script's `-AttachmentLimitMB` param now defaults to 35 and flags a rendered
 > send in **red as OVER LIMIT** when `rendered × 4/3 ≥ 35 MB`. **One** active subscription
