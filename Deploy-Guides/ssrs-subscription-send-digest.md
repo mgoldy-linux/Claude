@@ -2,10 +2,14 @@
 
 > Produced during development. Update as the artifact changes; commit with the code.
 
-> **Status 2026-08-28:** script built and live-verified against the Prod catalog; **not deployed**.
-> Awaiting Tony Neuman's reply on the max report-email size (→ the script's warning
-> threshold, currently hardcoded at 20 MB) before wiring it into the live profiles.
-> The three deploy actions below are all the user's to run.
+> **Status 2026-08-29:** script built and live-verified against the Prod catalog; **not deployed**.
+> Tony Neuman confirmed the relay attachment limit is **35 MB** (on the base64-encoded
+> size) — the script's `-AttachmentLimitMB` param now defaults to 35 and flags a rendered
+> send in **red as OVER LIMIT** when `rendered × 4/3 ≥ 35 MB`. Two subscriptions are
+> already over and not being delivered: `Inventory Value Report` / "EAV Weekly Inventory
+> Value" (MHTML ~92 MB) and `Inventory Usage 90 Days` (MHTML ~73 MB) — fix is Render
+> Format MHTML → Excel on each (owner: jklitzman). Reply with the SSRS navigation drafted
+> to Tony 2026-08-29 (in Drafts). The three deploy actions below are all the user's to run.
 
 ## Artifact(s)
 - `PowerShell/Check-SSRS-Subscription-Sends.ps1` — PowerShell 7 script. Once-per-day
@@ -74,9 +78,10 @@ Live files:
 Then `. $PROFILE` or open a new terminal. Note: because of the Claude Code guard, the
 check runs in the user's real terminals only, not inside Claude Code sessions.
 
-### Step 3 (later) — set the size threshold
-Once Tony answers, change the `20MB` literal in the `mail-relay risk` check in
-`Check-SSRS-Subscription-Sends.ps1` (and re-copy to `C:\PowerShell-Scripts\SSRS\`).
+### Step 3 — size threshold (done)
+`-AttachmentLimitMB` defaults to **35** (Tony Neuman, 2026-08-29). The check compares the
+base64-encoded size (`rendered × 4/3`): ≥ limit → red "OVER LIMIT", ≥ 80% → amber warning.
+Override per-run with `-AttachmentLimitMB <n>` if the relay cap changes.
 
 ## How the once-per-day / since-last-run logic works
 - State file: `C:\_P25\State\SSRS-Subscription-Sends.state.json` (auto-created). Holds

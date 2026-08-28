@@ -66,7 +66,12 @@ param(
     [switch]$Force,
     [switch]$Quiet,
     [string]$Instance,
-    [string]$StateFile = 'C:\_P25\State\SSRS-Subscription-Sends.state.json'
+    [string]$StateFile = 'C:\_P25\State\SSRS-Subscription-Sends.state.json',
+
+    # Corporate mail relay hard attachment limit, in MB, measured on the
+    # *base64-encoded* size (confirmed by Tony Neuman 2026-08-29 = 35 MB). Over
+    # this the relay drops the message silently and SSRS still logs "Mail sent".
+    [int]$AttachmentLimitMB = 35
 )
 
 # ---------------------------------------------------------------------------
@@ -489,9 +494,17 @@ if ($execs.Count -eq 0 -and $statusRows.Count -eq 0 -and $Quiet) {
             Say ('  {0} {1}  {2,-14} {3}  ' -f $nameCol, (Format-Size $e.ByteCount), $e.Format, $e.TimeStart.ToString('HH:mm:ss')) -NoNewline
             Say $statusLbl $(if ($ok) { 'Success' } else { 'Error' })
 
-            # mail-relay risk (a >20 MB attachment has hung the corporate relay before)
-            if ($ok -and $e.ByteCount -and [double]$e.ByteCount -ge 20MB) {
-                Say ('       (!) {0:N1} MB rendered - large enough to stall the mail relay; the email attachment is ~33% bigger again' -f ([double]$e.ByteCount / 1MB)) 'Warning'
+            # mail-relay risk. The relay limit ($AttachmentLimitMB) is on the
+            # base64-encoded attachment, which is ~4/3 of the rendered file. Over
+            # the limit the relay drops the mail silently - SSRS still logs
+            # "Mail sent" - so a red flag here means recipients get nothing.
+            $renderedMB = if ($e.ByteCount) { [double]$e.ByteCount / 1MB } else { 0 }
+            $encodedMB  = $renderedMB * 4 / 3
+            if ($ok -and $encodedMB -ge $AttachmentLimitMB) {
+                Say ('       (!) OVER LIMIT: ~{0:N0} MB as an email attachment ({1:N1} MB rendered x ~1.33 base64) vs the {2} MB relay cap - the relay drops this silently, recipients are NOT getting it.' -f $encodedMB, $renderedMB, $AttachmentLimitMB) 'Error'
+            }
+            elseif ($ok -and $encodedMB -ge ($AttachmentLimitMB * 0.8)) {
+                Say ('       (!) ~{0:N0} MB as an email attachment ({1:N1} MB rendered) - within 20% of the {2} MB relay cap.' -f $encodedMB, $renderedMB, $AttachmentLimitMB) 'Warning'
             }
             # empty render
             if ($ok -and ($null -eq $e.ByteCount -or [double]$e.ByteCount -eq 0)) {
