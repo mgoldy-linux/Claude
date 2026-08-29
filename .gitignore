@@ -4,6 +4,7 @@
 # Personal session notes
 Claude-resume.txt
 Claude-resume.txt.bak
+Session-*.txt
 
 # .NET build artifacts
 [Bb]in/
@@ -16,5 +17,11 @@ Claude-resume.txt.bak
 Thumbs.db
 .DS_Store
 
-# Backup task log
-Scripts/Backup-SqlScripts.log
+# SSMS / Visual Studio solution user state
+*.suo
+*.sqlsuo
+*.ssmssln
+*.user
+
+# Logs (operational / one-off run logs, e.g. Backup-SqlScripts.log, Cleanup-ClaudeFolder.log)
+*.log
