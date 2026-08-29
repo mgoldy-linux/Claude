@@ -44,10 +44,9 @@ try {
     $Script:BaseTranscriptPath = "C:\_P25\PST\Script-Transcripts"
     $Script:TranscriptPath = Join-Path $BaseTranscriptPath "$PSVer\$app"
     $Script:RecordPath = Join-Path $BaseTranscriptPath "Record-of-$PC_Name-VC-Scripts-Ran.txt"
-    
-    # SQL Server instances
-    $Script:SqlInst22 = 'DESKTOP-2ELUN3U'
-    $Script:SqlInst19 = 'DESKTOP-2ELUN3U\SQLEXPRESS'
+
+    # SQL Server instances + Connect-SQLServer are dot-sourced from SqlHelpers.ps1
+    # (see the SQL Helpers region below)
     $Script:SsrsInstance = 'ASDWDB01.ahi.local'
 
     # VSCode-optimized color scheme (compatible with dark themes)
@@ -61,6 +60,24 @@ try {
 }
 catch {
     Write-Warning "Error initializing profile variables: $_"
+}
+#endregion
+
+#region SQL Helpers
+# SQL Server instance names and Connect-SQLServer live in a shared file so the
+# Terminal and VSCode profiles stay in sync. SqlHelpers.ps1 must be deployed to
+# the same directory as this profile.
+try {
+    $Script:SqlHelpersPath = Join-Path $PSScriptRoot 'SqlHelpers.ps1'
+    if (Test-Path $Script:SqlHelpersPath) {
+        . $Script:SqlHelpersPath
+    }
+    else {
+        Write-Warning "SQL helpers file not found: $Script:SqlHelpersPath"
+    }
+}
+catch {
+    Write-Warning "Failed to load SQL helpers: $_"
 }
 #endregion
 
@@ -369,30 +386,7 @@ function Get-DirectorySize {
     return "{0:N2} {1}" -f $value, $sizes[$order]
 }
 
-function Connect-SQLServer {
-    <#
-    .SYNOPSIS
-        Connects to SQL Server using dbatools
-    .PARAMETER Instance
-        SQL Server instance name
-    .EXAMPLE
-        Connect-SQLServer -Instance $SqlInst22
-    #>
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$false)]
-        [string]$Instance = $Script:SqlInst22
-    )
-    
-    try {
-        $server = Connect-DbaInstance -SqlInstance $Instance
-        Write-Host "✓ Connected to SQL Server: $Instance" -ForegroundColor Green
-        return $server
-    }
-    catch {
-        Write-Error "Failed to connect to SQL Server: $_"
-    }
-}
+# Connect-SQLServer is defined in SqlHelpers.ps1 (dot-sourced above)
 
 function Get-SSRSSubscriptionSummary {
     <#

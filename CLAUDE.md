@@ -13,13 +13,17 @@ A personal developer productivity workspace containing:
 
 The primary artifacts are in `PowerShell-Profile/`:
 
-- `Microsoft_PowerShell_profile_IMPROVED.ps1` — Terminal profile (564 lines)
-- `Microsoft_VSCode_profile_IMPROVED.ps1` — VSCode-specific profile (668 lines)
+- `Microsoft_PowerShell_profile_IMPROVED.ps1` — Terminal profile
+- `Microsoft_VSCode_profile_IMPROVED.ps1` — VSCode-specific profile
+- `SqlHelpers.ps1` — shared SQL instance names + `Connect-SQLServer`, dot-sourced by both profiles
 
 **Deploying profiles:**
 ```powershell
-# Copy to active profile location, then reload
+# Copy to active profile location, then reload. SqlHelpers.ps1 must land in the
+# SAME directory as the profile (the profiles dot-source it via $PSScriptRoot).
+$dest = Split-Path $PROFILE.CurrentUserAllHosts
 Copy-Item "PowerShell-Profile\Microsoft_PowerShell_profile_IMPROVED.ps1" $PROFILE.CurrentUserAllHosts -Force
+Copy-Item "PowerShell-Profile\SqlHelpers.ps1" $dest -Force
 . $PROFILE
 ```
 
@@ -42,12 +46,14 @@ Both profiles share the same structure and features but differ in VSCode-specifi
 - **Logging**: `Write-Log` function — color-coded console + transcript file output
 - **Error handling**: All initialization wrapped in try-catch; `Get-ErrorDetails` for enhanced error reporting
 - **Prompt**: Shows `[ADMIN]` when elevated, Git branch when in a repo, shortened path
-- **SQL helpers**: Quick-connect functions for `$Script:SqlInst22` (MSSQL 2022) and `$Script:SqlInst19` (SQLEXPRESS)
+- **SQL helpers**: `SqlHelpers.ps1` (dot-sourced by both profiles) defines `$Script:SqlInst22` (MSSQL 2022), `$Script:SqlInst19` (SQLEXPRESS), and the `Connect-SQLServer` quick-connect function. dbatools encryption config stays in each profile's Initialization region.
 - **VSCode-only**: Clickable error links, adjusted colors, `New-Script` template generator
 
 **Key config variables** (update these for new systems):
 ```powershell
+# in each profile:
 $Script:BaseTranscriptPath = "C:\_P25\PST\Script-Transcripts"
+# in SqlHelpers.ps1:
 $Script:SqlInst22 = 'DESKTOP-2ELUN3U'
 $Script:SqlInst19 = 'DESKTOP-2ELUN3U\SQLEXPRESS'
 ```
