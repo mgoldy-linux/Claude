@@ -1,4 +1,6 @@
-# Deployment Guide — Order Acknowledgment Custom Email Message (no ticket)
+# Deployment Guide — Order Acknowledgment Custom Email Message (SA 53475)
+
+> **Status (2026-08-31): deployed + verified in P21Play, Prod plan pending.** See the `## 2026-08-26` section below. Sections written before that date (Artifact(s), Target environments, Deploy steps) still describe the pre-deployment "blocked on Matt / nothing in Play" state and need a fuller reconciliation pass — trust the dated sections.
 
 > Produced during development. Update as the artifact changes; commit with the code.
 
@@ -6,7 +8,7 @@
 - `CSharp\asi_oe_email_close_diag.cs` — **confirmed-working design, fully proven, plain text only**: an On-Demand rule attached directly to the OK button (`cb_ok`) on window `w_email_response`, appending to `memo` via `Data.Set` (multi-row) *after* the user's own comments. Both open diagnostic questions are now closed (2026-07-30): `memo` does not render HTML (tag came through literal), and image attachment/embedding is a confirmed dead end that can crash the P21 client (see Backward-compatibility notes). **The real (non-diagnostic) production rule based on this design has not been built yet** — blocked on Matt Munson for (1) which database to use for UAT and (2) the exact Marketing text — this file still writes a test marker, not the intended message.
 - `CSharp\asi_oe_order_ack_custom_message_t3.cs` — On-Event rule on `FormPreEmail`, pre-fills blank lines + message before the window opens. Built, never registered/tested. Now a documented **fallback only**, not the primary plan.
 - Superseded: `asi_oe_order_ack_custom_message_t1.cs` (caused a live-customer incident — see below, do not reuse), `asi_oe_order_ack_custom_message_t2.cs` (confirmed working, still the only `_tN`-family version actually registered)
-- Ticket: none
+- Ticket: SA 53475 (assigned 2026-08-26; the 2026-07/08 development work predates it)
 
 ## Target environments
 - **P21 Business Rules** (mgoldyn's own testing) → **Play** (user-facing testing) → Prod
@@ -18,6 +20,90 @@ The P21BusinessRules refresh-from-Prod deleted `asi_email_context_flag`, `asi_oe
 - **Open, unexplained:** `asi_oe_email_close_diag` came back registered as **Synchronous** (`run_type_cd=3424`). Every prior confirmed-working test of this exact rule (2026-07-29/30) was **Asynchronous** (3423), and this guide's own "Dependencies" section below states the dropdown always reverts to Asynchronous for this attach path regardless of selection. It didn't revert this time, and the rule still worked in the live test. Not proven safe long-term, just proven to work once — re-verify on the next registration cycle rather than assuming this is now the expected value.
 - **NOT recovered, decision pending:** `t2` (the FormPreEmail pre-fill fallback) was also deleted and was **not** re-registered as part of this recovery. Its `CustomMessage` constant is still test placeholder text ("Life is basically just opening 40 tabs..."), so its absence isn't actively harmful — with it gone, that placeholder can no longer land in a real customer's Order Ack email through this environment's live SMTP. Decide whether to restore it (resumes the same latent placeholder-text risk) or leave it out until the real message/design is finalized with Matt.
 - `t1` was never live at this point (already superseded before the refresh) — not affected.
+
+## 2026-08-26 — SA 53475: Matt approved the text, deployed to P21Play
+
+Supersedes the "blocked on Matt / nothing registered in Play" state described in **Artifact(s)**, **Target environments**, and **Deploy steps** above.
+
+- **Approved message text** (Matt Munson): *"Sign up for ASAP (All Surfaces, All Products) where you can view pricing, see live inventory, and place orders! Register today at www.allsurfaces.com/asap."*
+- `asi_oe_email_close_diag.cs` — swapped `TestMarker` for the approved text, de-diagnosticked the description/comments, rebuilt to **`1.0.0.8`**. `asi_email_context_flag.cs` unchanged.
+- **Deployed to P21Play:** `asi_email_context_flag` table already existed there (structure verified, 0 rows). Registered both rules fresh — **uid 165** (`asi_email_context_flag`, On-Event/FormPreEmail) and **uid 166** (`asi_oe_email_close_diag`, On-Demand/`cb_ok` on `w_email_response`), both `multirow_flag=Y`, both `run_type_cd=3424` (Synchronous). Confirmed exactly one live registration of each via SQL.
+- **Verified via the delivered email (read back through Outlook COM):** Order Ack send (order 6062152) got the ASAP text appended once, after the user's own note; an RMA Ack sent right after got nothing — the `asi_email_context_flag` scoping holds in Play.
+- **Still open:** Prod deployment (per **Deploy steps**, adjusted: the DB question is answered — Play was UAT, Prod is next); deregister `t2`; the deferred two-windows-open concurrency edge case.
+
+## 2026-08-31 — P21BusinessRules may still hold the pre-SA-53475 diagnostic rule
+
+While adding the web Rule Manager screenshots below, the web set (captured in **P21BusinessRules**, `uiserver` client) showed `asi_oe_email_close_diag` as **v1.0.0.7** with the **DIAGNOSTIC** description and a `DIAG-MARKER-7A29` test value — i.e. the pre-SA-53475 rule. If that reflects the current BRR registration, that environment is appending `TestMarker` to real order-ack emails through its live SMTP. **Action:** redeploy `1.0.0.8` to P21BusinessRules or deregister the rule there.
+
+## Reference screenshots — rule registration
+
+From `asi_email_context_flag` (Google Drive doc, `repairgroup.gmi@gmail.com`). Rule Manager setup for the two rules — the context-flag gate rule and the OK-button diagnostic that consumes it. Image files in `order-ack-custom-email-message-img/` (`d##` = desktop client, `w##` = web/`uiserver` client).
+
+**The two sets are from different environments and different rule versions — do not read them as one config:**
+
+| | Desktop set (`d##`) | Web set (`w##`) |
+|---|---|---|
+| Env (`global_database`) | `P21Play` | `P21BusinessRules` |
+| Client / version | desktop, 21.1.4559 | `uiserver` (web), 21.1.5813 |
+| `asi_oe_email_close_diag` | v1.0.0.8 — "appends the ASAP sign-up message to memo" (SA 53475), memo test value `Sign up for ASAP (All Surfaces, All Products)...` | v1.0.0.**7** — "**DIAGNOSTIC** — appends TestMarker to memo", memo test value `DIAG-MARKER-7A29` |
+
+The web set predates the SA-53475 rewrite. Treat the desktop set as the current-intent reference; the web set is a UI reference for what the browser Rule Manager exposes, not a second source of truth for the rule body.
+
+### Desktop Rule Manager (P21Play)
+
+**`asi_email_context_flag` (uid 163 — On-Event / FormPreEmail, the gate):**
+
+![Rules tab — asi_email_context_flag selected, "Records whether the about-to-open email window is an Order..." description, assembly Version=1.0.0.0](order-ack-custom-email-message-img/d01-ctxflag-rules.png)
+
+![Field Selector — Form Printing Pre-Email Response event, EmailDataMisc group, only form_type checked as Selected](order-ack-custom-email-message-img/d02-ctxflag-field-selector.png)
+
+![Manage Permissions — "Enable business rule for all users" checked](order-ack-custom-email-message-img/d03-ctxflag-permissions.png)
+
+![Configuration Options — Rule Type On Event, Multi-Row checked, Run Type Synchronous, Enabled For Version Both, Web Visual Rule URL blank, Trigger Rule in OE Windows all unchecked/greyed](order-ack-custom-email-message-img/d04-ctxflag-config-options.png)
+
+![Test Business Rule — Results PASSED, form_type = "Order Acknowledgement", globals show P21Play / mgoldyn / p21dev.allsurfaces.com / 21.1.4559, multirow = Y](order-ack-custom-email-message-img/d05-ctxflag-test-passed.png)
+
+**`asi_oe_email_close_diag` (uid 164 — On-Demand / `cb_ok` on `w_email_response`):**
+
+![Rules tab — asi_oe_email_close_diag selected, "SA 53475 -- appends the ASAP sign-up message to memo on w_email_response window close (cb_ok), gated on asi_email_context_flag so it only..." description, assembly Version=1.0.0.8](order-ack-custom-email-message-img/d06-closediag-rules.png)
+
+![Field Selector — d_dw_email_info group, memo checked as Selected; read-context fields visible (from_company "** Play 20260803 **", subject "SA 53475")](order-ack-custom-email-message-img/d07-closediag-field-selector-memo.png)
+
+![Field Selector — Window Controls > Buttons, cb_ok (OK) checked as both Selected and Triggers Rule; cb_cancel and cb_print unchecked](order-ack-custom-email-message-img/d08-closediag-field-selector-cbok.png)
+
+![Manage Permissions — "Enable business rule for all users" checked](order-ack-custom-email-message-img/d09-closediag-permissions.png)
+
+![Configuration Options — Rule Type On Demand, Apply Rule On Field Edit, Multi-Row checked, Run Type Synchronous, Enabled For Version Both](order-ack-custom-email-message-img/d10-closediag-config-options.png)
+
+![Test Business Rule — Results PASSED, memo field value "Sign up for ASAP (All Surfaces, All Products) where you can view pricing, see live in...", Modified = Y, Read Only unchecked, Row ID 1, char(4099)](order-ack-custom-email-message-img/d11-closediag-test-passed.png)
+
+> Note the **Run Type = Synchronous** in d04 and d10 — this matches the unexplained post-refresh state flagged in the 2026-08-10 section above (every prior confirmed-working test was Asynchronous). Re-verify on the next registration cycle.
+
+### Web Rule Manager (P21BusinessRules — older diagnostic version)
+
+**`asi_email_context_flag`:**
+
+![Rules grid — asi_email_context_flag, Selected checked, fuller description "Records whether the about-to-open email window is an Order Acknowledgment (via form_type) into asi_email_context_flag, for asi_oe_email_close_diag to read.", assembly Version=1.0.0.0](order-ack-custom-email-message-img/w01-ctxflag-select-rule.png)
+
+![Field Selector grid — Form Printing Pre-Email Response Window tabpage, EmailDataMisc data window, form_type row checked in the SELECTED column (1-22 of 22 items)](order-ack-custom-email-message-img/w02-ctxflag-field-selector.png)
+
+![Manage Permissions — "Enable business rule for all users" checked](order-ack-custom-email-message-img/w03-ctxflag-permissions.png)
+
+![Configuration Options — Rule Type On Event, Multi-Row checked, Run Type Synchronous, Enabled For Version Both, Web Visual Rule URL blank](order-ack-custom-email-message-img/w04-ctxflag-config-options.png)
+
+![Test Business Rule grid — Results PASSED, form_type = "Order Acknowledgement" (char(40)), client_platform = web, application_display_mode = uiserver, global_database = P21BusinessRules, version 21.1.5813, rf_location_id 221, run_type Synchronous, event "Form Printing Pre-Email Response Window", rule uid 0](order-ack-custom-email-message-img/w05-ctxflag-test-passed.png)
+
+**`asi_oe_email_close_diag`:**
+
+![Rules grid — asi_oe_email_close_diag selected (1-4 of 4 items), description "DIAGNOSTIC -- appends TestMarker to memo on w_email_response window close (cb_ok), gated on asi_email_context_flag so it only fires for Order Acknowledgment emails (that window is shared by Packing Li..."](order-ack-custom-email-message-img/w06-closediag-rules.png)
+
+![Field Selector grid, SELECTED column filtered — only the 2 checked rows show (1-2 of 2 items): Memo (d_dw_email_info) Selected with Pass to Rule As note "Not the final message, see P21 Play", and OK / cb_ok (Window Controls > Buttons) Selected + Triggers Rule](order-ack-custom-email-message-img/w07-closediag-field-selector.png)
+
+![Manage Permissions — "Enable business rule for all users" checked](order-ack-custom-email-message-img/w08-closediag-permissions.png)
+
+![Configuration Options — Rule Type On Demand, Global Rule unchecked, Apply Rule On Field Edit, Multi-Row checked, Run Type Synchronous (greyed), Enabled For Version Both; assembly Version=1.0.0.7, DIAGNOSTIC description](order-ack-custom-email-message-img/w09-closediag-config-options.png)
+
+![Test Business Rule grid — Results PASSED, memo field value "look for test message [DIAG-MARKER-7A29 --" (char(4099)), Modified = Y, Row ID 1; globals client_platform = web, global_database = P21BusinessRules, apply_on = Field Edit, type = On Demand, run_type Synchronous](order-ack-custom-email-message-img/w10-closediag-test-passed.png)
 
 ## Dependencies & deploy order
 **Preferred design (OK-button, once built for real):**
