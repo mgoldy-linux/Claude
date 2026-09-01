@@ -1,0 +1,269 @@
+{
+  "info": {
+    "name": "P21 V2 Transaction - Orders (BRR)",
+    "_postman_id": "b21e0000-0000-4000-8000-000000000001",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Create / verify / cancel P21 sales orders in the **Business Rules** environment via the V2 Transaction API.\n\nEndpoint: POST {{base_url}}/uiserver0/api/v2/Transaction  (body = <TransactionSet Name=\"Order\">)\nModeled on the working AS examples in `...\\Documents\\API\\v2transaction Order 2 line items*.txt`.\n\nBEFORE RUNNING:\n1. Postman Settings > General > turn **SSL certificate verification OFF** (internal cert).\n2. Postman Settings > General > **Protocol** = HTTP/1.1 (avoids NGHTTP2_CANCEL).\n3. Fill the `password` collection variable (Current value column, not Initial). Everything else is prefilled for BRR.\n\nRUN ORDER: `0 - Get Token` -> `1 - Get P21 Info (routing guard)` -> `2 - Create Order (1 line)` -> `4 - Get Order Info`.\n\nAll config is stored as COLLECTION variables on purpose - do not add a Postman Environment, an env var of the same name silently shadows the collection var.\n\nPrefilled BRR test values (queried from P21BusinessRules 2026-08-31):\n- sales_loc_id 100  = All Tile / CCS Wood Dale Test BRR (busiest test location)\n- customer_id / ship_to_id 1000260 = All Tile, Inc. (house account, NORMAL credit) -- default.\n  DO NOT use 3013124 (Cash Account - Wood Dale): credit_status CASH trips the Atlas\n  surcharge rule ('Please click the APPLY SURCHARGE button') and blocks the save.\n  Any prepay/cash/COD customer, or an order with directs, hits that same block.\n- item_id_1 MAP1005001 = Mapei Eco 575 Cartridge, EA, $7.76\n- item_id_2 FDTT11-50075 = Tego Filament Tape 3/4\", EA, $3.74\n- taker EQUEZADA (real taker on loc 100)\n\nNOTE: a submitted order in BRR can fire a real Order Acknowledgement email (lower envs have live SMTP). The cash account above has no ack contact; if you switch customers, point the ack recipient at yourself."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "0 - Get Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var xml2js = require('xml2js');",
+              "",
+              "// stripPrefix drops the XML namespace (act:Token, a:Token, ...) so the root name",
+              "// no longer has to be guessed; findKey then locates AccessToken at any depth.",
+              "var opts = {",
+              "    explicitArray: false,",
+              "    ignoreAttrs: true,",
+              "    tagNameProcessors: [xml2js.processors.stripPrefix]",
+              "};",
+              "",
+              "function findKey(node, key) {",
+              "    if (node === null || typeof node !== 'object') { return undefined; }",
+              "    if (Object.prototype.hasOwnProperty.call(node, key)) { return node[key]; }",
+              "    for (var k in node) {",
+              "        var hit = findKey(node[k], key);",
+              "        if (hit !== undefined) { return hit; }",
+              "    }",
+              "    return undefined;",
+              "}",
+              "",
+              "xml2js.parseString(pm.response.text(), opts, function(err, result) {",
+              "    if (err) {",
+              "        console.error('XML parse error: ' + err);",
+              "        console.log('Raw response: ' + pm.response.text());",
+              "        return;",
+              "    }",
+              "    var accessToken = findKey(result, 'AccessToken');",
+              "    var expiresIn   = findKey(result, 'ExpiresIn');",
+              "    if (!accessToken) {",
+              "        console.warn('AccessToken not found. Parsed response: ' + JSON.stringify(result));",
+              "        return;",
+              "    }",
+              "    pm.collectionVariables.set('token', accessToken);",
+              "    console.log('Token saved: ' + accessToken.substring(0, 30) + '...');",
+              "    var secs = parseInt(expiresIn, 10);",
+              "    if (!isNaN(secs)) {",
+              "        pm.collectionVariables.set('token_expires_at', (Date.now() + secs * 1000).toString());",
+              "    }",
+              "    pm.test('Token captured', function () {",
+              "        pm.expect(accessToken).to.be.a('string').and.not.empty;",
+              "    });",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "username", "value": "{{username}}" },
+          { "key": "password", "value": "{{password}}" },
+          { "key": "appKey", "value": "{{consumer_key}}" }
+        ],
+        "url": "{{base_url}}/api/security/token/"
+      }
+    },
+    {
+      "name": "1 - Get P21 Info (routing guard)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var body = pm.response.text();",
+              "console.log('P21 Info: ' + body);",
+              "pm.test('Pointed at Business Rules (P21BusinessRules)', function () {",
+              "    pm.expect(body).to.match(/BusinessRules/i);",
+              "});",
+              "if (!/BusinessRules/i.test(body)) {",
+              "    console.warn('*** base_url is NOT resolving to the Business Rules DB - stop before creating orders. ***');",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/uiserver0/ui/common/v1/info/"
+      }
+    },
+    {
+      "name": "2 - Create Order (1 line)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var raw = pm.response.text();",
+              "console.log('--- V2 Transaction (create) response ---');",
+              "console.log(raw);",
+              "",
+              "// order_no is echoed back as <Name>order_no</Name><Value>NNNNN</Value>",
+              "var m = raw.match(/<Name>\\s*order_no\\s*<\\/Name>\\s*<Value>\\s*([0-9]+)\\s*<\\/Value>/i);",
+              "var orderNo = m ? m[1] : null;",
+              "var passed = /<Succeeded>\\s*1\\s*<\\/Succeeded>/i.test(raw) && /<Status>\\s*Passed\\s*<\\/Status>/i.test(raw);",
+              "",
+              "if (orderNo) {",
+              "    pm.collectionVariables.set('last_order_no', orderNo);",
+              "    pm.collectionVariables.set('cancel_order_no', orderNo);",
+              "    console.log('Captured order_no = ' + orderNo);",
+              "} else {",
+              "    console.warn('No order_no captured - read the response above.');",
+              "}",
+              "",
+              "pm.test('HTTP 2xx', function () {",
+              "    pm.expect(pm.response.code).to.be.within(200, 299);",
+              "});",
+              "pm.test('Transaction Passed (Succeeded=1)', function () {",
+              "    pm.expect(passed, 'body did not report <Succeeded>1</Succeeded> + <Status>Passed</Status>').to.be.true;",
+              "});",
+              "pm.test('order_no captured', function () {",
+              "    pm.expect(orderNo, 'no <Name>order_no</Name><Value> in response').to.be.a('string');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/xml" }
+        ],
+        "body": {
+          "mode": "raw",
+          "options": { "raw": { "language": "xml" } },
+          "raw": "<TransactionSet xmlns=\"http://schemas.datacontract.org/2004/07/P21.Transactions.Model.V2\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\">\n  <Name>Order</Name>\n  <Transactions>\n    <Transaction>\n      <DataElements>\n        <DataElement>\n          <Keys xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" />\n          <Name>TABPAGE_1.order</Name>\n          <Rows>\n            <Row>\n              <Edits>\n                <Edit><Name>customer_id</Name><Value>{{customer_id}}</Value></Edit>\n                <Edit><Name>ship_to_id</Name><Value>{{ship_to_id}}</Value></Edit>\n                <Edit><Name>sales_loc_id</Name><Value>{{sales_loc_id}}</Value></Edit>\n              </Edits>\n            </Row>\n          </Rows>\n          <Type>Form</Type>\n        </DataElement>\n        <DataElement>\n          <Keys xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" />\n          <Name>TP_ITEMS.items</Name>\n          <Rows>\n            <Row>\n              <Edits>\n                <Edit><Name>oe_order_item_id</Name><Value>{{item_id_1}}</Value></Edit>\n                <Edit><Name>unit_quantity</Name><Value>{{qty_1}}</Value></Edit>\n                <Edit><Name>unit_price</Name><Value>{{price_1}}</Value></Edit>\n              </Edits>\n            </Row>\n          </Rows>\n          <Type>List</Type>\n        </DataElement>\n      </DataElements>\n      <Status>New</Status>\n    </Transaction>\n  </Transactions>\n  <UseCodeValues>false</UseCodeValues>\n</TransactionSet>"
+        },
+        "url": "{{base_url}}/uiserver0/api/v2/Transaction"
+      }
+    },
+    {
+      "name": "3 - Create Order (2 lines + PO + required dates)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var raw = pm.response.text();",
+              "console.log('--- V2 Transaction (create 2-line) response ---');",
+              "console.log(raw);",
+              "",
+              "var m = raw.match(/<Name>\\s*order_no\\s*<\\/Name>\\s*<Value>\\s*([0-9]+)\\s*<\\/Value>/i);",
+              "var orderNo = m ? m[1] : null;",
+              "var passed = /<Succeeded>\\s*1\\s*<\\/Succeeded>/i.test(raw) && /<Status>\\s*Passed\\s*<\\/Status>/i.test(raw);",
+              "",
+              "if (orderNo) {",
+              "    pm.collectionVariables.set('last_order_no', orderNo);",
+              "    pm.collectionVariables.set('cancel_order_no', orderNo);",
+              "    console.log('Captured order_no = ' + orderNo);",
+              "} else {",
+              "    console.warn('No order_no captured - read the response above.');",
+              "}",
+              "",
+              "pm.test('HTTP 2xx', function () {",
+              "    pm.expect(pm.response.code).to.be.within(200, 299);",
+              "});",
+              "pm.test('Transaction Passed (Succeeded=1)', function () {",
+              "    pm.expect(passed, 'body did not report <Succeeded>1</Succeeded> + <Status>Passed</Status>').to.be.true;",
+              "});",
+              "pm.test('order_no captured', function () {",
+              "    pm.expect(orderNo, 'no <Name>order_no</Name><Value> in response').to.be.a('string');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/xml" }
+        ],
+        "body": {
+          "mode": "raw",
+          "options": { "raw": { "language": "xml" } },
+          "raw": "<TransactionSet xmlns=\"http://schemas.datacontract.org/2004/07/P21.Transactions.Model.V2\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\">\n  <Name>Order</Name>\n  <Transactions>\n    <Transaction>\n      <DataElements>\n        <DataElement>\n          <Keys xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" />\n          <Name>TABPAGE_1.order</Name>\n          <Rows>\n            <Row>\n              <Edits>\n                <Edit><Name>customer_id</Name><Value>{{customer_id}}</Value></Edit>\n                <Edit><Name>ship_to_id</Name><Value>{{ship_to_id}}</Value></Edit>\n                <Edit><Name>sales_loc_id</Name><Value>{{sales_loc_id}}</Value></Edit>\n                <Edit><Name>po_no</Name><Value>{{po_no}}</Value></Edit>\n                <Edit><Name>taker</Name><Value>{{taker}}</Value></Edit>\n              </Edits>\n            </Row>\n          </Rows>\n          <Type>Form</Type>\n        </DataElement>\n        <DataElement>\n          <Keys xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" />\n          <Name>TP_ITEMS.items</Name>\n          <Rows>\n            <Row>\n              <Edits>\n                <Edit><Name>oe_order_item_id</Name><Value>{{item_id_1}}</Value></Edit>\n                <Edit><Name>unit_quantity</Name><Value>{{qty_1}}</Value></Edit>\n                <Edit><Name>unit_price</Name><Value>{{price_1}}</Value></Edit>\n              </Edits>\n            </Row>\n          </Rows>\n          <Type>List</Type>\n        </DataElement>\n        <DataElement>\n          <Keys xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">\n            <a:string>oe_order_item_id</a:string>\n          </Keys>\n          <Name>TP_EXTDINFO.extd_info</Name>\n          <Rows>\n            <Row>\n              <Edits>\n                <Edit><Name>required_date</Name><Value>{{required_date}}</Value></Edit>\n              </Edits>\n            </Row>\n          </Rows>\n          <Type>Form</Type>\n        </DataElement>\n        <DataElement>\n          <Keys xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" />\n          <Name>TP_ITEMS.items</Name>\n          <Rows>\n            <Row>\n              <Edits>\n                <Edit><Name>oe_order_item_id</Name><Value>{{item_id_2}}</Value></Edit>\n                <Edit><Name>unit_quantity</Name><Value>{{qty_2}}</Value></Edit>\n                <Edit><Name>unit_price</Name><Value>{{price_2}}</Value></Edit>\n              </Edits>\n            </Row>\n          </Rows>\n          <Type>List</Type>\n        </DataElement>\n        <DataElement>\n          <Keys xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">\n            <a:string>oe_order_item_id</a:string>\n          </Keys>\n          <Name>TP_EXTDINFO.extd_info</Name>\n          <Rows>\n            <Row>\n              <Edits>\n                <Edit><Name>required_date</Name><Value>{{required_date}}</Value></Edit>\n              </Edits>\n            </Row>\n          </Rows>\n          <Type>Form</Type>\n        </DataElement>\n      </DataElements>\n      <Status>New</Status>\n    </Transaction>\n  </Transactions>\n  <UseCodeValues>false</UseCodeValues>\n</TransactionSet>"
+        },
+        "url": "{{base_url}}/uiserver0/api/v2/Transaction"
+      }
+    },
+    {
+      "name": "4 - Get Order Info",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/api/sales/orders/{{last_order_no}}"
+      }
+    },
+    {
+      "name": "5 - Cancel Order (cleanup)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "console.log('--- cancel response ---');",
+              "console.log(pm.response.text());",
+              "pm.test('HTTP 2xx', function () {",
+              "    pm.expect(pm.response.code).to.be.within(200, 299);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/xml" }
+        ],
+        "body": {
+          "mode": "raw",
+          "options": { "raw": { "language": "xml" } },
+          "raw": "<TransactionSet xmlns=\"http://schemas.datacontract.org/2004/07/P21.Transactions.Model.V2\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\">\n  <Name>Order</Name>\n  <Transactions>\n    <Transaction>\n      <DataElements>\n        <DataElement>\n          <Keys xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" />\n          <Name>TABPAGE_1.order</Name>\n          <Rows>\n            <Row>\n              <Edits>\n                <Edit><Name>order_no</Name><Value>{{cancel_order_no}}</Value></Edit>\n                <Edit><Name>cancel_flag</Name><Value>Y</Value></Edit>\n              </Edits>\n            </Row>\n          </Rows>\n          <Type>Form</Type>\n        </DataElement>\n      </DataElements>\n      <Documents i:nil=\"true\" />\n      <Status>New</Status>\n    </Transaction>\n  </Transactions>\n  <UseCodeValues>false</UseCodeValues>\n</TransactionSet>"
+        },
+        "url": "{{base_url}}/uiserver0/api/v2/Transaction"
+      }
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "https://p21businessrules.allsurfaces.com:3444" },
+    { "key": "username", "value": "mgoldyn" },
+    { "key": "consumer_key", "value": "73844b21-3b37-4d24-9db5-2bf9e143c53c" },
+    { "key": "password", "value": "" },
+    { "key": "token", "value": "" },
+    { "key": "token_expires_at", "value": "" },
+    { "key": "company_id", "value": "1" },
+    { "key": "sales_loc_id", "value": "100" },
+    { "key": "customer_id", "value": "1000260" },
+    { "key": "ship_to_id", "value": "1000260" },
+    { "key": "taker", "value": "EQUEZADA" },
+    { "key": "po_no", "value": "API-TEST" },
+    { "key": "required_date", "value": "2026-09-15" },
+    { "key": "item_id_1", "value": "MAP1005001" },
+    { "key": "qty_1", "value": "1" },
+    { "key": "price_1", "value": "7.76" },
+    { "key": "item_id_2", "value": "FDTT11-50075" },
+    { "key": "qty_2", "value": "2" },
+    { "key": "price_2", "value": "3.74" },
+    { "key": "last_order_no", "value": "" },
+    { "key": "cancel_order_no", "value": "" }
+  ]
+}
