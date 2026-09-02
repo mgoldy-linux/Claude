@@ -1,4 +1,4 @@
-// asi_Order_Validator.cs
+// asi_Order_Validator_t2.cs
 //
 // Replaces kb_Order_Validator_v2 + dbo.kb_fnt_br_order_validator_v2.
 //
@@ -38,15 +38,16 @@ using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using asi_OrderValidator;          // OrderValidationEngine + its POCOs
 
-namespace asi_Order_Validator
+namespace asi_OrderValidator_t2
 {
-    public class asi_Order_Validator : P21.Extensions.BusinessRule.Rule
+    public class asi_Order_Validator_t2 : P21.Extensions.BusinessRule.Rule
     {
         // Was: reflection over MethodBase.GetCurrentMethod(), which stripped underscores and
         // yielded "kbOrderValidatorv2" -- a name that matched nothing. nameof() is compile-time
         // and survives a rename, matching the other asi_ rules.
-        private const string RuleNameConst = nameof(asi_Order_Validator);
+        private const string RuleNameConst = nameof(asi_Order_Validator_t2);
         private const string SupportEmail = "ITSupport@allsurfaces.com";
 
         #region SQL -- native P21 objects only
@@ -157,7 +158,7 @@ VALUES
 
         public override string GetName()
         {
-            return nameof(asi_Order_Validator);
+            return nameof(asi_Order_Validator_t2);
         }
 
         public override string GetDescription()

@@ -5,28 +5,79 @@
 > `kb-order-validator-v2-cas-fix.md` (note that guide states `class_name =
 > w_order_entry_sheet`; it is actually **`d_oe_header`** — verified 2026-09-01).
 
-## ⚠ STATUS 2026-09-01 — DEPLOYED TO BRR, THEN ROLLED BACK. DO NOT PROMOTE.
+## ⚠ STATUS 2026-09-02 — ROLLED BACK. ROOT CAUSE FOUND. READ THIS BEFORE ANY REGISTRATION WORK.
 
-`asi_Order_Validator` v1.0.0.0 (`asi_Order_Validator_t1.dll`) was deployed to BRR and
-registered active (704) at 15:14. Live test **wrongly blocked order 6108922** with
-`[v2err#0] The FREIGHT CODE on this order is blank` while the Ship Info tab showed
-`WILL CALL` and `oe_hdr.freight_code_uid = 8`.
+`asi_Order_Validator` v1.0.0.0 (`_t1.dll`) was deployed to BRR active (704) on 9/1 and
+**wrongly blocked order 6108922** with `[v2err#0] The FREIGHT CODE on this order is blank`
+while the Ship Info tab showed `WILL CALL` and `oe_hdr.freight_code_uid = 8`. Rolled back the
+same afternoon. Current BRR state: `kb_Order_Validator_v2` **704**, `asi_Order_Validator`
+(`_t1` row) **705**.
 
-**Cause:** a `HasColumn` guard in the adapter turned "cannot read this field" into "the user
-left it blank", so a read failure became a false block — fail-**closed**, which stops people
-working. Rolled back to `kb_Order_Validator_v2` (704) the same afternoon.
+### The cause was the REGISTRATION, not the code
 
-Re-testing the OLD rule on the same order produced `More initializing, subsection 2` — a
-`NullReferenceException` on `d_front_counter`. **That save yields a partial DataSet and BOTH
-rules fail on it**: the old one fails open (saves, logs an error), the new one failed closed.
-The partial DataSet is the prime suspect for the null freight code but is **NOT yet
-confirmed**.
+P21 populates a rule's runtime DataSet with **only** the fields registered in
+`business_rule_data_element`. A field that is missing or mis-registered is, at runtime,
+**indistinguishable from one the user left blank** — the column simply is not present. The
+rule was correctly reporting that `d_oe_header` had no `freight_code_uid`, because
+**`freight_cd` had been registered instead of `freight_code_uid`**.
 
-**A fix is built and harness-verified (55/55) but NOT deployed.** Missing columns are now
-tracked separately from null values — an absent column logs loudly and allows the save, a
-present-but-null value still blocks. Numeric reads use `Convert.To*` rather than `Field<T>`
-(which throws on a DataWindow type mismatch), and a temporary field-inventory diagnostic
-dumps what `d_oe_header` actually carries. Resume at **Deploy steps** below.
+Four more of the rule's required fields were also unregistered:
+`d_dw_oe_hdr_shipinfo.oe_hdr_carrier_id` (would have been the next false block), and all
+three of `d_dw_oe_hdr_notepad_dataentry.topic` / `.mandatory` / `.delete_flag`. Those last
+three are worse than a blocked save — they cause **silently wrong verdicts**: check 7
+false-fires on every $15k order (signature note invisible) and check 6b cannot fire at all.
+
+### BRR's `kb_Order_Validator_v2` registration is ALSO damaged
+
+The `asi_` rule inherited its gaps because it was registered by copying BRR's `kb_` list —
+which is itself broken:
+
+| env | elements | DataWindows |
+|---|---|---|
+| PROD / Play / Dev | **114** | **11** |
+| BRR | **74** | **3** |
+
+Eight whole DataWindows are missing in BRR, including `d_front_counter` (19 fields) — which
+is why the OLD rule NREs there with `More initializing, subsection 2`. (An earlier draft of
+this guide blamed "a partial DataSet on that save"; that was right in effect, **wrong in
+cause**. Every save through that rule in BRR is missing 8 DataWindows.)
+
+**Proven by timestamps:** all 74 surviving BRR rows are `date_created 2026-09-01 14:22:46`,
+`created_by MGOLDYN`. PROD and Play still hold all 114 at `2024-02-19 07:22:06`,
+`created_by kbenish`. The list was not edited — it was **deleted and rewritten**, keeping
+only the DataWindows the UI had loaded, at the timestamp of the **first** Rule Manager edit
+that day (before any test).
+
+> ### 🔴 Saving a rule in P21 Rule Manager replaces its ENTIRE registered field list.
+> Anything the UI has not loaded is silently destroyed — no warning, no error.
+> **This is a live Prod hazard.** The Prod cutover needs a `row_status_flag` flip, and doing
+> that through Rule Manager could truncate the registration of the rule gating every order
+> save in Prod. Flip it **by SQL** instead:
+> ```sql
+> UPDATE business_rule SET row_status_flag = 705, date_last_modified = GETDATE(),
+>        last_maintained_by = SUSER_SNAME()
+> WHERE  rule_name = 'kb_Order_Validator_v2';
+> ```
+> and snapshot `business_rule_data_element` before **and** after any registration work.
+> Mechanism is strongly evidenced but **not yet formally proven** — run
+> `Sql-Scripts\Business-Rules\Test-RuleManager-Element-Loss.sql` first.
+
+Blast radius checked across all 135 BRR rules: only this rule shows a large recent loss, and
+**`kb_Order_Workflow_v2` (same assembly) is untouched at 115/11** — so the damage is confined
+to the rule actually opened and saved, not the assembly or the session.
+
+### Code changes since the rollback (built, harness-verified 55/55, NOT deployed)
+
+- Missing columns are now tracked separately from null values: an absent column logs loudly
+  and **allows** the save; a present-but-null value still blocks. This turns a registration
+  error into a diagnosable skip instead of a false accusation against the user.
+- Numeric reads use `Convert.To*` rather than `Field<T>` (which throws on a DataWindow type
+  mismatch and gets swallowed into a fail-open).
+- Temporary field-inventory diagnostic dumps what `d_oe_header` actually carries.
+- Renamed to **`_t2`** — class, namespace and assembly — so it cannot collide with the
+  `_t1.dll` already on the share (two assemblies exporting the same `GetName()` is the
+  "second copy being loaded" hazard). Engine moved to suffix-free namespace
+  `asi_OrderValidator` so successive `_tN` iterations share one copy. **v1.0.1.0.**
 >
 > **This build is deliberately bug-for-bug equivalent to the old rule.** Known defects are
 > marked `[PRESERVED-BUG]` in the source and are NOT fixed here — they are Phase 2, so the
@@ -198,6 +249,24 @@ Retiring them is a separate change after the diff is clean.
    an assembly that won't load — wrong TFM, missing `Atlas.CrownSurcharge5011348`, the APTCA
    trap — breaks **every order save in the environment** the moment the pool recycles. At 705
    a bad DLL costs nothing.
+
+   > **⚠ REGISTER THE DATA ELEMENTS TOO — this is what broke the first attempt.**
+   > `business_rule_data_element` is a separate list from the binding fields below, and P21
+   > gives the rule **only** the fields registered there. Register these 23, and make sure
+   > **`freight_code_uid`** is selected — **not** `freight_cd`:
+   >
+   > | DataWindow | fields |
+   > |---|---|
+   > | `d_oe_header` | `order_no`, `date_created`, `requested_date`, **`freight_code_uid`**, `ship_to_id`, `customer_id`, `packing_basis`, `order_type`, `rma_flag`, `quote`, `cancel_flag`, `ufc_oe_hdr_ud_oe_surcharge` |
+   > | `d_dw_oe_line_dataentry` | `delete_flag`, `oe_order_item_id`, `qty_ordered`, `oe_line_complete`, `product_type`, `extended_price` |
+   > | `d_dw_oe_hdr_shipinfo` | `oe_hdr_carrier_id` |
+   > | `d_oe_hdr_credit` | `credit_status` |
+   > | `d_dw_oe_hdr_notepad_dataentry` | `topic`, `mandatory`, `delete_flag` |
+   >
+   > Then **verify** with `Testing\kb_Order_Validator_v2\verify-required-elements.sql`
+   > (set `@uid` to the new rule's `business_rule_uid`). Every row must read `ok` before
+   > flipping to 704 — any `*** NOT REGISTERED ***` is a latent false block or, for the
+   > notepad fields, a silently wrong verdict.
 
    Binding values, read from BRR 2026-09-01:
 

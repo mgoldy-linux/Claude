@@ -4,9 +4,12 @@
 // tested without P21. This file has ZERO P21 references and zero database access -- it is
 // pure functions over plain objects. Do not add any.
 //
-//   asi_Order_Validator.cs   -- adapter: reads Data.Set, runs the reference SQL, logs
-//   OrderValidationEngine.cs -- this file: decides
-//   ValidatorHarness         -- console app: replays the 23 matrix cases against Validate()
+//   asi_Order_Validator_tN.cs -- adapter: reads Data.Set, runs the reference SQL, logs
+//   OrderValidationEngine.cs  -- this file: decides
+//   ValidatorHarness          -- console app: replays the 23 matrix cases against Validate()
+//
+// Namespace is deliberately suffix-free (asi_OrderValidator) so successive _tN rule
+// iterations share ONE engine rather than each carrying a copy.
 //
 // Replaces dbo.kb_fnt_br_order_validator_v2. The nine live checks run as an ordered
 // if/else chain -- FIRST MATCH WINS, and the order is behavior, not style. Do not reorder.
@@ -24,7 +27,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace asi_Order_Validator
+namespace asi_OrderValidator
 {
     #region Inputs
 
