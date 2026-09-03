@@ -2,7 +2,9 @@
    registered. ANY 'NOT REGISTERED' row is a latent false block: P21 only populates
    registered elements, so the adapter would see the column as absent.
    Set @uid to the rule being checked. */
-DECLARE @uid INT = 166;   -- asi_Order_Validator (_t1 row). Change to the _t2 uid once created.
+DECLARE @uid INT = 166;   -- asi_Order_Validator_t2 (renamed in place 2026-09-03; was the
+                          -- _t1 row). Repaired to 76 elements / 5 DataWindows -- all 23 'ok'.
+                          -- Re-run this after ANY Rule Manager save on this rule.
 
 ;WITH required(dw, field, used_for) AS (
     SELECT * FROM (VALUES

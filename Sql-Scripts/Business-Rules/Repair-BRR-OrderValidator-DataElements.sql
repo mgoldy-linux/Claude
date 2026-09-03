@@ -39,8 +39,9 @@ BEGIN
     RETURN;
 END
 
-PRINT 'Before: ' + CAST((SELECT COUNT(*) FROM business_rule_data_element
-                         WHERE business_rule_uid = 133) AS varchar(10)) + ' elements';
+DECLARE @n INT;   -- PRINT cannot take a subquery; collect the count into a variable.
+SELECT @n = COUNT(*) FROM business_rule_data_element WHERE business_rule_uid = 133;
+PRINT 'Before: ' + CAST(@n AS varchar(10)) + ' elements';
 
 -- 40 rows PROD has that BRR does not.
 INSERT INTO business_rule_data_element
@@ -88,8 +89,8 @@ VALUES
     (133, 'payment_desc', 'd_oe_payment_details', NULL, GETDATE(), SUSER_SNAME(), GETDATE(), SUSER_SNAME()),
     (133, 'payment_method_id', 'd_oe_payment_details', NULL, GETDATE(), SUSER_SNAME(), GETDATE(), SUSER_SNAME());
 
-PRINT 'After:  ' + CAST((SELECT COUNT(*) FROM business_rule_data_element
-                         WHERE business_rule_uid = 133) AS varchar(10)) + ' elements  (expect 114)';
+SELECT @n = COUNT(*) FROM business_rule_data_element WHERE business_rule_uid = 133;
+PRINT 'After:  ' + CAST(@n AS varchar(10)) + ' elements  (expect 114)';
 
 -- Verify against the expected shape before committing.
 SELECT class_name, fields = COUNT(*)
