@@ -177,6 +177,11 @@ footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
     like a validation block and is not one — check which rule owns the log row before
     attributing it. <code>EncodeFileToBase64</code> fails on every single invocation and has
     done since 2018; ignore it.</p>
+    <p><strong>Observed 2026-09-03, not yet verified:</strong> the ribbon appears to load on
+    <em>new</em> orders but not reliably on <em>saved</em> ones. If that holds, ribbon rules
+    will fire inconsistently across the B-cases — every one of which is a re-save of an
+    existing order — so their presence or absence in the log is not by itself a signal. Do
+    not read a missing ribbon row as a change in behaviour until this is pinned down.</p>
     <p><code>asi_oe_suppress_oe_msgs</code> hooks P21 message-box events and can set
     <code>suppress_message='Y'</code> to hide one. It matches on <code>message_no</code>
     against a four-row table (5 ALLOW, 451/688/8280 SUPPRESS), and a validator block is a
