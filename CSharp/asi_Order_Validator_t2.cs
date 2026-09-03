@@ -281,9 +281,16 @@ VALUES
 
             // Precursor fields are recorded as MISSING when the column is absent, which is
             // NOT the same as present-but-null. A null value is a blank the user must fix;
-            // an absent column means this DataSet cannot answer the question. Confirmed real:
-            // order 6108922 saves from a context whose DataSet lacks d_front_counter entirely
-            // (the old rule NREs there), so partial DataSets do occur.
+            // an absent column means this DataSet cannot answer the question.
+            //
+            // CORRECTION 2026-09-03: an earlier version of this comment cited order 6108922 as
+            // proof that P21 hands out partial DataSets on its own. That was wrong. The DataSet
+            // was short because BRR's business_rule_data_element list had been truncated (114/11
+            // -> 74/3) by a Rule Manager save -- not because the save context omits DataWindows.
+            // A missing table here means the REGISTRATION is broken, which is why MissingColumns
+            // fails open with a loud "rule-binding problem, not an order problem" message rather
+            // than blocking. Do not treat a partial DataSet as normal; it is always a bug to fix
+            // in business_rule_data_element.
             snap.FreightCodeUid = Int(hdr, "freight_code_uid", snap);
             // NOTE: the d_oe_header DataWindow exposes this as ship_to_id; the underlying
             // oe_hdr column is address_id. The DataWindow name is correct here.
