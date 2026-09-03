@@ -169,6 +169,23 @@ footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
     <code>verify-required-elements.sql</code>; every result after that point is suspect.</p>
   </div>
 
+  <div class="call">
+    <p><strong>Other rules share this screen, and two of them muddy the evidence.</strong></p>
+    <p><code>ribbon_oe_default_branch</code> and <code>_ribbon_pro_perks</code> both return
+    Fail with <em>"Ship To ID is required."</em> on any order lacking a ship-to. They fire on
+    <em>load</em>, seconds before the validator fires on <em>save</em>. That message looks
+    like a validation block and is not one — check which rule owns the log row before
+    attributing it. <code>EncodeFileToBase64</code> fails on every single invocation and has
+    done since 2018; ignore it.</p>
+    <p><code>asi_oe_suppress_oe_msgs</code> hooks P21 message-box events and can set
+    <code>suppress_message='Y'</code> to hide one. It matches on <code>message_no</code>
+    against a four-row table (5 ALLOW, 451/688/8280 SUPPRESS), and a validator block is a
+    business-rule return message rather than a numbered P21 message, so it should be out of
+    scope. If a <code>Validation</code> row ever appears in the log with no popup on screen,
+    that rule is the first suspect. Note it also emails an alert for any message number it
+    does not recognise, and BRR has live SMTP.</p>
+  </div>
+
   <pre>-- run after each case. Times are CENTRAL: the SQL box is ~1h behind the workstation.
 SELECT TOP 12 business_rule_log_uid, rule_name, log_action, return_value,
        date_created, CAST(return_message AS varchar(300)) AS msg
