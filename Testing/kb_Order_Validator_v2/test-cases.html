@@ -1,0 +1,400 @@
+<title>Validator Cutover Test Book</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+:root{
+  --ground:#f4f6f8; --surface:#ffffff; --surface-2:#eef1f5;
+  --ink:#15181e; --ink-2:#39414d; --muted:#626d7c; --line:#dde2e9; --line-2:#c8d0da;
+  --accent:#2d5f7f; --accent-soft:#e4edf3;
+  --block:#9a4718; --block-soft:#f7e9e1;
+  --pass:#22664e; --pass-soft:#e2efea;
+  --warn:#7d6415; --warn-soft:#f6efd9;
+  --shadow:0 1px 2px rgba(21,24,30,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0d1014; --surface:#151a20; --surface-2:#1b212a;
+    --ink:#e3e8ef; --ink-2:#c0c8d3; --muted:#8d97a5; --line:#242b35; --line-2:#333c48;
+    --accent:#78adcf; --accent-soft:#17242e;
+    --block:#dc9163; --block-soft:#2a1d15;
+    --pass:#63b193; --pass-soft:#152520;
+    --warn:#c8a94a; --warn-soft:#241f10;
+    --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0d1014; --surface:#151a20; --surface-2:#1b212a;
+  --ink:#e3e8ef; --ink-2:#c0c8d3; --muted:#8d97a5; --line:#242b35; --line-2:#333c48;
+  --accent:#78adcf; --accent-soft:#17242e;
+  --block:#dc9163; --block-soft:#2a1d15;
+  --pass:#63b193; --pass-soft:#152520;
+  --warn:#c8a94a; --warn-soft:#241f10;
+  --shadow:0 1px 2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.6; margin:0;
+  padding:clamp(20px,4vw,56px) clamp(16px,4vw,40px) 96px;
+}
+.wrap{max-width:1080px;margin:0 auto}
+.prose{max-width:68ch}
+h1,h2,h3{font-family:"IBM Plex Serif",Georgia,serif;text-wrap:balance;margin:0}
+h1{font-size:clamp(28px,4vw,38px);font-weight:600;letter-spacing:-.015em;line-height:1.15}
+h2{font-size:22px;font-weight:600;margin:0 0 4px}
+h3{font-size:16px;font-weight:600;margin:0}
+p{margin:0 0 14px}
+a{color:var(--accent)}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.92em}
+code{background:var(--surface-2);padding:1px 5px;border-radius:3px;color:var(--ink-2)}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+}
+header.top{border-bottom:2px solid var(--ink);padding-bottom:22px;margin-bottom:8px}
+header.top .eyebrow{display:block;margin-bottom:10px}
+.lede{font-size:17px;color:var(--ink-2);margin-top:12px;max-width:66ch}
+
+/* state strip */
+.state{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:1px;
+  background:var(--line);border:1px solid var(--line);margin:28px 0 40px;
+}
+.state div{background:var(--surface);padding:12px 14px}
+.state dt{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 5px}
+.state dd{margin:0;font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:500;
+  font-variant-numeric:tabular-nums}
+
+section{margin:0 0 44px}
+.sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;
+  border-bottom:1px solid var(--line-2);padding-bottom:8px}
+.sec-head .n{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);
+  font-weight:500;letter-spacing:.08em}
+.sec-note{color:var(--muted);font-size:14px;margin:10px 0 20px;max-width:68ch}
+
+/* callout */
+.call{border-left:3px solid var(--warn);background:var(--warn-soft);
+  padding:14px 18px;margin:0 0 24px;max-width:72ch}
+.call.crit{border-left-color:var(--block);background:var(--block-soft)}
+.call p:last-child{margin-bottom:0}
+.call strong{color:var(--ink)}
+
+/* tables */
+.scroll{overflow-x:auto;border:1px solid var(--line);background:var(--surface);
+  box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{background:var(--surface-2);text-align:left;padding:9px 12px;font-weight:600;
+  font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  white-space:nowrap;border-bottom:1px solid var(--line-2)}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.id,td.ord,td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+  white-space:nowrap}
+td.id{font-weight:600;color:var(--accent)}
+td.ord{font-weight:500}
+.pill{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:11.5px;
+  font-weight:500;padding:2px 7px;border-radius:2px;white-space:nowrap}
+.pill.b{background:var(--block-soft);color:var(--block);border:1px solid var(--block)}
+.pill.p{background:var(--pass-soft);color:var(--pass);border:1px solid var(--pass)}
+.result{width:74px;border-bottom:1px solid var(--line-2);display:inline-block;height:1.1em}
+
+/* outcome key */
+.key{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:0 0 8px}
+.key > div{border:1px solid var(--line);background:var(--surface);padding:14px 16px}
+.key h3{font-size:14px;margin-bottom:6px}
+.key p{font-size:13.5px;color:var(--ink-2);margin:0}
+.key .tag{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;display:block;margin-bottom:8px;font-weight:600}
+.key .ok .tag{color:var(--pass)} .key .bad .tag{color:var(--block)} .key .void .tag{color:var(--warn)}
+.key .void{border-color:var(--warn);border-width:2px}
+
+pre{background:var(--surface-2);border:1px solid var(--line);padding:13px 15px;
+  overflow-x:auto;font-family:"IBM Plex Mono",monospace;font-size:12.5px;line-height:1.5;
+  margin:0 0 16px;color:var(--ink-2)}
+
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:0 0 16px;max-width:70ch}
+ol.steps li{counter-increment:s;position:relative;padding:0 0 12px 34px;font-size:14px}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:1px;
+  font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;color:var(--accent);
+  border:1px solid var(--accent);width:20px;height:20px;display:grid;place-items:center}
+
+footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
+  color:var(--muted);font-size:13px}
+@media (max-width:640px){ .state{grid-template-columns:repeat(2,1fr)} }
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">P21 Business Rules · Business Rules Refresh env</span>
+  <h1>Validator Cutover Test Book</h1>
+  <p class="lede">Coverage for <code>asi_Order_Validator_t2</code> replacing
+  <code>kb_Order_Validator_v2</code>. Every case below names a real BRR order you can open
+  and save — no synthetic setup required except where explicitly flagged.</p>
+</header>
+
+<dl class="state">
+  <div><dt>_t2 status</dt><dd>704 · active</dd></div>
+  <div><dt>_t2 registration</dt><dd>76 fields / 5 DW</dd></div>
+  <div><dt>kb_ status</dt><dd>705 · rollback</dd></div>
+  <div><dt>kb_ registration</dt><dd>114 fields / 11 DW</dd></div>
+  <div><dt>DLL</dt><dd>v1.0.1.0</dd></div>
+  <div><dt>BRR refreshed</dt><dd>2026-08-25</dd></div>
+</dl>
+
+<section>
+  <div class="sec-head"><span class="n">00</span><h2>Reading a result</h2></div>
+  <p class="sec-note">The screen cannot tell you whether a test passed. A rule that never
+  fired produces a perfectly clean save — identical to a rule that fired and approved the
+  order. Check the log after every single case.</p>
+
+  <div class="key">
+    <div class="ok"><span class="tag">Real pass</span><h3>Invoke + Return Success</h3>
+      <p>Two rows for <code>asi_Order_Validator_t2</code>, no <code>Validation</code> row.
+      The rule ran and allowed the save.</p></div>
+    <div class="bad"><span class="tag">Real block</span><h3>Validation row present</h3>
+      <p>A <code>Validation</code> row carries the message and the <code>v2err#</code> code.
+      Compare the code to the Expected column.</p></div>
+    <div class="void"><span class="tag">Void — not a pass</span><h3>No rows at all</h3>
+      <p>The rule did not fire. Scoping, pool cache, or status. The case proves nothing;
+      fix and re-run before recording anything.</p></div>
+  </div>
+
+  <div class="call crit">
+    <p><strong>A fourth outcome worth naming:</strong> an <code>Error</code> row, or a
+    <code>RuleError</code> mentioning <em>"rule-binding problem, not an order problem"</em>,
+    means the registration drifted again — almost certainly because the rule was opened and
+    saved in Rule Manager. Stop testing and re-run
+    <code>verify-required-elements.sql</code>; every result after that point is suspect.</p>
+  </div>
+
+  <pre>-- run after each case. Times are CENTRAL: the SQL box is ~1h behind the workstation.
+SELECT TOP 12 business_rule_log_uid, rule_name, log_action, return_value,
+       date_created, CAST(return_message AS varchar(300)) AS msg
+FROM   business_rule_log WITH (NOLOCK)
+ORDER  BY business_rule_log_uid DESC;</pre>
+</section>
+
+<section>
+  <div class="sec-head"><span class="n">01</span><h2>Branch coverage</h2></div>
+  <p class="sec-note">One case per decision branch, using orders that already exist in BRR.
+  These orders currently sit in a state that <em>should</em> trigger the branch on re-save —
+  their data drifted after the save that created them. Open the order, save it, read the log.</p>
+
+  <div class="scroll">
+  <table>
+    <thead><tr>
+      <th>ID</th><th>Order</th><th>Branch</th><th>Why it fires</th><th>Expected</th><th>Result</th>
+    </tr></thead>
+    <tbody>
+      <tr><td class="id">B1</td><td class="ord">6109022</td>
+        <td><span class="pill p">pass</span></td>
+        <td>Will Call code 8 with a genuine will-call carrier</td>
+        <td>Saves clean</td><td><span class="result"></span></td></tr>
+
+      <tr><td class="id">B2</td><td class="ord">6043906</td>
+        <td><span class="pill b">v2err#0</span></td>
+        <td>Ship-to blank — precursor guard</td>
+        <td>Blocks: SHIP TO ID is blank</td><td><span class="result"></span></td></tr>
+
+      <tr><td class="id">B3</td><td class="ord">6025031</td>
+        <td><span class="pill b">v2err#1a</span></td>
+        <td>COD + Out Freight + not will-call, freight line already added</td>
+        <td>Blocks 1a</td><td><span class="result"></span></td></tr>
+
+      <tr><td class="id">B4</td><td class="ord">6068311</td>
+        <td><span class="pill b">v2err#1c</span></td>
+        <td>Same as B3 but no freight line present</td>
+        <td>Blocks 1c</td><td><span class="result"></span></td></tr>
+
+      <tr><td class="id">B5</td><td class="ord">6107554</td>
+        <td><span class="pill b">v2err#2a</span></td>
+        <td>Auto-adding freight code + manual freight line + Order Complete</td>
+        <td>Blocks 2a — charged twice</td><td><span class="result"></span></td></tr>
+
+      <tr><td class="id">B6</td><td class="ord">6103568</td>
+        <td><span class="pill b">v2err#3a</span></td>
+        <td>Prepaid, Order Complete, freight line missing</td>
+        <td>Blocks 3a</td><td><span class="result"></span></td></tr>
+
+      <tr><td class="id">B7</td><td class="ord">6102461</td>
+        <td><span class="pill b">v2err#3b</span></td>
+        <td>Prepaid, Partial, open items but no open freight line</td>
+        <td>Blocks 3b</td><td><span class="result"></span></td></tr>
+
+      <tr><td class="id">B8</td><td class="ord">6083720</td>
+        <td><span class="pill b">v2err#4a</span></td>
+        <td>Freight code Will Call but carrier is not a will-call carrier</td>
+        <td>Blocks 4a</td><td><span class="result"></span></td></tr>
+
+      <tr><td class="id">B9</td><td class="ord">6105005</td>
+        <td><span class="pill b">v2err#4c</span></td>
+        <td>Carrier <em>is</em> will-call but freight code is No Freight</td>
+        <td>Blocks 4c</td><td><span class="result"></span></td></tr>
+
+      <tr><td class="id">B10</td><td class="ord">6106933</td>
+        <td><span class="pill b">v2err#7</span></td>
+        <td>$90,316.80 of counted product, no Signature Required note</td>
+        <td>Blocks 7</td><td><span class="result"></span></td></tr>
+
+      <tr><td class="id">B11</td><td class="ord">6085662</td>
+        <td><span class="pill p">pass</span></td>
+        <td>$16,836.83 and no signature note, but <code>order_type</code> is NULL — the
+            preserved <code>NULL NOT IN</code> guard must suppress check 7</td>
+        <td>Saves clean. A block here is a real regression.</td>
+        <td><span class="result"></span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p class="sec-note" style="margin-top:14px">Spares, if an order has been touched since this
+  book was generated —
+  <span class="mono">1c:</span> 6086317, 6092642 ·
+  <span class="mono">2a:</span> 6107707, 6108116 ·
+  <span class="mono">3a:</span> 6104240, 6104732 ·
+  <span class="mono">4a:</span> 6093543, 6105207 ·
+  <span class="mono">4c:</span> 6105998, 6106808 ·
+  <span class="mono">7:</span> 6106608, 6107157 ·
+  <span class="mono">pass:</span> 6109018, 6109020</p>
+</section>
+
+<section>
+  <div class="sec-head"><span class="n">02</span><h2>Surface coverage</h2></div>
+  <p class="sec-note">Case B5 so far has only been exercised in the web client. Registration
+  governs what is <em>in</em> the DataSet; the save surface governs which DataWindows P21
+  builds at all. These are different failure modes and the second is untested.</p>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th>ID</th><th>Surface</th><th>Case</th><th>Expected</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td class="id">S1</td><td>Web</td><td>Re-run B5 (6107554)</td>
+        <td>Blocks 2a — already partly proven via 6108922</td><td><span class="result"></span></td></tr>
+      <tr><td class="id">S2</td><td>Desktop</td><td>Same order, same edit</td>
+        <td>Identical message and code to S1</td><td><span class="result"></span></td></tr>
+      <tr><td class="id">S3</td><td>Desktop</td><td>Re-run B1 (6109022), a pass case</td>
+        <td>Saves clean, Invoke + Return Success</td><td><span class="result"></span></td></tr>
+      <tr><td class="id">S4</td><td>Front Counter</td><td>Create and save a <em>new</em> order</td>
+        <td>Rule fires. No NRE, no missing-DataWindow error.</td><td><span class="result"></span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="call">
+    <p><strong>S4 is the one case reading the code cannot settle.</strong> The rule has
+    <code>front_counter_flag = 'Y'</code>, and <code>_t2</code> deliberately does not register
+    <code>d_front_counter</code> — the DataWindow whose absence made the old rule throw. Every
+    one of its 19 fields feeds commented-out branches in the TVF, so dropping it is correct on
+    the merits. What is unverified is whether registration affects the rule <em>firing</em> at
+    the front counter. BRR has no recent front-counter orders, so this must be created by hand.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="n">03</span><h2>DynaChange isolation</h2></div>
+  <p class="sec-note">Isolates the <code>n_cst_layoutmanager::of_getlayoutmethod</code> popup
+  seen on the 6108922 save. Read as a UI layout lookup for the Terms tab page, it should be
+  independent of the rule — but that is an inference, and this settles it.</p>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th>ID</th><th>Condition</th><th>Action</th><th>Tells you</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td class="id">D1</td><td>DynaChange ON</td><td>Save 6109022</td>
+        <td>Baseline — does the popup reproduce at all?</td><td><span class="result"></span></td></tr>
+      <tr><td class="id">D2</td><td>DynaChange OFF</td><td>Save 6109022</td>
+        <td>Popup gone ⇒ DynaChange layout, not the rule</td><td><span class="result"></span></td></tr>
+      <tr><td class="id">D3</td><td>DynaChange ON, <em>both</em> rules 705</td><td>Save 6109022</td>
+        <td>Popup still present with no validator running ⇒ conclusively not ours</td>
+        <td><span class="result"></span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="sec-note">D3 is the decisive one — it removes the rule from the picture entirely.
+  Run it before spending time on D1/D2 if you only want the yes/no.</p>
+</section>
+
+<section>
+  <div class="sec-head"><span class="n">04</span><h2>Cost measurement</h2></div>
+  <p class="sec-note">Script: <code>Measure-Validator-Cost.sql</code>. Logical reads and CPU
+  from the plan-cache DMVs plus DataSet payload bytes — never wall-clock, which on these
+  servers has reported the opposite of the truth.</p>
+
+  <div class="call">
+    <p><strong>The payload numbers already in the log are not a baseline.</strong> The
+    <code>kb_Order_Validator_v2</code> samples of ~52,972 bytes were captured on 2026-09-01
+    while kb_ was itself on the damaged 74/3 registration. They measure kb_ crippled. Against
+    <code>_t2</code>'s 54,055 they would "prove" the rewrite made things worse. kb_ is now
+    repaired to 114/11 and has to be re-measured from scratch.</p>
+  </div>
+
+  <ol class="steps">
+    <li>Snapshot the plan cache (STEP 1).</li>
+    <li>kb_ → 704, _t2 → 705 <em>by SQL</em>. Recycle pools. Save the test order.</li>
+    <li>Capture with <code>@phase='kb'</code>.</li>
+    <li>Snapshot again. Flip back: _t2 → 704, kb_ → 705. Recycle pools.</li>
+    <li>Save <strong>the same order</strong>. Capture with <code>@phase='t2'</code>.</li>
+    <li>Report (STEP 3).</li>
+  </ol>
+
+  <p class="sec-note">Expect <code>_t2</code> to move fewer DataSet bytes — it asks for 76
+  fields across 5 DataWindows against kb_'s 114 across 11. Expect it to issue <em>more</em>
+  SQL statements: five small native SELECTs replacing one TVF call. Both are true at once, and
+  the round-trip count is a real cost that should be reported alongside the reads, not buried
+  under them. If the rewrite is not faster, that is a legitimate result — the case for it is
+  retiring nine <code>kb_</code> objects and the custom stored procedure dependency, not speed.</p>
+</section>
+
+<section>
+  <div class="sec-head"><span class="n">05</span><h2>Gaps needing synthetic setup</h2></div>
+  <p class="sec-note">Three branches have no naturally-occurring order in BRR, because the live
+  rule prevented those orders from ever being saved. Build them from
+  <code>Capture-OldValidator-Matrix.sql</code>, which already carries 23 synthetic cases.</p>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th>ID</th><th>Branch</th><th>Shape required</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td class="id">G1</td><td><span class="pill b">v2err#2b</span></td>
+        <td>Auto-adding freight code, a freight line still <em>open</em>, packing basis not
+            Order Complete</td>
+        <td>Zero instances in BRR or Prod</td></tr>
+      <tr><td class="id">G2</td><td><span class="pill b">v2err#6a</span></td>
+        <td>COD/CASH/PREPAY, freight total zero, not will-call, freight code not in
+            (5, 7, 10, 12), required date not 12/31/49</td>
+        <td>One instance exists in Prod post-refresh; none in BRR</td></tr>
+      <tr><td class="id">G3</td><td><span class="pill b">v2err#6b</span></td>
+        <td>Required date 12/31/49, freight non-zero, a <em>mandatory</em> "Freight Quote
+            Required" note, not will-call</td>
+        <td>Needs the note created by hand</td></tr>
+      <tr><td class="id">G4</td><td><span class="pill b">v2err#0</span></td>
+        <td>Blank freight code · no items · blank credit status · blank customer · blank
+            carrier · blank packing basis</td>
+        <td>Only the ship-to variant (B2) occurs naturally</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="n">06</span><h2>What none of this proves</h2></div>
+  <p class="prose">Branch coverage shows every decision path fires and returns the right code.
+  It is not an equivalence proof. The two rules could agree on all eleven cases above and still
+  diverge on the long tail — the corpus re-save against the 2026-09-01 kb_ baseline, diffed
+  both directions, remains the test that settles that.</p>
+  <p class="prose">Two known divergences are deliberate and will show up in that diff. The
+  validator reads <code>customer.credit_status</code> directly while the note writer reads the
+  corporate rollup; they disagree for 577 customers. And four
+  <code>[PRESERVED-BUG]</code> behaviours were carried over intact — an unrecognised carrier
+  still bypasses checks 1, 3, 4 and 6 entirely. Neither is a port defect; both are business
+  decisions still open.</p>
+</section>
+
+<footer>
+  Orders selected by <code>Find-ProdOrders-By-RuleBranch.sql</code> against BRR, 2026-09-03.
+  Branch predictions are derived from the engine specification in SQL, so they are independent
+  of the C# implementation but not of the spec — a shared misreading would not be caught here.
+</footer>
+
+</div>
