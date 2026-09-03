@@ -69,6 +69,10 @@ ln AS (
 agg AS (
     SELECT order_no,
            line_count      = COUNT(*),
+           /* The adapter short-circuits on this BEFORE calling Validate() -- an order with
+              no qualifying open line is never validated at all, whatever else is wrong with
+              it. This is the "skip" bucket in the 2026-09-01 baseline (385/114/1). */
+           qualifying_open = SUM(CASE WHEN qty_open > 0 THEN 1 ELSE 0 END),
            freight_present = MAX(is_freight),
            freight_open    = SUM(CASE WHEN is_freight=1 THEN qty_open ELSE 0 END),
            freight_ext     = SUM(CASE WHEN is_freight=1 THEN ext ELSE 0 END),
@@ -102,8 +106,8 @@ base AS (
                  ORDER BY a.id),
            credit_status = c.credit_status,
            cod_cash_prepay = CASE WHEN c.credit_status IN ('COD','CASH','PREPAY') THEN 1 ELSE 0 END,
-           a.line_count, a.freight_present, a.freight_open, a.freight_ext,
-           a.order_total, a.counted_open,
+           a.line_count, a.qualifying_open, a.freight_present, a.freight_open, a.freight_ext,
+           a.order_total, a.counted_open, h.date_created AS hdr_created,
            freight_zero = CASE WHEN ISNULL(a.freight_present,0)=0 OR ISNULL(a.freight_ext,0)=0
                                THEN 1 ELSE 0 END,
            order_status = CASE CAST(h.requested_date AS date)
@@ -137,13 +141,28 @@ SELECT order_no, date_created, freight_code_uid, fc_desc, packing_basis, carrier
        order_status, freight_quote_note, signature_note, order_type_desc, requested_date,
        expected_branch =
          CASE
-           WHEN freight_code_uid IS NULL                     THEN 'v2err#0 freight code blank'
+           /* Gates the adapter applies BEFORE any check. Both were missing from the first
+              version of this script, which is how order 6043906 came to be predicted as a
+              v2err#0 block that never happened. */
+           WHEN hdr_created < '2018-07-23'                    THEN 'skip (pre-epoch)'
+           WHEN ISNULL(qualifying_open,0) = 0                 THEN 'skip (no qualifying open line)'
+
+           /* --- Precursor guards ---------------------------------------------------------
+              VERIFIED 2026-09-03 on order 6043906: a blank ship_to_id does NOT trigger its
+              guard. The DataWindow delivers ship_to_id as decimal(0) with an empty value,
+              and Dec() returns a number rather than null, so HasValue is true and the guard
+              never fires. The rule returned Success with no exception and no Error row.
+              kb_ used Field<decimal?>().HasValue on the same DataRow, so it behaves the same
+              way -- this is a shared characteristic, not a port regression.
+
+              The three NUMERIC guards (freight_code_uid, ship_to_id, customer_id) are
+              therefore treated as unreachable and are NOT predicted here. The string-typed
+              ones are predicted but flagged, because whether a DataWindow char column ever
+              arrives as DBNull rather than blanks is still unverified. */
            WHEN ISNULL(line_count,0) = 0                     THEN 'v2err#0 no items'
-           WHEN ship_to_id   IS NULL                         THEN 'v2err#0 ship-to blank'
-           WHEN credit_status IS NULL                        THEN 'v2err#0 credit blank'
-           WHEN customer_id  IS NULL                         THEN 'v2err#0 customer blank'
-           WHEN carrier_name IS NULL                         THEN 'v2err#0 carrier blank'
-           WHEN packing_basis IS NULL                        THEN 'v2err#0 packing basis blank'
+           WHEN credit_status IS NULL                        THEN 'v2err#0? credit blank (guard unverified)'
+           WHEN carrier_name IS NULL                         THEN 'v2err#0? carrier blank (guard unverified)'
+           WHEN packing_basis IS NULL                        THEN 'v2err#0? packing basis blank (guard unverified)'
            -- 1
            WHEN cod_cash_prepay=1 AND auto_adds=1 AND wc='N' AND freight_present=1 THEN 'v2err#1a'
            WHEN cod_cash_prepay=1 AND auto_adds=1 AND wc='N'                       THEN 'v2err#1c'
