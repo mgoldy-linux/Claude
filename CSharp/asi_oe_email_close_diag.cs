@@ -1,14 +1,15 @@
 // ============================================================
 // asi_oe_email_close_diag.cs
 // ============================================================
-// Description : DIAGNOSTIC ONLY, but now performs a real (small, clearly
-//               marked, reversible) modification: appends a distinctive
-//               test marker to `memo` when the Email Order Acknowledgment
-//               window closes via OK. This is the decisive test for one
-//               open question: does a write made here actually reach the
-//               email that gets sent, or is it too late? Compare the
-//               logged "New memo" value against the body of the actually-
-//               delivered email for the same test send.
+// Description : SA 53475 -- appends the ASAP marketing message to `memo`
+//               when the Email Order Acknowledgment window closes via OK,
+//               after whatever the user typed. Gated on
+//               asi_email_context_flag so it only fires for Order
+//               Acknowledgment emails (w_email_response is a shared window
+//               -- also used by Packing List Transfer and other document
+//               emails). Retains the "_diag" filename/class name from its
+//               proving-ground origin (see 2026-07-29/30/08-03 log entries
+//               below) -- functionally this is now the production rule.
 // Event       : On-Demand rule attached to the OK button (cb_ok) on window
 //               w_email_response ("Email Order Acknowledgment"). Not tied
 //               to a published event (business_rule_event_uid = NULL).
@@ -125,6 +126,11 @@
 //     appends if is_order_ack = 1. That flag is written by the new
 //     asi_email_context_flag rule on the FormPreEmail event, which fires
 //     earlier in the same window's lifecycle and does know form_type.
+// 2026-08-26  Bus App Team
+//   - SA 53475: Matt Munson approved the ASAP sign-up message. Swapped
+//     TestMarker for the real text (renamed to CustomMessage), dropped the
+//     "diagnostic" framing from GetDescription(). Design/gating logic is
+//     otherwise unchanged from the 2026-08-04 confirmed-working version.
 // ============================================================
 
 using P21.Extensions.BusinessRule;
@@ -136,9 +142,12 @@ namespace asi_OeEmailCloseDiag
 {
     public class asi_oe_email_close_diag : P21.Extensions.BusinessRule.Rule
     {
-        // Distinctive and safe -- if this text shows up in the delivered
-        // email body, writes made here reach the real send.
-        private const string TestMarker = "\r\n\r\n[DIAG-MARKER-7A29 -- asi_oe_email_close_diag test write]";
+        // SA 53475 -- Marketing's approved ASAP sign-up message (Matt
+        // Munson, 2026-08-26). Leading \r\n\r\n gives a real blank line so
+        // Outlook doesn't merge it into whatever the user typed above it
+        // (see feedback_p21_alert_email_plaintext_linebreaks -- single \n
+        // gets swallowed).
+        private const string CustomMessage = "\r\n\r\nSign up for ASAP (All Surfaces, All Products) where you can view pricing, see live inventory, and place orders! Register today at www.allsurfaces.com/asap.";
 
         public override RuleResult Execute()
         {
@@ -173,10 +182,10 @@ namespace asi_OeEmailCloseDiag
                         {
                             DataRow row = table.Rows[0];
                             string originalMemo = row["memo"] as string ?? string.Empty;
-                            string newMemo = originalMemo + TestMarker;
+                            string newMemo = originalMemo + CustomMessage;
                             row["memo"] = newMemo;
 
-                            LogRuleInfo($"Original memo='{originalMemo}' New memo='{newMemo}'. Check the delivered email's Body for TestMarker.");
+                            LogRuleInfo($"Original memo='{originalMemo}' New memo='{newMemo}'.");
                         }
                     }
                 }
@@ -283,7 +292,7 @@ namespace asi_OeEmailCloseDiag
 
         public override string GetDescription()
         {
-            return "DIAGNOSTIC -- appends TestMarker to memo on w_email_response window close (cb_ok), gated on asi_email_context_flag so it only fires for Order Acknowledgment emails (that window is shared by Packing List Transfer and other document emails). Attachment-write attempt removed (confirmed dead end); HTML tag removed (confirmed memo is plain-text only).";
+            return "SA 53475 -- appends the ASAP sign-up message to memo on w_email_response window close (cb_ok), gated on asi_email_context_flag so it only fires for Order Acknowledgment emails (that window is shared by Packing List Transfer and other document emails).";
         }
 
         public override string GetName()

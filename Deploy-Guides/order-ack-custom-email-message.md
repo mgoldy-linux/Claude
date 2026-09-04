@@ -1,6 +1,6 @@
 # Deployment Guide — Order Acknowledgment Custom Email Message (SA 53475)
 
-> **Status (2026-08-31): deployed + verified in P21Play, Prod plan pending.** See the `## 2026-08-26` section below. Sections written before that date (Artifact(s), Target environments, Deploy steps) still describe the pre-deployment "blocked on Matt / nothing in Play" state and need a fuller reconciliation pass — trust the dated sections.
+> **Status (2026-09-04): verified in P21Play; Prod deployment started and paused mid-run.** DLLs are staged in Prod, the flag table is not yet created there, and neither rule is registered. See `## 2026-09-04 — Prod deployment (in progress)` below for exactly where to pick up. Sections written before 2026-08-26 (Artifact(s), Target environments, Deploy steps) still describe the pre-deployment "blocked on Matt / nothing in Play" state and need a fuller reconciliation pass — trust the dated sections.
 
 > Produced during development. Update as the artifact changes; commit with the code.
 
@@ -34,6 +34,50 @@ Supersedes the "blocked on Matt / nothing registered in Play" state described in
 ## 2026-08-31 — P21BusinessRules may still hold the pre-SA-53475 diagnostic rule
 
 While adding the web Rule Manager screenshots below, the web set (captured in **P21BusinessRules**, `uiserver` client) showed `asi_oe_email_close_diag` as **v1.0.0.7** with the **DIAGNOSTIC** description and a `DIAG-MARKER-7A29` test value — i.e. the pre-SA-53475 rule. If that reflects the current BRR registration, that environment is appending `TestMarker` to real order-ack emails through its live SMTP. **Action:** redeploy `1.0.0.8` to P21BusinessRules or deregister the rule there.
+
+## 2026-09-04 — Prod deployment (IN PROGRESS — resume here)
+
+Matt approved the Prod rollout. Started 2026-09-03, paused 2026-09-04 partway through.
+
+**Pre-flight against `P21` on `P21.allsurfaces.com` (read-only):**
+
+| Check | Result |
+|---|---|
+| `dbo.asi_email_context_flag` | **missing** |
+| `business_rule` rows for either rule | **none** — clean slate, no duplicate-registration risk |
+| `\\ASP21FS1.ahi.local\Prod\BusinessRulesDLL\asi_email_context_flag.dll` | present, 1.0.0.0, SHA-256 `7535F9AE…` |
+| `\\ASP21FS1.ahi.local\Prod\BusinessRulesDLL\asi_oe_email_close_diag.dll` | present, **1.0.0.8**, SHA-256 `C39127CF…` |
+
+**Both Prod DLLs are byte-identical to the Play copies that passed UAT** — the DLL step is already done. Do not rebuild or re-copy; doing so would forfeit that guarantee.
+
+### ⚠️ Schema trap — the table must be created as `dbo.`, explicitly
+
+The first Prod attempt created **`[AHI\mgoldyn].asi_email_context_flag`** and then appeared to fail on permissions. It was not a permissions failure:
+
+- In **Play / BusinessRules** the login maps to `dbo` and is `db_owner`, so an unqualified `CREATE TABLE asi_email_context_flag` had always landed in `dbo` by accident.
+- In **Prod** the login is `AHI\mgoldyn` with default schema `AHI\mgoldyn` and no `db_owner`, so the same statement created the table in the personal schema.
+- `GRANT … ON dbo.asi_email_context_flag` then failed because that object didn't exist — SQL Server reports a missing object as *"does not exist or you do not have permission,"* which reads as a rights problem.
+
+Rights are sufficient and no DBA escalation is needed: `HAS_PERMS_BY_NAME('dbo','SCHEMA','ALTER') = 1` (can create in dbo) and `IS_MEMBER('db_securityadmin') = 1` (grants will work). Not db_owner / db_ddladmin / sysadmin, and no `CONTROL` on dbo — none of which are required.
+
+**`Create-asi-email-context-flag.sql` was rewritten 2026-09-04** to make this impossible to repeat: everything `dbo.`-qualified; the existence guard is now schema-aware `OBJECT_ID('dbo.asi_email_context_flag','U')` instead of `INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = …` (which matched *any* schema — with the stray copy present, a re-run would have printed "already exists — skipped" and left dbo empty, producing a deploy that looks clean and fails at runtime); a non-destructive warning listing any copy outside dbo with its row count; and a closing `SELECT` showing which schema the table actually landed in.
+
+**The table must live in `dbo`** — both rules query it unqualified (`FROM asi_email_context_flag`, `MERGE asi_email_context_flag`). The C# was deliberately *not* changed to qualify it: that forces a rebuild of both DLLs and loses the byte-identical-to-UAT property. Fix the schema, not the code.
+
+### Remaining Prod steps
+
+1. `DROP TABLE [AHI\mgoldyn].asi_email_context_flag;` — verified 0 rows on 2026-09-04.
+2. Re-run `Sql-Scripts\Business-Rules\Create-asi-email-context-flag.sql` against `P21`. Confirm the closing SELECT reports `schema_name = dbo`.
+3. Register `asi_email_context_flag` — On Event → Form Printing Pre-Email Response Window; Field Selector `EmailDataMisc` → `form_type` (Selected only); **Multi-Row checked at creation**; enable for all users.
+4. Register `asi_oe_email_close_diag` — On Demand, window `w_email_response`; Field Selector `d_dw_email_info` → `memo` (Selected) and Window Controls → Buttons → `cb_ok` (Selected **+ Triggers Rule**); **Multi-Row checked at creation** (not editable in place — changing it needs delete+recreate, which is how the 7/30 duplicate bug happens); enable for all users.
+5. **Verify exactly one live registration each** before any test send:
+   `SELECT business_rule_uid, rule_name, row_status_flag, multirow_flag, run_type_cd FROM business_rule WHERE rule_name IN ('asi_email_context_flag','asi_oe_email_close_diag')` — expect two rows, both `row_status_flag = 704`, both `multirow_flag = Y`.
+6. Controlled test: a real Prod Order Ack with the To: address changed to yourself **before** clicking OK, then an RMA Ack immediately after as the negative test. Verify the delivered message body, not just `business_rule_log`.
+
+### Side findings (not Prod blockers)
+
+- **P21BusinessRules has two live `asi_oe_email_close_diag` registrations** — uid 164 (`multirow_flag=N`, silently fails its `Data.Set`) and uid 165 (`multirow_flag=Y`, appends). The 7/30 duplicate-registration bug has recurred. Combined with BRR's DLL still being **1.0.0.7**, that environment is appending `DIAG-MARKER-7A29` to real Order Ack emails over its live SMTP. Deregister the duplicate and either push 1.0.0.8 or deregister both.
+- **`t2` is registered in no environment** (BRR, Play, Prod all checked) — the "deregister t2 after Prod" step is already satisfied.
 
 ## Reference screenshots — rule registration
 
