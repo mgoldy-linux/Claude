@@ -41,6 +41,30 @@
 > **PAD recipient reconciliation:** checked Play first — PAD-Team (106) was missing Evan Jenkins vs. main Team, and PAD-Purchasing (107) had a genuinely corrupted recipient (`<rsm_email>` and `mgoldyn@allsurfaces.com` jammed into one field, not two rows) — fixed via `UPDATE` back to a clean address, matching 105 exactly per the user's choice. User clarified the real ask was **Prod** — re-checked there and found different gaps: 107 missing 5 of 9 recipients (Jerome Butler, Justine Daugherty, Alex Sivongsay, Sales Rep token, Order Taker token), 106 missing Evan Jenkins. Recommended the client over raw SQL `INSERT` (documented counter-drift history on `alert_recipient`, plus the user's established preference from the 8/3 rebuild). **User added them; re-verified — both alert pairs' recipient sets now match exactly** (Team 6/6, Purchasing 9/9). All four alerts remain `705` inactive throughout — zero live-fire risk from any of this work.
 >
 > **Status: waiting on Evan** — recipient sets fully built and reconciled, RSM proven live in both Play and Prod, everything still safely inactive. Open: his final confirmation on the recipient set as-built and go-live timing (9/2 floated); BCC-to-self raised as a want, not yet added anywhere.
+>
+> ---
+>
+> ## 🟢 GO-LIVE — EXECUTED 2026-09-04 (Evan's confirmed date)
+>
+> **All four alerts flipped to ACTIVE; the two legacy single-alerts they replace turned OFF.** State verified against Prod after the flip (all edits `MGOLDYN`, ~06:58–07:18):
+>
+> | uid | Alert | row_status_flag |
+> |----|-------|-----------------|
+> | 104 | Low Margin Alert - Team | **704 ACTIVE** |
+> | 105 | Low Margin Alert - Purchasing Escalation (MAC) | **704 ACTIVE** |
+> | 106 | Low PAD Margin Alert - Team | **704 ACTIVE** |
+> | 107 | Low PAD Margin Alert - Purchasing Escalation (MAC) | **704 ACTIVE** |
+> | 97 | Low Margin Alert (legacy — `line_item_profit_percentage < 5`) | **705 inactive** |
+> | 100 | Low PAD Margin Alert (legacy — `line_item_profit_percentage < -5`) | **705 inactive** |
+> | 102 | Test Verify Alerts (decoy) | 705 — confirmed still off |
+>
+> Legacy 97/100 were **deactivated, not deleted** — a rollback is a flag flip back (see the Rollback section, which now also covers reactivating them).
+>
+> **Recipient add trap hit and diagnosed.** Adding an "RSM" recipient in the client threw `SQLDBCode 3621 — Violation of UNIQUE KEY constraint 'ak_alert_recipient'`, duplicate key `(110, '', 1059)` = `(alert_message_uid, alert_email_address, record_type_cd)`, and rolled the whole statement back (*"No changes made to database"*). Cause: `<rsm_email>` was **already** on that alert from the 8/28 build — it was being added a second time. This is a *loud* failure (rare for P21 alerts) and effectively a guard that the token recipient already exists. Recorded as trap 8 in `feedback_p21_alerts.md`.
+>
+> **Recipient list cross-checked on all four.** `code_p21` confirms the type codes: `code_no` 1281 = "To...", 1282 = "CC...", 1283 = "BCC...", 1059 = "Email Recipient". Every recipient row active (704). Membership matched within each pair (104≡106 at 8 each, 105≡107 at 11 each); RSM, Erik Bullock, Evan Jenkins, and a BCC-to-self (`mgoldyn@allsurfaces.com`, type 1283) on all four; Jere Butler on both Purchasing alerts. **To/CC placement was inconsistent** at first check (Erik Bullock CC on all four though the 2026-08-31 request said "To"; RSM To on 106 but CC on 104; the Purchasing pair's To/CC split disagreed) — **the user corrected the assignments** (not re-verified from SQL in that session) and put the family into a **monitoring phase**.
+>
+> **Status: 🟡 LIVE, in monitoring.** Watch the first real fires for volume against the estimate (~477 unique orders/period for the main pair — see "Backward-compatibility notes"), confirm the RSM token resolves on live orders, then decide when to delete legacy 97/100 rather than leave them parked. BCC-to-self is in place (type 1283, `mgoldyn`). Script 06 (NULL-token hardening) is still **not** on Prod — separate, unapproved, deliberately deferred.
 
 ## Artifact(s)
 All under `C:\Claude\Alerts\Low-Margin-Alert\`, run **in numbered order**:
@@ -179,5 +203,18 @@ Audited `p21_view_alert_oe_OrderEntry` for every OE-token column not already gua
    DELETE FROM token                      WHERE token_uid IN (<uids>)
    ```
 - The live alert (uid 97) is untouched throughout, so rollback fully restores prior behavior.
+
+**Post-go-live rollback (after 2026-09-04)** — the fastest safe revert, no deletes:
+```sql
+-- turn the four new alerts back off
+UPDATE alert_implementation SET row_status_flag = 705
+WHERE alert_implementation_name IN (
+  'Low Margin Alert - Team','Low Margin Alert - Purchasing Escalation (MAC)',
+  'Low PAD Margin Alert - Team','Low PAD Margin Alert - Purchasing Escalation (MAC)');
+-- bring the two legacy single-alerts back
+UPDATE alert_implementation SET row_status_flag = 704
+WHERE alert_implementation_name IN ('Low Margin Alert','Low PAD Margin Alert');
+```
+Legacy 97/100 were only deactivated at go-live, so this restores the exact prior behavior. Do the flag flips **by SQL**, not through Rule Manager/Alert Maintenance where avoidable.
 
 **Rolling back script 06 alone** (the NULL-token hardening, independent of the rest): `CREATE OR ALTER VIEW` back to the pre-06 definition saved when each environment was patched (Play/Training/BusinessRules — no separate backup file was taken since script 06 is provably a no-op on all existing data; the pre-06 text is recoverable from git history on `06-harden-oe-view-null-tokens.sql`'s parent commit, or from `OBJECT_DEFINITION` on any environment not yet patched).
