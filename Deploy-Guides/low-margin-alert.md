@@ -66,6 +66,8 @@
 >
 > **Status: 🟡 LIVE, in monitoring.** Watch the first real fires for volume against the estimate (~477 unique orders/period for the main pair — see "Backward-compatibility notes"), confirm the RSM token resolves on live orders, then decide when to delete legacy 97/100 rather than leave them parked. BCC-to-self is in place (type 1283, `mgoldyn`). Script 06 (NULL-token hardening) is still **not** on Prod — separate, unapproved, deliberately deferred.
 
+**First monitoring-phase question, 2026-09-04 (later same day):** Evan asked (order 6132881, Freedom Carpeting and Countertops) why `Price Page Description` didn't say "Overridden" after he confirmed the sell price was manually cut to $2.54 — a live instance of the exact behavior already measured in the **Price-page demo recipe** note above (2026-07-22): a manual override doesn't reliably clear `price_page_uid`, so the original price page's description can keep showing. Nothing new to fix; answered Evan with the existing measured numbers (~⅓ of lines, 55,784/173,104 over 120d) rather than treating it as a fresh bug. Reply drafted in Outlook, not yet sent as of this note.
+
 ## Artifact(s)
 All under `C:\Claude\Alerts\Low-Margin-Alert\`, run **in numbered order**:
 
