@@ -2,6 +2,18 @@
 
 > Produced during development. Update as the artifact changes; commit with the code.
 
+> **Status 2026-09-04 — REPO UPDATED, LIVE COPY STALE.** The record-file format was
+> reworked to match `Check-Job-History.ps1` (header/footer block, ordinal-numbered
+> multi-run support, error counters, matching master-log lines — see script header
+> comment for the exact shape). Repo copy `C:\Claude\PowerShell\Check-SSRS-Subscription-Sends.ps1`
+> has the change and parses clean; **the deployed copy the live profiles actually call,
+> `C:\PowerShell-Scripts\SSRS\Check-SSRS-Subscription-Sends.ps1`, is still the 2026-08-28
+> version** (confirmed by diff) — it will NOT show the new record-file format until
+> Step 1 below is re-run. Not re-copied yet; that's the user's call since it's what the
+> profile invokes unattended every morning. Not run live this session (no `-Force` test)
+> — first real validation is the next normal profile launch, or a manual `-Force` run,
+> **after** the copy is refreshed.
+
 > **Status 2026-08-28 — DEPLOYED.** Script copied to
 > `C:\PowerShell-Scripts\SSRS\Check-SSRS-Subscription-Sends.ps1`; the call block was
 > surgically pasted into both live profiles (`Microsoft.PowerShell_profile.ps1` after the

@@ -28,6 +28,34 @@
       but is overwritten every run (no history). The only definitive per-send
       delivery record is ReportServerService_<date>.log on the report-server box.
 
+    RECORD FILE (same header/footer shape as Check-Job-History.ps1):
+      C:\_P25\Logs\PS-Rec-Of\Check-SSRS-Subscription-Sends.ps1-yyyyMMdd.txt
+
+      Each invocation appends one "=== Nth Run ===" block (numbered by counting
+      prior "Initium Script" lines in today's file, so a -Force re-run the same
+      day adds "2nd Run", etc.):
+
+        === 1st Run ===
+        Initium Script
+        Start Script Time: <T> Check-SSRS-Subscription-Sends.ps1
+        Window: <start> -> <end>   (<n> day(s))
+        Source: <instance>\ReportServer
+        Sends checked: <n> | OK: <n> | Errors: <n> | Status flags: <n>
+        SEND <timestamp> <report> <size> fmt=<fmt> <OK/ERROR> -> <recipients>
+        ...
+        Number of script errors: <n>
+        Number of SQL errors: <n>
+        Stop Script Time: <T> Check-SSRS-Subscription-Sends.ps1
+
+        Script runtime: X minutes Y seconds Z milliseconds
+        Finis Script!
+
+      Written regardless of -Quiet so there is a durable local record of what
+      went out each day. As with Check-Job-History.ps1, notepad++ is opened on
+      the record file automatically when the run turns up a render error, a
+      delivery-status flag, or a script-level failure - so problems surface the
+      same way a failed-job run does.
+
 .PARAMETER Since
     Override the window start. Default: the last completed run (or, on the very
     first run, midnight -DaysBack days ago).
@@ -78,6 +106,10 @@ param(
 # Setup
 # ---------------------------------------------------------------------------
 $scriptName = if ($MyInvocation.MyCommand.Name) { $MyInvocation.MyCommand.Name } else { 'Check-SSRS-Subscription-Sends.ps1' }
+$fDate      = (Get-Date).ToString('-yyyyMMdd')
+$recDir     = 'C:\_P25\Logs\PS-Rec-Of'
+$ofrec      = Join-Path $recDir ($scriptName + $fDate + '.txt')
+$masterPath = 'C:\_P25\Logs\Record-of-' + $env:COMPUTERNAME + '-VC-Scripts-Ran-' + (Get-Date).ToString('yyyyMM') + '.txt'
 
 # Read a variable the profile *may* have set (SsrsInstance, Colors) without
 # tripping Set-StrictMode when it hasn't been - works whether this script is
@@ -113,11 +145,21 @@ function Say {
 function Write-RecordLine {
     param([string]$Line)
     try {
-        $recDir = 'C:\_P25\Logs\PS-Rec-Of'
         if (-not (Test-Path $recDir)) { New-Item -ItemType Directory -Path $recDir -Force | Out-Null }
-        $rec = Join-Path $recDir ($scriptName + (Get-Date).ToString('-yyyyMMdd') + '.txt')
-        ((Get-Date).ToString('yyyy-MM-dd HH:mm:ss') + '  ' + $Line) | Out-File -FilePath $rec -Append -Encoding UTF8
+        $Line | Out-File -FilePath $ofrec -Append -Encoding UTF8
     } catch { }
+}
+
+# Same ordinal-suffix helper as Check-Job-History.ps1, so multiple same-day
+# runs (-Force) number their blocks "1st Run", "2nd Run", etc.
+function Get-OrdinalSuffix([int]$n) {
+    if ($n % 100 -in 11..13) { return "${n}th" }
+    switch ($n % 10) {
+        1 { return "${n}st" }
+        2 { return "${n}nd" }
+        3 { return "${n}rd" }
+        default { return "${n}th" }
+    }
 }
 
 # ---------------------------------------------------------------------------
@@ -146,54 +188,84 @@ if (-not $Force -and $stateLastRun -and $stateLastRun.Date -eq $today) {
 }
 
 # ---------------------------------------------------------------------------
-# Window
-#   normal run   : last completed run  -> now   (then advance state)
-#   -Force       : re-show the SAME window as the last run, and do NOT advance
-#                  state (so a manual re-run never disturbs the daily cadence
-#                  or collapses to an empty window)
-#   -Since <dt>  : explicit start, wins over everything; never advances state
+# From here on the script is "running" - wrap it so the record file always
+# gets a matching header + footer (Check-Job-History.ps1 shape), even on an
+# early return (dbatools missing, empty window, query failure, etc.).
 # ---------------------------------------------------------------------------
-$firstRun     = -not $stateLastRun
-$advanceState = $true
-if ($Since) {
-    $windowStart  = $Since
-    $advanceState = $false
-} elseif ($Force -and -not $firstRun) {
-    $windowStart  = if ($stateWindowStart) { $stateWindowStart } else { $stateLastRun }
-    $advanceState = $false
-} elseif (-not $firstRun) {
-    $windowStart = $stateLastRun
-} else {
-    $windowStart = $today.AddDays(-[math]::Abs($DaysBack))
+$StopWatch    = [system.diagnostics.stopwatch]::StartNew()
+$Error.Clear()
+$total_errors = 0
+$errCount     = 0
+$statusRows   = @()
+$execs        = @()
+
+(Get-Date -Format 'yyyy-MM-dd') + ' ' + $scriptName | Out-File -FilePath $masterPath -Append -Encoding UTF8
+
+$runNumber = 1
+if (Test-Path $ofrec) {
+    $runNumber = (Select-String -Path $ofrec -Pattern '^Initium Script').Count + 1
+    '' | Out-File -FilePath $ofrec -Append
 }
-$windowEnd = $now
+Write-RecordLine ('=== ' + (Get-OrdinalSuffix $runNumber) + ' Run ===')
+Write-RecordLine 'Initium Script'
+Write-RecordLine ('Start Script Time: ' + (Get-Date).ToString('T') + ' ' + $scriptName)
 
-if ($windowStart -ge $windowEnd) {
-    if (-not $Quiet) { Say "SSRS subscription check: window start is in the future, nothing to do." 'Muted' }
-    return
-}
+try {
+    # -----------------------------------------------------------------------
+    # Window
+    #   normal run   : last completed run  -> now   (then advance state)
+    #   -Force       : re-show the SAME window as the last run, and do NOT advance
+    #                  state (so a manual re-run never disturbs the daily cadence
+    #                  or collapses to an empty window)
+    #   -Since <dt>  : explicit start, wins over everything; never advances state
+    # -----------------------------------------------------------------------
+    $firstRun     = -not $stateLastRun
+    $advanceState = $true
+    if ($Since) {
+        $windowStart  = $Since
+        $advanceState = $false
+    } elseif ($Force -and -not $firstRun) {
+        $windowStart  = if ($stateWindowStart) { $stateWindowStart } else { $stateLastRun }
+        $advanceState = $false
+    } elseif (-not $firstRun) {
+        $windowStart = $stateLastRun
+    } else {
+        $windowStart = $today.AddDays(-[math]::Abs($DaysBack))
+    }
+    $windowEnd = $now
 
-$sinceStr = $windowStart.ToString('yyyy-MM-dd HH:mm:ss')
-$untilStr = $windowEnd.ToString('yyyy-MM-dd HH:mm:ss')
+    $sinceStr = $windowStart.ToString('yyyy-MM-dd HH:mm:ss')
+    $untilStr = $windowEnd.ToString('yyyy-MM-dd HH:mm:ss')
+    $dayCount = [int]([math]::Floor(($today - $windowStart.Date).TotalDays)) + 1
+    Write-RecordLine ('Window: {0} -> {1}   ({2} day(s))' -f $sinceStr, $untilStr, $dayCount)
+    Write-RecordLine ('Source: ' + $Instance + '\ReportServer')
 
-# ---------------------------------------------------------------------------
-# dbatools
-# ---------------------------------------------------------------------------
-if (-not (Get-Module -ListAvailable -Name dbatools)) {
-    Say "dbatools module not installed - cannot check SSRS subscriptions. Install-Module dbatools -Scope CurrentUser" 'Warning'
-    return
-}
-Import-Module dbatools -ErrorAction Stop
-Set-DbatoolsConfig -FullName sql.connection.encrypt   -Value $false -ErrorAction SilentlyContinue | Out-Null
-Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true  -ErrorAction SilentlyContinue | Out-Null
+    if ($windowStart -ge $windowEnd) {
+        if (-not $Quiet) { Say "SSRS subscription check: window start is in the future, nothing to do." 'Muted' }
+        Write-RecordLine 'Sends checked: 0 | OK: 0 | Errors: 0 | Status flags: 0  (window start is in the future)'
+        return
+    }
 
-# ---------------------------------------------------------------------------
-# Queries
-# ---------------------------------------------------------------------------
-# RequestType 1 = Subscription in dbo.ExecutionLogStorage (the view ExecutionLog3
-# spells it 'Subscription'). ExtensionSettings / AdditionalInfo are returned as
-# nvarchar so they arrive as plain strings for [xml] parsing on this side.
-$sendsQuery = @"
+    # -----------------------------------------------------------------------
+    # dbatools
+    # -----------------------------------------------------------------------
+    if (-not (Get-Module -ListAvailable -Name dbatools)) {
+        Say "dbatools module not installed - cannot check SSRS subscriptions. Install-Module dbatools -Scope CurrentUser" 'Warning'
+        $total_errors++
+        Write-RecordLine 'Sends checked: 0 | OK: 0 | Errors: 0 | Status flags: 0  (dbatools module not installed)'
+        return
+    }
+    Import-Module dbatools -ErrorAction Stop
+    Set-DbatoolsConfig -FullName sql.connection.encrypt   -Value $false -ErrorAction SilentlyContinue | Out-Null
+    Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true  -ErrorAction SilentlyContinue | Out-Null
+
+    # -----------------------------------------------------------------------
+    # Queries
+    # -----------------------------------------------------------------------
+    # RequestType 1 = Subscription in dbo.ExecutionLogStorage (the view ExecutionLog3
+    # spells it 'Subscription'). ExtensionSettings / AdditionalInfo are returned as
+    # nvarchar so they arrive as plain strings for [xml] parsing on this side.
+    $sendsQuery = @"
 SET NOCOUNT ON;
 SELECT
     els.LogEntryId,
@@ -228,8 +300,8 @@ WHERE els.RequestType = 1
 ORDER BY SendDate, els.TimeStart, c.Path, s.SubscriptionID;
 "@
 
-# Fallback: supported view, no recipient columns.
-$fallbackQuery = @"
+    # Fallback: supported view, no recipient columns.
+    $fallbackQuery = @"
 SET NOCOUNT ON;
 SELECT
     CAST(TimeStart AS date) AS SendDate,
@@ -250,10 +322,10 @@ WHERE RequestType = 'Subscription'
 ORDER BY SendDate, TimeStart, ItemPath;
 "@
 
-# Point-in-time delivery status (LastStatus has no history - it is overwritten
-# every run). Negative match on the known "good" prefixes so anything unusual
-# surfaces.
-$statusQuery = @"
+    # Point-in-time delivery status (LastStatus has no history - it is overwritten
+    # every run). Negative match on the known "good" prefixes so anything unusual
+    # surfaces.
+    $statusQuery = @"
 SET NOCOUNT ON;
 SELECT
     c.Path                                      AS ReportPath,
@@ -276,384 +348,446 @@ WHERE ISNULL(s.LastStatus, N'') <> N''
 ORDER BY s.LastRunTime DESC;
 "@
 
-# ---------------------------------------------------------------------------
-# Run
-# ---------------------------------------------------------------------------
-$recipientsAvailable = $true
-$rows = $null
-try {
-    $rows = Invoke-DbaQuery -SqlInstance $Instance -Database ReportServer -Query $sendsQuery -As PSObject -EnableException
-} catch {
-    Say "Detailed query failed ($($_.Exception.Message.Trim())) - falling back to ExecutionLog3 without recipients." 'Warning'
-    Write-RecordLine "Detailed query failed: $($_.Exception.Message.Trim())"
-    $recipientsAvailable = $false
+    # -----------------------------------------------------------------------
+    # Run
+    # -----------------------------------------------------------------------
+    $recipientsAvailable = $true
+    $rows = $null
     try {
-        $rows = Invoke-DbaQuery -SqlInstance $Instance -Database ReportServer -Query $fallbackQuery -As PSObject -EnableException
+        $rows = Invoke-DbaQuery -SqlInstance $Instance -Database ReportServer -Query $sendsQuery -As PSObject -EnableException
     } catch {
-        Say "SSRS subscription check failed: $($_.Exception.Message.Trim())" 'Error'
-        Write-RecordLine "FAILED (fallback too): $($_.Exception.Message.Trim())"
-        return   # do not advance state - the window is retried next launch
-    }
-}
-
-$statusRows = @()
-try {
-    $statusRows = @(Invoke-DbaQuery -SqlInstance $Instance -Database ReportServer -Query $statusQuery -As PSObject -EnableException)
-} catch { }
-
-$queuedNote = $null
-try {
-    $q = Invoke-DbaQuery -SqlInstance $Instance -Database ReportServer -As PSObject -EnableException `
-         -Query "SET NOCOUNT ON; SELECT COUNT(*) AS Queued FROM dbo.Notifications;"
-    if ($q -and [int]$q.Queued -gt 0) { $queuedNote = [int]$q.Queued }
-} catch { }
-
-# ---------------------------------------------------------------------------
-# Helpers for shaping output
-# ---------------------------------------------------------------------------
-function Format-Size {
-    param($Bytes)
-    if ($null -eq $Bytes -or $Bytes -eq [DBNull]::Value) { return '     -   ' }
-    $b = [double]$Bytes
-    if ($b -ge 1MB) { return ('{0,7:N2} MB' -f ($b / 1MB)) }
-    if ($b -ge 1KB) { return ('{0,7:N1} KB' -f ($b / 1KB)) }
-    return ('{0,7} B ' -f [long]$b)
-}
-
-function Format-AddrList {
-    param([string]$Text)
-    if ([string]::IsNullOrWhiteSpace($Text)) { return $null }
-    $parts = $Text -split '[;,]' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
-    if (-not $parts) { return $null }
-    return ($parts -join '; ')
-}
-
-function Get-Recipients {
-    param([string]$Xml, [string]$DeliveryExtension)
-    if ([string]::IsNullOrWhiteSpace($Xml)) { return $null }
-    $doc = $null
-    try { $doc = [xml]$Xml } catch { return $null }
-
-    $pv = @{}
-    foreach ($n in $doc.SelectNodes('//ParameterValue')) {
-        if ($n.Name) { $pv[[string]$n.Name] = [string]$n.Value }
-    }
-    # Data-driven subscriptions store <Field> mappings, not literal values.
-    if ($pv.Count -eq 0 -and $doc.SelectSingleNode('//Field')) {
-        return [pscustomobject]@{ Kind = 'DataDriven'; RenderFormat = $null }
-    }
-    if ($pv.ContainsKey('TO') -or $pv.ContainsKey('CC') -or $pv.ContainsKey('BCC')) {
-        return [pscustomobject]@{
-            Kind         = 'Email'
-            To           = (Format-AddrList $pv['TO'])
-            Cc           = (Format-AddrList $pv['CC'])
-            Bcc          = (Format-AddrList $pv['BCC'])
-            RenderFormat = $pv['RenderFormat']
+        Say "Detailed query failed ($($_.Exception.Message.Trim())) - falling back to ExecutionLog3 without recipients." 'Warning'
+        Write-RecordLine "Detailed query failed: $($_.Exception.Message.Trim())"
+        $total_errors++
+        $recipientsAvailable = $false
+        try {
+            $rows = Invoke-DbaQuery -SqlInstance $Instance -Database ReportServer -Query $fallbackQuery -As PSObject -EnableException
+        } catch {
+            Say "SSRS subscription check failed: $($_.Exception.Message.Trim())" 'Error'
+            Write-RecordLine "FAILED (fallback too): $($_.Exception.Message.Trim())"
+            $total_errors++
+            return   # do not advance state - the window is retried next launch
         }
     }
-    if ($pv.ContainsKey('PATH')) {
-        $full = $pv['PATH']
-        if ($pv['FILENAME']) { $full = ($pv['PATH'].TrimEnd('\') + '\' + $pv['FILENAME']) }
-        return [pscustomobject]@{ Kind = 'FileShare'; Path = $full; RenderFormat = $pv['RENDER_FORMAT'] }
+
+    try {
+        $statusRows = @(Invoke-DbaQuery -SqlInstance $Instance -Database ReportServer -Query $statusQuery -As PSObject -EnableException)
+    } catch { }
+
+    $queuedNote = $null
+    try {
+        $q = Invoke-DbaQuery -SqlInstance $Instance -Database ReportServer -As PSObject -EnableException `
+             -Query "SET NOCOUNT ON; SELECT COUNT(*) AS Queued FROM dbo.Notifications;"
+        if ($q -and [int]$q.Queued -gt 0) { $queuedNote = [int]$q.Queued }
+    } catch { }
+
+    # -----------------------------------------------------------------------
+    # Helpers for shaping output
+    # -----------------------------------------------------------------------
+    function Format-Size {
+        param($Bytes)
+        if ($null -eq $Bytes -or $Bytes -eq [DBNull]::Value) { return '     -   ' }
+        $b = [double]$Bytes
+        if ($b -ge 1MB) { return ('{0,7:N2} MB' -f ($b / 1MB)) }
+        if ($b -ge 1KB) { return ('{0,7:N1} KB' -f ($b / 1KB)) }
+        return ('{0,7} B ' -f [long]$b)
     }
-    if ($DeliveryExtension -eq 'Report Server NULL Delivery Provider' -or $DeliveryExtension -match 'NULL') {
-        return [pscustomobject]@{ Kind = 'Null' }
+
+    function Format-AddrList {
+        param([string]$Text)
+        if ([string]::IsNullOrWhiteSpace($Text)) { return $null }
+        $parts = $Text -split '[;,]' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+        if (-not $parts) { return $null }
+        return ($parts -join '; ')
     }
-    return [pscustomobject]@{ Kind = 'Other'; Keys = ($pv.Keys -join ', ') }
-}
 
-function Get-RenderException {
-    param([string]$Xml)
-    if ([string]::IsNullOrWhiteSpace($Xml)) { return $null }
-    try { $doc = [xml]$Xml } catch { return $null }
-    $ex = $doc.SelectSingleNode('//Exception')
-    if ($ex) {
-        $txt = if ($ex.InnerText) { $ex.InnerText } else { $ex.OuterXml }
-        return ($txt -replace '\s+', ' ').Trim()
-    }
-    return $null
-}
+    function Get-Recipients {
+        param([string]$Xml, [string]$DeliveryExtension)
+        if ([string]::IsNullOrWhiteSpace($Xml)) { return $null }
+        $doc = $null
+        try { $doc = [xml]$Xml } catch { return $null }
 
-function Test-StatusOk {
-    param([string]$Status)
-    return ($Status -eq 'rsSuccess' -or [string]::IsNullOrWhiteSpace($Status))
-}
-
-# ExecutionLogStorage has no SubscriptionID, so a report's runs can't be tied to
-# an exact subscription. Narrow the candidate list: drop disabled subscriptions,
-# then keep only those whose delivery render format matches this execution's
-# format. Returns the narrowed list plus a confidence label.
-function Select-FiringSubs {
-    param($AllSubs, [string]$ExecFormat)
-    $result = [pscustomobject]@{ Subs = @(); Confidence = 'none' }
-    if (-not $AllSubs -or @($AllSubs).Count -eq 0) { return $result }
-
-    $active = @($AllSubs | Where-Object { -not $_.Inactive })
-    $pool   = if ($active.Count -gt 0) { $active } else { @($AllSubs) }
-
-    if ($ExecFormat) {
-        $fmt = @($pool | Where-Object {
-            $_.Recipients -and $_.Recipients.RenderFormat -and
-            ($_.Recipients.RenderFormat -replace '\s','') -ieq ($ExecFormat -replace '\s','')
-        })
-        if ($fmt.Count -eq 1) { $result.Subs = $fmt;  $result.Confidence = 'exact';  return $result }
-        if ($fmt.Count -gt 1) { $result.Subs = $fmt;  $result.Confidence = 'format'; return $result }
-    }
-    if ($pool.Count -eq 1) { $result.Subs = $pool; $result.Confidence = 'single'; return $result }
-    $result.Subs = $pool
-    $result.Confidence = 'all'
-    return $result
-}
-
-# ---------------------------------------------------------------------------
-# Collapse rows -> one object per execution (a report can have >1 subscription)
-# ---------------------------------------------------------------------------
-$execs = foreach ($grp in ($rows | Group-Object LogEntryId)) {
-    $r = $grp.Group[0]
-
-    $subs = @()
-    if ($recipientsAvailable) {
-        $subs = $grp.Group |
-            Where-Object { $_.SubscriptionID -and $_.SubscriptionID -ne [DBNull]::Value } |
-            Sort-Object SubscriptionID -Unique |
-            ForEach-Object {
-                [pscustomobject]@{
-                    SubscriptionID = $_.SubscriptionID
-                    Description    = ("$($_.SubscriptionDesc)").Trim()
-                    Owner          = "$($_.SubscriptionOwner)"
-                    Delivery       = "$($_.DeliveryExtension)"
-                    Inactive       = ($_.SubInactiveFlags -and "$($_.SubInactiveFlags)" -ne '0')
-                    Recipients     = (Get-Recipients -Xml $_.ExtensionSettings -DeliveryExtension "$($_.DeliveryExtension)")
-                }
+        $pv = @{}
+        foreach ($n in $doc.SelectNodes('//ParameterValue')) {
+            if ($n.Name) { $pv[[string]$n.Name] = [string]$n.Value }
+        }
+        # Data-driven subscriptions store <Field> mappings, not literal values.
+        if ($pv.Count -eq 0 -and $doc.SelectSingleNode('//Field')) {
+            return [pscustomobject]@{ Kind = 'DataDriven'; RenderFormat = $null }
+        }
+        if ($pv.ContainsKey('TO') -or $pv.ContainsKey('CC') -or $pv.ContainsKey('BCC')) {
+            return [pscustomobject]@{
+                Kind         = 'Email'
+                To           = (Format-AddrList $pv['TO'])
+                Cc           = (Format-AddrList $pv['CC'])
+                Bcc          = (Format-AddrList $pv['BCC'])
+                RenderFormat = $pv['RenderFormat']
             }
+        }
+        if ($pv.ContainsKey('PATH')) {
+            $full = $pv['PATH']
+            if ($pv['FILENAME']) { $full = ($pv['PATH'].TrimEnd('\') + '\' + $pv['FILENAME']) }
+            return [pscustomobject]@{ Kind = 'FileShare'; Path = $full; RenderFormat = $pv['RENDER_FORMAT'] }
+        }
+        if ($DeliveryExtension -eq 'Report Server NULL Delivery Provider' -or $DeliveryExtension -match 'NULL') {
+            return [pscustomobject]@{ Kind = 'Null' }
+        }
+        return [pscustomobject]@{ Kind = 'Other'; Keys = ($pv.Keys -join ', ') }
     }
 
-    [pscustomobject]@{
-        SendDate   = [datetime]$r.SendDate
-        ReportName = if ("$($r.ReportName)".StartsWith('/')) { Split-Path "$($r.ReportName)" -Leaf } else { "$($r.ReportName)" }
-        ReportPath = "$($r.ReportPath)"
-        RunAsUser  = "$($r.RunAsUser)"
-        Format     = "$($r.Format)"
-        ByteCount  = if ($r.ByteCount -eq [DBNull]::Value) { $null } else { $r.ByteCount }
-        Rows       = if ($r.RowsInReport -eq [DBNull]::Value) { $null } else { $r.RowsInReport }
-        TimeStart  = [datetime]$r.TimeStart
-        DurationSec = if ($r.PSObject.Properties['DurationSec']) { $r.DurationSec } else { $null }
-        Status     = "$($r.Status)"
-        RenderError = if ($r.PSObject.Properties['AdditionalInfo']) { Get-RenderException -Xml $r.AdditionalInfo } else { $null }
-        Subs       = $subs
+    function Get-RenderException {
+        param([string]$Xml)
+        if ([string]::IsNullOrWhiteSpace($Xml)) { return $null }
+        try { $doc = [xml]$Xml } catch { return $null }
+        $ex = $doc.SelectSingleNode('//Exception')
+        if ($ex) {
+            $txt = if ($ex.InnerText) { $ex.InnerText } else { $ex.OuterXml }
+            return ($txt -replace '\s+', ' ').Trim()
+        }
+        return $null
     }
-}
-$execs = @($execs | Sort-Object TimeStart)
 
-# ---------------------------------------------------------------------------
-# Output
-# ---------------------------------------------------------------------------
-$errCount = @($execs | Where-Object { -not (Test-StatusOk $_.Status) }).Count
-$dayCount = [int]([math]::Floor(($today - $windowStart.Date).TotalDays)) + 1
-$bar = ('=' * 70)
-
-if ($execs.Count -eq 0 -and $statusRows.Count -eq 0 -and $Quiet) {
-    # Nothing at all and running silently from the profile: still advance state.
-} else {
-    Write-Host ''
-    Say $bar 'Accent'
-    Say ' SSRS Subscription Sends' 'Accent'
-    $gap = if ($dayCount -gt 1) { "   ($dayCount days)" } else { '' }
-    Say (' Window : {0}  ->  {1}{2}' -f $windowStart.ToString('yyyy-MM-dd HH:mm'), $windowEnd.ToString('yyyy-MM-dd HH:mm'), $gap)
-    if ($firstRun) {
-        Say (' Last   : first run - showing the last {0} day(s)' -f [math]::Abs($DaysBack))
-    } else {
-        Say (' Last   : {0}' -f $stateLastRun.ToString('yyyy-MM-dd HH:mm'))
+    function Test-StatusOk {
+        param([string]$Status)
+        return ($Status -eq 'rsSuccess' -or [string]::IsNullOrWhiteSpace($Status))
     }
-    Say (' Source : {0}\ReportServer   ({1} send(s), {2} render error(s))' -f $Instance, $execs.Count, $errCount)
+
+    # ExecutionLogStorage has no SubscriptionID, so a report's runs can't be tied to
+    # an exact subscription. Narrow the candidate list: drop disabled subscriptions,
+    # then keep only those whose delivery render format matches this execution's
+    # format. Returns the narrowed list plus a confidence label.
+    function Select-FiringSubs {
+        param($AllSubs, [string]$ExecFormat)
+        $result = [pscustomobject]@{ Subs = @(); Confidence = 'none' }
+        if (-not $AllSubs -or @($AllSubs).Count -eq 0) { return $result }
+
+        $active = @($AllSubs | Where-Object { -not $_.Inactive })
+        $pool   = if ($active.Count -gt 0) { $active } else { @($AllSubs) }
+
+        if ($ExecFormat) {
+            $fmt = @($pool | Where-Object {
+                $_.Recipients -and $_.Recipients.RenderFormat -and
+                ($_.Recipients.RenderFormat -replace '\s','') -ieq ($ExecFormat -replace '\s','')
+            })
+            if ($fmt.Count -eq 1) { $result.Subs = $fmt;  $result.Confidence = 'exact';  return $result }
+            if ($fmt.Count -gt 1) { $result.Subs = $fmt;  $result.Confidence = 'format'; return $result }
+        }
+        if ($pool.Count -eq 1) { $result.Subs = $pool; $result.Confidence = 'single'; return $result }
+        $result.Subs = $pool
+        $result.Confidence = 'all'
+        return $result
+    }
+
+    # -----------------------------------------------------------------------
+    # Collapse rows -> one object per execution (a report can have >1 subscription)
+    # -----------------------------------------------------------------------
+    $execs = foreach ($grp in ($rows | Group-Object LogEntryId)) {
+        $r = $grp.Group[0]
+
+        $subs = @()
+        if ($recipientsAvailable) {
+            $subs = $grp.Group |
+                Where-Object { $_.SubscriptionID -and $_.SubscriptionID -ne [DBNull]::Value } |
+                Sort-Object SubscriptionID -Unique |
+                ForEach-Object {
+                    [pscustomobject]@{
+                        SubscriptionID = $_.SubscriptionID
+                        Description    = ("$($_.SubscriptionDesc)").Trim()
+                        Owner          = "$($_.SubscriptionOwner)"
+                        Delivery       = "$($_.DeliveryExtension)"
+                        Inactive       = ($_.SubInactiveFlags -and "$($_.SubInactiveFlags)" -ne '0')
+                        Recipients     = (Get-Recipients -Xml $_.ExtensionSettings -DeliveryExtension "$($_.DeliveryExtension)")
+                    }
+                }
+        }
+
+        [pscustomobject]@{
+            SendDate   = [datetime]$r.SendDate
+            ReportName = if ("$($r.ReportName)".StartsWith('/')) { Split-Path "$($r.ReportName)" -Leaf } else { "$($r.ReportName)" }
+            ReportPath = "$($r.ReportPath)"
+            RunAsUser  = "$($r.RunAsUser)"
+            Format     = "$($r.Format)"
+            ByteCount  = if ($r.ByteCount -eq [DBNull]::Value) { $null } else { $r.ByteCount }
+            Rows       = if ($r.RowsInReport -eq [DBNull]::Value) { $null } else { $r.RowsInReport }
+            TimeStart  = [datetime]$r.TimeStart
+            DurationSec = if ($r.PSObject.Properties['DurationSec']) { $r.DurationSec } else { $null }
+            Status     = "$($r.Status)"
+            RenderError = if ($r.PSObject.Properties['AdditionalInfo']) { Get-RenderException -Xml $r.AdditionalInfo } else { $null }
+            Subs       = $subs
+        }
+    }
+    $execs    = @($execs | Sort-Object TimeStart)
+    $errCount = @($execs | Where-Object { -not (Test-StatusOk $_.Status) }).Count
+
+    # -----------------------------------------------------------------------
+    # Durable per-report record
+    #   Sends checked: N | OK: N | Errors: N | Status flags: N   (the
+    #   Check-Job-History.ps1-style summary line), then one SEND line per
+    #   subscription send, written on every run regardless of -Quiet, so
+    #   there is a local record of exactly which reports went out and to whom.
+    # -----------------------------------------------------------------------
+    function Get-RecipientSummary {
+        param($Exec)
+        if (-not $Exec.Subs -or @($Exec.Subs).Count -eq 0) { return '(no subscription row found)' }
+        $out = foreach ($s in $Exec.Subs) {
+            $rc  = $s.Recipients
+            $who =
+                if     ($null -eq $rc)             { 'recipients not readable' }
+                elseif ($rc.Kind -eq 'Email')      {
+                    $bits = @()
+                    if ($rc.To)  { $bits += "to $($rc.To)" }
+                    if ($rc.Cc)  { $bits += "cc $($rc.Cc)" }
+                    if ($rc.Bcc) { $bits += "bcc $($rc.Bcc)" }
+                    if ($bits) { $bits -join '  ' } else { 'email (no addresses parsed)' }
+                }
+                elseif ($rc.Kind -eq 'FileShare')  { "file share $($rc.Path)" }
+                elseif ($rc.Kind -eq 'DataDriven') { 'data-driven (recipients resolved from query)' }
+                elseif ($rc.Kind -eq 'Null')       { 'null delivery' }
+                else                               { "$($s.Delivery)" }
+            $nm = if ($s.Description) { $s.Description } elseif ($s.Owner) { "owner $($s.Owner)" } else { "$($s.SubscriptionID)" }
+            $flag = if ($s.Inactive) { ' (disabled)' } else { '' }
+            "[$nm$flag] $who"
+        }
+        return ($out -join ' | ')
+    }
+
     if (-not $recipientsAvailable) {
-        Say ' NOTE   : recipient columns unavailable - fell back to ExecutionLog3' 'Warning'
+        Write-RecordLine ('Sends checked: {0} | OK: {1} | Errors: {2} | Status flags: {3}  (recipient columns unavailable - fell back to ExecutionLog3)' -f $execs.Count, ($execs.Count - $errCount), $errCount, $statusRows.Count)
+    } else {
+        Write-RecordLine ('Sends checked: {0} | OK: {1} | Errors: {2} | Status flags: {3}' -f $execs.Count, ($execs.Count - $errCount), $errCount, $statusRows.Count)
     }
-    Say $bar 'Accent'
+    foreach ($e in $execs) {
+        $okTxt = if (Test-StatusOk $e.Status) { 'OK' } else { "ERROR $($e.Status)" }
+        Write-RecordLine ("SEND  {0}  {1}  {2}  fmt={3}  {4}  -> {5}{6}" -f `
+            $e.TimeStart.ToString('yyyy-MM-dd HH:mm:ss'), `
+            $e.ReportName, `
+            (Format-Size $e.ByteCount).Trim(), `
+            "$($e.Format)", `
+            $okTxt, `
+            (Get-RecipientSummary $e), `
+            $(if ($e.RenderError) { "  -- $($e.RenderError)" } else { '' }))
+    }
 
-    # One section per calendar day in the window, missed days included.
-    for ($d = $windowStart.Date; $d -le $today; $d = $d.AddDays(1)) {
-        $dayExecs = @($execs | Where-Object { $_.SendDate -eq $d })
+    # -----------------------------------------------------------------------
+    # Output
+    # -----------------------------------------------------------------------
+    $bar = ('=' * 70)
+
+    if ($execs.Count -eq 0 -and $statusRows.Count -eq 0 -and $Quiet) {
+        # Nothing at all and running silently from the profile: still advance state.
+    } else {
         Write-Host ''
-        Say ('-- {0} {1}' -f $d.ToString('dddd'), $d.ToString('yyyy-MM-dd')) 'Accent'
-
-        if ($dayExecs.Count -eq 0) {
-            if ($d -eq $today) {
-                Say '   (nothing yet today - scheduled reports may still be pending)' 'Muted'
-            } else {
-                Say '   (no subscription sends recorded - if a report was expected, its schedule may not have fired)' 'Warning'
-            }
-            continue
+        Say $bar 'Accent'
+        Say ' SSRS Subscription Sends' 'Accent'
+        $gap = if ($dayCount -gt 1) { "   ($dayCount days)" } else { '' }
+        Say (' Window : {0}  ->  {1}{2}' -f $windowStart.ToString('yyyy-MM-dd HH:mm'), $windowEnd.ToString('yyyy-MM-dd HH:mm'), $gap)
+        if ($firstRun) {
+            Say (' Last   : first run - showing the last {0} day(s)' -f [math]::Abs($DaysBack))
+        } else {
+            Say (' Last   : {0}' -f $stateLastRun.ToString('yyyy-MM-dd HH:mm'))
         }
+        Say (' Source : {0}\ReportServer   ({1} send(s), {2} render error(s))' -f $Instance, $execs.Count, $errCount)
+        if (-not $recipientsAvailable) {
+            Say ' NOTE   : recipient columns unavailable - fell back to ExecutionLog3' 'Warning'
+        }
+        Say $bar 'Accent'
 
-        foreach ($e in $dayExecs) {
-            $ok = Test-StatusOk $e.Status
-            $nameCol = if ($e.ReportName.Length -gt 42) { $e.ReportName.Substring(0, 41) + [char]0x2026 } else { $e.ReportName.PadRight(42) }
-            $statusLbl = if ($ok) { 'OK' } else { "ERROR $($e.Status)" }
+        # One section per calendar day in the window, missed days included.
+        for ($d = $windowStart.Date; $d -le $today; $d = $d.AddDays(1)) {
+            $dayExecs = @($execs | Where-Object { $_.SendDate -eq $d })
+            Write-Host ''
+            Say ('-- {0} {1}' -f $d.ToString('dddd'), $d.ToString('yyyy-MM-dd')) 'Accent'
 
-            Say ('  {0} {1}  {2,-14} {3}  ' -f $nameCol, (Format-Size $e.ByteCount), $e.Format, $e.TimeStart.ToString('HH:mm:ss')) -NoNewline
-            Say $statusLbl $(if ($ok) { 'Success' } else { 'Error' })
-
-            # mail-relay risk. The relay limit ($AttachmentLimitMB) is on the
-            # base64-encoded attachment, which is ~4/3 of the rendered file. Over
-            # the limit the relay drops the mail silently - SSRS still logs
-            # "Mail sent" - so a red flag here means recipients get nothing.
-            $renderedMB = if ($e.ByteCount) { [double]$e.ByteCount / 1MB } else { 0 }
-            $encodedMB  = $renderedMB * 4 / 3
-            if ($ok -and $encodedMB -ge $AttachmentLimitMB) {
-                Say ('       (!) OVER LIMIT: ~{0:N0} MB as an email attachment ({1:N1} MB rendered x ~1.33 base64) vs the {2} MB relay cap - the relay drops this silently, recipients are NOT getting it.' -f $encodedMB, $renderedMB, $AttachmentLimitMB) 'Error'
-            }
-            elseif ($ok -and $encodedMB -ge ($AttachmentLimitMB * 0.8)) {
-                Say ('       (!) ~{0:N0} MB as an email attachment ({1:N1} MB rendered) - within 20% of the {2} MB relay cap.' -f $encodedMB, $renderedMB, $AttachmentLimitMB) 'Warning'
-            }
-            # empty render
-            if ($ok -and ($null -eq $e.ByteCount -or [double]$e.ByteCount -eq 0)) {
-                Say '       (!) rendered 0 bytes - check the report is not returning an empty set' 'Warning'
+            if ($dayExecs.Count -eq 0) {
+                if ($d -eq $today) {
+                    Say '   (nothing yet today - scheduled reports may still be pending)' 'Muted'
+                } else {
+                    Say '   (no subscription sends recorded - if a report was expected, its schedule may not have fired)' 'Warning'
+                }
+                continue
             }
 
-            # recipients
-            if (-not $recipientsAvailable) {
-                # fallback query - no subscription/recipient data at all
-            }
-            elseif ($e.Subs.Count -eq 0) {
-                Say '       -> (no subscription row found for this report - it may have been deleted since the send)' 'Muted'
-            }
-            else {
-                $pick = Select-FiringSubs -AllSubs $e.Subs -ExecFormat $e.Format
+            foreach ($e in $dayExecs) {
+                $ok = Test-StatusOk $e.Status
+                $nameCol = if ($e.ReportName.Length -gt 42) { $e.ReportName.Substring(0, 41) + [char]0x2026 } else { $e.ReportName.PadRight(42) }
+                $statusLbl = if ($ok) { 'OK' } else { "ERROR $($e.Status)" }
 
-                # Collapse subscriptions that deliver to the same place so an
-                # identical recipient set is not printed two or three times.
-                $dedup = $pick.Subs | Group-Object {
-                    $rc = $_.Recipients
-                    if     ($null -eq $rc)            { 'x' }
-                    elseif ($rc.Kind -eq 'Email')     { "E|$($rc.To)|$($rc.Cc)|$($rc.Bcc)" }
-                    elseif ($rc.Kind -eq 'FileShare') { "F|$($rc.Path)" }
-                    else                              { $rc.Kind }
+                Say ('  {0} {1}  {2,-14} {3}  ' -f $nameCol, (Format-Size $e.ByteCount), $e.Format, $e.TimeStart.ToString('HH:mm:ss')) -NoNewline
+                Say $statusLbl $(if ($ok) { 'Success' } else { 'Error' })
+
+                # mail-relay risk. The relay limit ($AttachmentLimitMB) is on the
+                # base64-encoded attachment, which is ~4/3 of the rendered file. Over
+                # the limit the relay drops the mail silently - SSRS still logs
+                # "Mail sent" - so a red flag here means recipients get nothing.
+                $renderedMB = if ($e.ByteCount) { [double]$e.ByteCount / 1MB } else { 0 }
+                $encodedMB  = $renderedMB * 4 / 3
+                if ($ok -and $encodedMB -ge $AttachmentLimitMB) {
+                    Say ('       (!) OVER LIMIT: ~{0:N0} MB as an email attachment ({1:N1} MB rendered x ~1.33 base64) vs the {2} MB relay cap - the relay drops this silently, recipients are NOT getting it.' -f $encodedMB, $renderedMB, $AttachmentLimitMB) 'Error'
+                }
+                elseif ($ok -and $encodedMB -ge ($AttachmentLimitMB * 0.8)) {
+                    Say ('       (!) ~{0:N0} MB as an email attachment ({1:N1} MB rendered) - within 20% of the {2} MB relay cap.' -f $encodedMB, $renderedMB, $AttachmentLimitMB) 'Warning'
+                }
+                # empty render
+                if ($ok -and ($null -eq $e.ByteCount -or [double]$e.ByteCount -eq 0)) {
+                    Say '       (!) rendered 0 bytes - check the report is not returning an empty set' 'Warning'
                 }
 
-                $ambiguous = $pick.Confidence -in @('format', 'all')
-
-                # A per-location report can have dozens of subscriptions on one
-                # format; only one fired but the log can't say which. Don't dump
-                # the whole roster into a daily digest - summarise instead.
-                if ($ambiguous -and $dedup.Count -gt 6) {
-                    # A per-location report can have dozens of subscriptions on one
-                    # format; only one fired but the log can't say which. Summarise
-                    # rather than dumping the whole roster into a daily digest.
-                    $allNames = @($pick.Subs | ForEach-Object { $_.Description } | Where-Object { $_ } | Select-Object -Unique)
-                    Say ("       -> one of {0} subscriptions on this report fired ({1} distinct recipient sets) - the log doesn't record which." -f @($pick.Subs).Count, $dedup.Count) 'Muted'
-                    Say ("          e.g. {0}{1}" -f (($allNames | Select-Object -First 3) -join ' / '), $(if ($allNames.Count -gt 3) { " (+$($allNames.Count - 3) more)" } else { '' })) 'Muted'
-                    Say '          full roster: SSRS portal > Manage > Subscriptions' 'Muted'
+                # recipients
+                if (-not $recipientsAvailable) {
+                    # fallback query - no subscription/recipient data at all
+                }
+                elseif ($e.Subs.Count -eq 0) {
+                    Say '       -> (no subscription row found for this report - it may have been deleted since the send)' 'Muted'
                 }
                 else {
-                    if ($pick.Confidence -eq 'format' -and $dedup.Count -gt 1) {
-                        Say ("       ({0} candidate subscriptions render this format - the exact one that fired isn't recorded)" -f $dedup.Count) 'Muted'
-                    }
-                    elseif ($pick.Confidence -eq 'all' -and $dedup.Count -gt 1) {
-                        Say ("       ({0} subscriptions on this report, none matched the send format - showing all)" -f $dedup.Count) 'Muted'
+                    $pick = Select-FiringSubs -AllSubs $e.Subs -ExecFormat $e.Format
+
+                    # Collapse subscriptions that deliver to the same place so an
+                    # identical recipient set is not printed two or three times.
+                    $dedup = $pick.Subs | Group-Object {
+                        $rc = $_.Recipients
+                        if     ($null -eq $rc)            { 'x' }
+                        elseif ($rc.Kind -eq 'Email')     { "E|$($rc.To)|$($rc.Cc)|$($rc.Bcc)" }
+                        elseif ($rc.Kind -eq 'FileShare') { "F|$($rc.Path)" }
+                        else                              { $rc.Kind }
                     }
 
-                    foreach ($g in $dedup) {
-                        $s  = $g.Group[0]
-                        $rc = $s.Recipients
-                        $names = @($g.Group | ForEach-Object { if ($_.Description) { $_.Description } elseif ($_.Owner) { "owner $($_.Owner)" } } | Where-Object { $_ } | Select-Object -Unique)
-                        $tag = if ($names) { ' [' + ($names -join ' / ') + ']' } else { '' }
+                    $ambiguous = $pick.Confidence -in @('format', 'all')
 
-                        if ($null -eq $rc) {
-                            Say ("       -> (recipients not readable){0}" -f $tag) 'Muted'
+                    # A per-location report can have dozens of subscriptions on one
+                    # format; only one fired but the log can't say which. Don't dump
+                    # the whole roster into a daily digest - summarise instead.
+                    if ($ambiguous -and $dedup.Count -gt 6) {
+                        $allNames = @($pick.Subs | ForEach-Object { $_.Description } | Where-Object { $_ } | Select-Object -Unique)
+                        Say ("       -> one of {0} subscriptions on this report fired ({1} distinct recipient sets) - the log doesn't record which." -f @($pick.Subs).Count, $dedup.Count) 'Muted'
+                        Say ("          e.g. {0}{1}" -f (($allNames | Select-Object -First 3) -join ' / '), $(if ($allNames.Count -gt 3) { " (+$($allNames.Count - 3) more)" } else { '' })) 'Muted'
+                        Say '          full roster: SSRS portal > Manage > Subscriptions' 'Muted'
+                    }
+                    else {
+                        if ($pick.Confidence -eq 'format' -and $dedup.Count -gt 1) {
+                            Say ("       ({0} candidate subscriptions render this format - the exact one that fired isn't recorded)" -f $dedup.Count) 'Muted'
                         }
-                        elseif ($rc.Kind -eq 'Email') {
-                            $line = "       -> $($rc.To)"
-                            if ($rc.Cc)  { $line += "  (cc: $($rc.Cc))" }
-                            if ($rc.Bcc) { $line += "  (bcc: $($rc.Bcc))" }
-                            Say ($line + $tag)
+                        elseif ($pick.Confidence -eq 'all' -and $dedup.Count -gt 1) {
+                            Say ("       ({0} subscriptions on this report, none matched the send format - showing all)" -f $dedup.Count) 'Muted'
                         }
-                        elseif ($rc.Kind -eq 'FileShare') {
-                            Say ("       -> file share: $($rc.Path)$tag")
-                        }
-                        elseif ($rc.Kind -eq 'DataDriven') {
-                            Say ("       -> data-driven subscription - recipients resolved at run time from its query$tag") 'Muted'
-                        }
-                        elseif ($rc.Kind -eq 'Null') {
-                            Say ("       -> null delivery (no email/file - cache or trigger only)$tag") 'Muted'
-                        }
-                        else {
-                            Say ("       -> $($s.Delivery)$tag") 'Muted'
-                        }
-                        if ($g.Group[0].Inactive -and @($g.Group | Where-Object { -not $_.Inactive }).Count -eq 0) {
-                            Say '          (subscription currently disabled)' 'Muted'
+
+                        foreach ($g in $dedup) {
+                            $s  = $g.Group[0]
+                            $rc = $s.Recipients
+                            $names = @($g.Group | ForEach-Object { if ($_.Description) { $_.Description } elseif ($_.Owner) { "owner $($_.Owner)" } } | Where-Object { $_ } | Select-Object -Unique)
+                            $tag = if ($names) { ' [' + ($names -join ' / ') + ']' } else { '' }
+
+                            if ($null -eq $rc) {
+                                Say ("       -> (recipients not readable){0}" -f $tag) 'Muted'
+                            }
+                            elseif ($rc.Kind -eq 'Email') {
+                                $line = "       -> $($rc.To)"
+                                if ($rc.Cc)  { $line += "  (cc: $($rc.Cc))" }
+                                if ($rc.Bcc) { $line += "  (bcc: $($rc.Bcc))" }
+                                Say ($line + $tag)
+                            }
+                            elseif ($rc.Kind -eq 'FileShare') {
+                                Say ("       -> file share: $($rc.Path)$tag")
+                            }
+                            elseif ($rc.Kind -eq 'DataDriven') {
+                                Say ("       -> data-driven subscription - recipients resolved at run time from its query$tag") 'Muted'
+                            }
+                            elseif ($rc.Kind -eq 'Null') {
+                                Say ("       -> null delivery (no email/file - cache or trigger only)$tag") 'Muted'
+                            }
+                            else {
+                                Say ("       -> $($s.Delivery)$tag") 'Muted'
+                            }
+                            if ($g.Group[0].Inactive -and @($g.Group | Where-Object { -not $_.Inactive }).Count -eq 0) {
+                                Say '          (subscription currently disabled)' 'Muted'
+                            }
                         }
                     }
                 }
-            }
 
-            # render error detail
-            if (-not $ok) {
-                $detail = if ($e.RenderError) { $e.RenderError } else { "Status $($e.Status) (no exception text in the log)" }
-                Say ("       error: {0}" -f $detail) 'Error'
+                # render error detail
+                if (-not $ok) {
+                    $detail = if ($e.RenderError) { $e.RenderError } else { "Status $($e.Status) (no exception text in the log)" }
+                    Say ("       error: {0}" -f $detail) 'Error'
+                }
             }
         }
-    }
 
-    # summary line
-    if ($execs.Count -gt 0) {
-        $largest = $execs | Sort-Object { [double]($_.ByteCount) } -Descending | Select-Object -First 1
-        Write-Host ''
-        Say ('   {0} send(s) over {1} day(s); {2} render error(s); largest {3} ({4})' -f `
-             $execs.Count, $dayCount, $errCount, (Format-Size $largest.ByteCount).Trim(), $largest.ReportName) 'Muted'
-    }
-
-    # -------------------------------------------------------------------
-    # Delivery status (point-in-time) - catches SMTP failures the
-    # ExecutionLog never sees. LastStatus is overwritten every run.
-    # -------------------------------------------------------------------
-    if ($statusRows.Count -gt 0) {
-        Write-Host ''
-        Say '-- Delivery status flags (dbo.Subscriptions.LastStatus - point-in-time, overwritten each run)' 'Accent'
-        foreach ($sr in $statusRows) {
-            $nm = if ("$($sr.ReportName)") { "$($sr.ReportName)" } else { Split-Path "$($sr.ReportPath)" -Leaf }
-            $desc = ("$($sr.SubscriptionDesc)").Trim()
-            $when = if ($sr.LastRunTime -and $sr.LastRunTime -ne [DBNull]::Value) { ([datetime]$sr.LastRunTime).ToString('yyyy-MM-dd HH:mm') } else { '?' }
-            Say ("  {0}{1}" -f $nm, $(if ($desc) { " [$desc]" } else { '' })) 'Warning'
-            Say ("     {0}   (last run {1}, owner {2})" -f ("$($sr.LastStatus)").Trim(), $when, $sr.SubscriptionOwner)
+        # summary line
+        if ($execs.Count -gt 0) {
+            $largest = $execs | Sort-Object { [double]($_.ByteCount) } -Descending | Select-Object -First 1
+            Write-Host ''
+            Say ('   {0} send(s) over {1} day(s); {2} render error(s); largest {3} ({4})' -f `
+                 $execs.Count, $dayCount, $errCount, (Format-Size $largest.ByteCount).Trim(), $largest.ReportName) 'Muted'
         }
-        Say '  (verify a genuine failure against ReportServerService_<date>.log on the report-server box)' 'Muted'
-    }
 
-    if ($queuedNote) {
+        # ---------------------------------------------------------------
+        # Delivery status (point-in-time) - catches SMTP failures the
+        # ExecutionLog never sees. LastStatus is overwritten every run.
+        # ---------------------------------------------------------------
+        if ($statusRows.Count -gt 0) {
+            Write-Host ''
+            Say '-- Delivery status flags (dbo.Subscriptions.LastStatus - point-in-time, overwritten each run)' 'Accent'
+            foreach ($sr in $statusRows) {
+                $nm = if ("$($sr.ReportName)") { "$($sr.ReportName)" } else { Split-Path "$($sr.ReportPath)" -Leaf }
+                $desc = ("$($sr.SubscriptionDesc)").Trim()
+                $when = if ($sr.LastRunTime -and $sr.LastRunTime -ne [DBNull]::Value) { ([datetime]$sr.LastRunTime).ToString('yyyy-MM-dd HH:mm') } else { '?' }
+                Say ("  {0}{1}" -f $nm, $(if ($desc) { " [$desc]" } else { '' })) 'Warning'
+                Say ("     {0}   (last run {1}, owner {2})" -f ("$($sr.LastStatus)").Trim(), $when, $sr.SubscriptionOwner)
+            }
+            Say '  (verify a genuine failure against ReportServerService_<date>.log on the report-server box)' 'Muted'
+        }
+
+        if ($queuedNote) {
+            Write-Host ''
+            Say ("$queuedNote notification(s) are currently sitting in dbo.Notifications (delivery queue) - may indicate a stalled relay.") 'Warning'
+        }
+
         Write-Host ''
-        Say ("$queuedNote notification(s) are currently sitting in dbo.Notifications (delivery queue) - may indicate a stalled relay.") 'Warning'
     }
 
-    Write-Host ''
-}
-
-# ---------------------------------------------------------------------------
-# Advance state - only when the query succeeded AND this was a real daily run
-# (a -Force / -Since run reproduces a window and must not move the cadence).
-# ---------------------------------------------------------------------------
-if ($advanceState) {
-    try {
-        $stateDir = Split-Path -Path $StateFile -Parent
-        if ($stateDir -and -not (Test-Path $stateDir)) { New-Item -ItemType Directory -Path $stateDir -Force | Out-Null }
-        [pscustomobject]@{
-            LastRun      = $windowEnd.ToString('o')
-            WindowStart  = $windowStart.ToString('o')
-            SendsSeen    = $execs.Count
-            RenderErrors = $errCount
-            StatusFlags  = $statusRows.Count
-            Instance     = $Instance
-            Host         = $env:COMPUTERNAME
-            Script       = $scriptName
-        } | ConvertTo-Json | Set-Content -Path $StateFile -Encoding UTF8
-    } catch {
-        Say "SSRS check ran but could not write state file ($StateFile): $($_.Exception.Message.Trim())" 'Warning'
+    # -----------------------------------------------------------------------
+    # Advance state - only when the query succeeded AND this was a real daily run
+    # (a -Force / -Since run reproduces a window and must not move the cadence).
+    # -----------------------------------------------------------------------
+    if ($advanceState) {
+        try {
+            $stateDir = Split-Path -Path $StateFile -Parent
+            if ($stateDir -and -not (Test-Path $stateDir)) { New-Item -ItemType Directory -Path $stateDir -Force | Out-Null }
+            [pscustomobject]@{
+                LastRun      = $windowEnd.ToString('o')
+                WindowStart  = $windowStart.ToString('o')
+                SendsSeen    = $execs.Count
+                RenderErrors = $errCount
+                StatusFlags  = $statusRows.Count
+                Instance     = $Instance
+                Host         = $env:COMPUTERNAME
+                Script       = $scriptName
+            } | ConvertTo-Json | Set-Content -Path $StateFile -Encoding UTF8
+        } catch {
+            Say "SSRS check ran but could not write state file ($StateFile): $($_.Exception.Message.Trim())" 'Warning'
+            $total_errors++
+        }
     }
 }
+finally {
+    # -------------------------------------------------------------------
+    # Footer - same shape as Check-Job-History.ps1's record file, plus a
+    # matching end-of-run line in the shared master log.
+    # -------------------------------------------------------------------
+    Write-RecordLine ('Number of script errors: ' + $total_errors)
+    Write-RecordLine ('Number of SQL errors: ' + $Error.Count)
+    Write-RecordLine ('Stop Script Time: ' + (Get-Date).ToString('T') + ' ' + $scriptName)
+    Write-RecordLine ("`nScript runtime: " + $StopWatch.Elapsed.Minutes.ToString() + ' minutes ' + $StopWatch.Elapsed.Seconds.ToString() + ' seconds ' + $StopWatch.ElapsedMilliseconds + ' milliseconds')
+    Write-RecordLine 'Finis Script!'
 
-Write-RecordLine ("window {0} -> {1} | {2} send(s), {3} render error(s), {4} status flag(s)" -f $sinceStr, $untilStr, $execs.Count, $errCount, $statusRows.Count)
+    $scriptName + ' - Number of script errors: ' + $total_errors + ' - Number of SQL errors: ' + $Error.Count + ' - runtime: ' + $StopWatch.Elapsed.Minutes.ToString() + ' minutes ' + $StopWatch.Elapsed.Seconds.ToString() + ' seconds ' + $StopWatch.ElapsedMilliseconds + ' milliseconds' |
+        Out-File -FilePath $masterPath -Append -Encoding UTF8
 
-try {
-    $master = 'C:\_P25\Logs\Record-of-' + $env:COMPUTERNAME + '-VC-Scripts-Ran-' + (Get-Date).ToString('yyyyMM') + '.txt'
-    ((Get-Date -Format 'yyyy-MM-dd HH:mm') + ' ' + $scriptName + " ($($execs.Count) sends, $errCount errors)") | Out-File -FilePath $master -Append -Encoding UTF8
-} catch { }
+    # Mirror Check-Job-History.ps1's notepad++ pop-open on a bad run - here
+    # there's no separate CSV (detail stays inline in the record file per
+    # your call), so open the record file itself.
+    if ($total_errors -gt 0 -or $errCount -gt 0 -or @($statusRows).Count -gt 0) {
+        try { Start-Process -FilePath 'notepad++' -ArgumentList $ofrec } catch { }
+    }
+}
