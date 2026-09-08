@@ -1,15 +1,19 @@
 // ============================================================
 // asi_email_context_flag.cs
 // ============================================================
-// Description : Records, per user, whether the email window about to open
-//               is for an Order Acknowledgment. Writes/updates a single
-//               row in asi_email_context_flag (see
+// Description : Records, per user, the context of the email window about to
+//               open: whether it is an Order Acknowledgment, and which
+//               document (order) it is for. Writes/updates a single row in
+//               asi_email_context_flag (see
 //               Create-asi-email-context-flag.sql) every time it fires --
-//               not just when it's an Order Ack -- so a stale "true" can
-//               never leak into a later, unrelated email for the same
-//               user. asi_oe_email_close_diag (OK button on
-//               w_email_response) reads this row to decide whether to
-//               append its text, since w_email_response has no
+//               not just when it's an Order Ack -- so a stale "true" (or a
+//               stale order number) can never leak into a later, unrelated
+//               email for the same user. Read at the cb_ok attach point on
+//               w_email_response by:
+//                 * asi_oe_email_close_diag        -- gates its memo append
+//                 * asi_oe_order_ack_email_subject -- gates its subject
+//                   stamp AND takes the order number from document_nos
+//               Both need this table because w_email_response has no
 //               form_type/document_nos field exposed to a rule attached to
 //               its OK button (confirmed 2026-08-03 -- that window is
 //               shared by Order Ack, Packing List Transfer, and other
@@ -18,13 +22,20 @@
 //               business_rule_event_uid = 24). Fires before EVERY emailed
 //               form, not just Order Ack.
 // Registration: On-Event rule on FormPreEmail. Field Selector: under
-//               EmailDataMisc, select form_type (Selected only -- the
-//               event itself is the trigger, no field needs to trigger
-//               the rule).
+//               EmailDataMisc, select form_type AND document_nos (Selected
+//               only -- the event itself is the trigger, no field needs to
+//               trigger the rule). Multi-Row = Yes at creation.
+//               NOTE: adding document_nos means re-saving this rule in Rule
+//               Manager, which REPLACES the whole data-element list
+//               (feedback_p21_rule_manager_destroys_data_elements). Snapshot
+//               business_rule_data_element before and after, and confirm
+//               BOTH columns are present afterwards -- a silently dropped
+//               form_type turns every email into "not an Order Ack".
 // Structure   : Data.Set only (confirmed for this event in
 //               asi_oe_order_ack_custom_message_t3). Table["EmailDataMisc"],
-//               1 row, column form_type. Order Acknowledgment's form_type
-//               is the exact string 'Order Acknowledgement'.
+//               1 row, columns form_type + document_nos. Order
+//               Acknowledgment's form_type is the exact string
+//               'Order Acknowledgement'.
 // ============================================================
 // CHANGE LOG
 // ------------------------------------------------------------
@@ -35,6 +46,15 @@
 //     information to asi_oe_email_close_diag via a small shared table
 //     instead of a P21 field, since none of w_email_response's real
 //     fields are safe to repurpose as a flag.
+// 2026-09-06  Bus App Team
+//   - v1.0.0.2 -- now also records document_nos (SA 54321). The 2026-09-06
+//     BRR test proved d_dw_email_info.subject at cb_ok is the rep's
+//     free-text portion, not the delivered subject line, so
+//     asi_oe_order_ack_email_subject cannot parse the order number out of
+//     it. This rule already sees document_nos at FormPreEmail, so it hands
+//     that over the same way it hands over form_type. Nothing about the
+//     is_order_ack behaviour changes; asi_oe_email_close_diag is
+//     unaffected and needs no rebuild for this.
 // ============================================================
 
 using P21.Extensions.BusinessRule;
@@ -70,11 +90,27 @@ namespace asi_EmailContextFlag
                     }
                     else
                     {
-                        string formType = table.Rows[0]["form_type"] as string ?? string.Empty;
+                        DataRow row = table.Rows[0];
+
+                        string formType = row["form_type"] as string ?? string.Empty;
                         bool isOrderAck = formType.Equals(OrderAckFormType, StringComparison.OrdinalIgnoreCase);
 
-                        SetFlag(isOrderAck, formType);
-                        LogRuleInfo($"form_type='{formType}' is_order_ack={isOrderAck}");
+                        // Absent column != blank value (feedback_p21_datawindow_missing_vs_null):
+                        // if document_nos was never added to the Field Selector we must say so
+                        // loudly, because the subject rule downstream will silently do nothing.
+                        bool haveDocCol = table.Columns.Contains("document_nos");
+                        string docNos = haveDocCol
+                            ? Convert.ToString(row["document_nos"]) ?? string.Empty
+                            : string.Empty;
+
+                        SetFlag(isOrderAck, formType, docNos);
+                        LogRuleInfo($"form_type='{formType}' is_order_ack={isOrderAck} document_nos='{docNos}'");
+
+                        if (!haveDocCol)
+                        {
+                            LogRuleError("EmailDataMisc has no document_nos column -- add it to this rule's "
+                                + "Field Selector. asi_oe_order_ack_email_subject cannot stamp a subject without it.");
+                        }
                     }
                 }
             }
@@ -89,25 +125,30 @@ namespace asi_EmailContextFlag
             return ruleResult;
         }
 
-        // Upserts the one row for this user -- the later cb_ok rule only
-        // ever wants the most recent value.
-        private void SetFlag(bool isOrderAck, string formType)
+        // Upserts the one row for this user -- the later cb_ok rules only
+        // ever want the most recent value. Every field is overwritten on
+        // every fire, document_nos included, so a previous email's order
+        // number can never be read by a later, unrelated one.
+        private void SetFlag(bool isOrderAck, string formType, string documentNos)
         {
             const string upsertSql =
                 @"MERGE asi_email_context_flag AS target
                   USING (SELECT @User AS user_id) AS src
                   ON target.user_id = src.user_id
                   WHEN MATCHED THEN
-                      UPDATE SET is_order_ack = @IsOrderAck, form_type = @FormType, updated_at = GETDATE()
+                      UPDATE SET is_order_ack = @IsOrderAck, form_type = @FormType,
+                                 document_nos = @DocumentNos, updated_at = GETDATE()
                   WHEN NOT MATCHED THEN
-                      INSERT (user_id, is_order_ack, form_type, updated_at)
-                      VALUES (@User, @IsOrderAck, @FormType, GETDATE());";
+                      INSERT (user_id, is_order_ack, form_type, document_nos, updated_at)
+                      VALUES (@User, @IsOrderAck, @FormType, @DocumentNos, GETDATE());";
 
             using (SqlCommand cmd = new SqlCommand(upsertSql, P21SqlConnection))
             {
                 cmd.Parameters.Add("@User", SqlDbType.VarChar, 30).Value = GetUserId();
                 cmd.Parameters.Add("@IsOrderAck", SqlDbType.Bit).Value = isOrderAck;
                 cmd.Parameters.Add("@FormType", SqlDbType.VarChar, 255).Value = formType;
+                cmd.Parameters.Add("@DocumentNos", SqlDbType.VarChar, 255).Value =
+                    string.IsNullOrEmpty(documentNos) ? (object)DBNull.Value : documentNos;
                 cmd.ExecuteNonQuery();
             }
         }
@@ -168,7 +209,7 @@ namespace asi_EmailContextFlag
 
         public override string GetDescription()
         {
-            return "Records whether the about-to-open email window is an Order Acknowledgment (via form_type) into asi_email_context_flag, for asi_oe_email_close_diag to read.";
+            return "Records the about-to-open email window's context -- whether it is an Order Acknowledgment (form_type) and which order it is for (document_nos) -- into asi_email_context_flag, for asi_oe_email_close_diag and asi_oe_order_ack_email_subject to read at the cb_ok attach point.";
         }
 
         public override string GetName()
