@@ -66,7 +66,71 @@
 >
 > **Status: 🟡 LIVE, in monitoring.** Watch the first real fires for volume against the estimate (~477 unique orders/period for the main pair — see "Backward-compatibility notes"), confirm the RSM token resolves on live orders, then decide when to delete legacy 97/100 rather than leave them parked. BCC-to-self is in place (type 1283, `mgoldyn`). Script 06 (NULL-token hardening) is still **not** on Prod — separate, unapproved, deliberately deferred.
 
-**First monitoring-phase question, 2026-09-04 (later same day):** Evan asked (order 6132881, Freedom Carpeting and Countertops) why `Price Page Description` didn't say "Overridden" after he confirmed the sell price was manually cut to $2.54 — a live instance of the exact behavior already measured in the **Price-page demo recipe** note above (2026-07-22): a manual override doesn't reliably clear `price_page_uid`, so the original price page's description can keep showing. Nothing new to fix; answered Evan with the existing measured numbers (~⅓ of lines, 55,784/173,104 over 120d) rather than treating it as a fresh bug. Reply drafted in Outlook, not yet sent as of this note.
+**First monitoring-phase question, 2026-09-04 (later same day):** Evan asked (order 6132881, Freedom Carpeting and Countertops) why `Price Page Description` didn't say "Overridden" after he confirmed the sell price was manually cut to $2.54 — a live instance of the exact behavior already measured in the **Price-page demo recipe** note above (2026-07-22): a manual override doesn't reliably clear `price_page_uid`, so the original price page's description can keep showing. Nothing new to fix; answered Evan with the existing measured numbers (~⅓ of lines, 55,784/173,104 over 120d) rather than treating it as a fresh bug. Reply drafted in Outlook, not yet sent as of this note. **Sent; Evan replied 9/4 4:18pm** asking for the override to be shown alongside the price source, and for a scope conversation.
+
+> ## Phase 1 — show the price override (agreed 2026-09-09, NOT yet built)
+>
+> **The ask needs almost no build.** P21 already stores both halves on `oe_line`:
+> `manual_price_overide` (`'Y'` when a user edited the price — P21's own misspelling, one `r`, do **not** "correct" it)
+> and `system_calc_unit_price` (what P21 calculated before the edit).
+>
+> `manual_price_overide` is **already a column in this alert's view**, exposed as **`price_edit`** — and it is **stock
+> P21**, present in `ROLLBACK-p21_view_alert_oe_OrderEntry-Play-BEFORE.sql:82`, so it predates every change this project
+> made. It is also **already a registered token**: `token_uid 135`, `available_areas = 36` = `32` (header/event) **+ `4`**
+> (line-item body), so it is usable in the body **right now**.
+>
+> **Phase 1 is therefore a body-text edit on the four alerts — no view change, no token registration, no deploy
+> script, and none of the Prod-view-drift risk a `CREATE OR ALTER VIEW` would carry.** Insert one line, single-spaced to
+> match the cost cluster (preserves the 7/22 spacing Evan signed off on):
+>
+> ```
+> Price Page Description: <price_page_description>
+> Price Overridden: <price_edit>              <-- new
+> Req Date: <line_required_date>   |   UOM: <unit_of_measure>
+> ```
+>
+> **Open unknown, and the point of the first test fire:** the view wraps it as `ISNULL(oe_line.manual_price_overide, '')`
+> and the token is `data_type_cd 851`, so whether "not overridden" renders as `N`, blank, or something else is untested.
+> A blank line would read as broken — check it in Play *before* anything reaches Evan.
+>
+> **Measured justification** (`Analyze-Price-Override-Detection.sql`, Prod, 788,109 lines / 120 days): flag `Y` on
+> 324,596; prices differ on 299,373; **differ with the flag NOT set on just 96 (0.012%)**; in the low-margin population
+> this alert actually emails on, **1 miss in 12,140**. The alternative of comparing `system_calc_unit_price` to
+> `unit_price` loses — that column is NULL or zero on **222,265 lines (28%)** and carries float noise
+> (`22.439999997`, `803.680000002`) that would false-positive on rounding alone. Also **103,523 of 324,596 overridden
+> lines still carry a price page = 31.9%**, independently reconfirming the ~⅓ figure in the 7/22 note above.
+>
+> **Order 6132881 re-checked 9/9:** `unit_price` **$3.54**, `system_calc_unit_price` **$4.08**, flag **`Y`**, price page
+> still populated. $3.54 is Tyler's already-applied correction — so **the correction is itself still an override**,
+> 13% below program pricing. Worth telling Evan.
+>
+> **Phase 2 (deferred, optional):** add `system_calc_unit_price` so the email shows how far off the price is
+> ($4.08 → $2.54 is 38% below program). Additive column on a table already in the FROM — no new join, negligible
+> cost — but it *does* mean `CREATE OR ALTER VIEW` on a Prod view live for other alerts, so diff Prod against Play
+> first, and note script 06 is still not on Prod.
+>
+> **Evan's invoice assumption is probably wrong and has not been corrected yet.** Nothing "flips" at invoicing. The
+> 'Manual Override' he has seen is almost certainly a report-side display CASE — `Deploy-Guides/SA-50249/original-asi_3yr-view.sql:568`
+> does exactly that, and reads the **order** line's flag. That pattern *replaces* the description; Evan asked for **both**,
+> so do not copy it as-is. Unverified — the screen he is describing has not been seen.
+>
+> ### ⚠ Before any Play test — two consequences of the 2026-09-06 refresh
+>
+> 1. **Play's alerts now carry Prod's uids (104–107)** as well as the same names, because the refresh restored Play
+>    *from* Prod. The uid is **no longer an environment discriminator**, and the identically-named Prod alerts are
+>    **live and emailing real people**. Only the connection tells them apart.
+> 2. **The `[TEST-Play]` subject tag is gone** — Play's alert messages came from Prod, so a test fire produces an
+>    email indistinguishable from a real Prod alert. `Sql-Scripts/Alerts/Update-P21Play-Alert-Message-Env-Tag.sql` is
+>    idempotent and exists for this, but it works by replacing `'P21 Prod'` strings and may not tag these four — run
+>    its read-only PREVIEW block first.
+> 3. Prod went live 9/4 with **real recipients**, so Play's restored copy is very likely **active (704) with real
+>    recipients** on live SMTP. This has already bitten this project twice post-refresh.
+>    **Run `Check-Play-Alert-State-Before-Test.sql` (Q1/Q2) before building any test order.**
+>
+> **Status: Phase 1 agreed, NOT executed — nothing changed in any environment.** Session ended for a reboot.
+> RESUME: Play pre-flight → env tag → re-check `MAP1785142` stock at loc 100 → one-line body edit **in the
+> client** (per the standing preference on this alert family) → fire a test order → read the `price_edit` rendering
+> → forward samples to Evan → await his feedback.
 
 ## Artifact(s)
 All under `C:\Claude\Alerts\Low-Margin-Alert\`, run **in numbered order**:
@@ -78,6 +142,8 @@ All under `C:\Claude\Alerts\Low-Margin-Alert\`, run **in numbered order**:
 | 3 | `03-create-alerts.sql` | Creates the 2 alert definitions (impl + filters + message + recipients) |
 | — | `ROLLBACK-p21_view_alert_oe_OrderEntry-Play-BEFORE.sql` | The pre-change view definition — **the rollback artifact** |
 | — | `Analyze-Cost-Buckets.sql` | Read-only analysis; not part of the deploy |
+| — | `Analyze-Price-Override-Detection.sql` | Read-only analysis; not part of the deploy. Proves `oe_line.manual_price_overide` is the reliable override signal (96 misses in 788,109 lines; 1 in 12,140 low-margin) and that comparing `system_calc_unit_price` is not (NULL/zero on 28% of lines, plus float noise). **Run 2026-09-09 vs Prod.** Note `oe_line` has no `item_id` — join `inv_mast` on `inv_mast_uid`; statements are `GO`-separated because a bad column reference is a bind-time error that aborts the whole batch |
+| — | `Check-Play-Alert-State-Before-Test.sql` | Read-only **pre-flight, run before any Play test order**. Q1 active status, Q2 recipients (post-refresh live-email risk), Q3 test-item stock, Q4 a not-overridden low-margin example. **Not yet run** |
 | 6 | `06-harden-oe-view-null-tokens.sql` | Wraps 6 previously-unwrapped OE-token columns in `ISNULL`/`COALESCE` — defense against the `p21_sp_alert_generation` NULL-token-collapse bug (see 2026-08-11 note below). `CREATE OR ALTER VIEW`, run standalone against the view already deployed by script 01 |
 | 7 | `07-add-rsm-token.sql` | Adds `contacts.sales_manager_id` self-join + `rsm_email` column/token to the view. **Play.** Live-tested 8/28 (real test order fired, received). Does NOT itself touch `alert_recipient` — that was done separately, in the client |
 | 7-PROD | `07-add-rsm-token-PROD.sql` | Same RSM change, built from **Prod's own current view definition** (not the Play script — Prod was missing script 06's hardening too, deliberately not bundled in). Deployed 2026-08-28, `CREATE OR ALTER VIEW` + token registration, verified via diff (exactly 2 lines changed) and against live Prod contacts data |
