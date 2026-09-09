@@ -13,6 +13,7 @@
 9. ⏳ before 9/14 — find the source of all OE popups (per popup: Business Rule, P21 setting, or DynaChange)
 10. Low Margin alerts — is it possible to show whether the price was edited? — **answered: yes, and free.** `<price_edit>` renders `Y`/`N` with no view change; live in the Play Team alert. Reply drafted to Evan (out to **9/14**) asking wording + placement. Blocked on his answer.
 11. Finish testing the cancel-orders stored procs — Phase 5 (`lost_sales_transaction`) is written and **redeployed in Play but never run**. Cancel a throwaway multi-line order and diff its rows against the client-cancelled 6062441 (expect N line rows + 1 trailer, `transaction_code_no` 2143). Also decide the two defaults: `@write_lost_sales`, and `@lost_sales_uid` (16 Other vs 31 Doesn t Need, far more common in real data).
+12. For Jossy — update P21 **Training**: `replenishment_method`, ABC (anc) class, and minimum inventory = 0. See Teams message. (Groundwork done 9/9: `SELECT replenishment_method, COUNT(*) FROM inv_loc WHERE delete_flag = 'N' GROUP BY replenishment_method` — column is `varchar`, not a numeric code; the "Invalid column name" squiggle was stale SSMS IntelliSense.)
 
 ---
 
