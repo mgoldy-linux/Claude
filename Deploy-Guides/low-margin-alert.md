@@ -89,9 +89,17 @@
 > Req Date: <line_required_date>   |   UOM: <unit_of_measure>
 > ```
 >
-> **Open unknown, and the point of the first test fire:** the view wraps it as `ISNULL(oe_line.manual_price_overide, '')`
-> and the token is `data_type_cd 851`, so whether "not overridden" renders as `N`, blank, or something else is untested.
-> A blank line would read as broken — check it in Play *before* anything reaches Evan.
+> **RESOLVED 2026-09-09 by a live fire (order 6062441).** `price_edit` renders **`Y`** when overridden and **`N`**
+> when not — NOT blank. The view wraps it `ISNULL(oe_line.manual_price_overide, '')`, but P21 actually stores the
+> literal `'N'`, so the ISNULL never engages. **Phase 1 therefore needs no view change whatsoever**, exactly as scoped.
+> One order carried both cases: `SMGSTR SC457FULL` (not overridden) → `N`, `MAP1785142` overridden to $16.00 → `Y`.
+> That email is also the best sample yet for Evan — the overridden line shows a populated
+> `Price Page Description: List Price - Mapei Patch Group 2 - EA - Qty Break` alongside `Overridden: Y`, i.e. his exact
+> order-6132881 shape, with the contrasting `N` line directly above it.
+>
+> Consequence for script 08: its **`price_override_display` column is no longer necessary** — it existed only to avoid
+> a blank that does not occur. Keep it ONLY if Evan prefers `Yes`/`No` over `Y`/`N`; otherwise drop that column and its
+> token and ship just `system_calc_price`.
 >
 > **Measured justification** (`Analyze-Price-Override-Detection.sql`, Prod, 788,109 lines / 120 days): flag `Y` on
 > 324,596; prices differ on 299,373; **differ with the flag NOT set on just 96 (0.012%)**; in the low-margin population
@@ -141,6 +149,15 @@
 > **Second sample, for the not-overridden rendering:** `MAP36691` (order 6062411) — priced from page 87444,
 > `manual_price_overide = N`, −5.18% off MAC. A genuine low-margin line with a populated Price Page Description and no
 > override. Stock not yet checked.
+>
+> ### ⚠ CLEAN-UP OWED IN PLAY — open at end of day 2026-09-09
+>
+> **Cancel these test orders in P21Play** (user's own reminder, end of 2026-09-09):
+> - **6062439** — Empire Today, 8 lines, never fired (excluded customer)
+> - **6062441** — Built Rite Construction LLC, 8 lines, $2,665.81, fired 104 successfully
+> - plus any other orders built during the 2026-09-09 testing session
+>
+> **Also still to restore:** the `[OVR=<price_edit>]` subject marker on Play 104, if it was added.
 >
 > ### ⚠ OPEN STATE TO RESTORE — `<rsm_email>` disabled on Play 104 (2026-09-09)
 >

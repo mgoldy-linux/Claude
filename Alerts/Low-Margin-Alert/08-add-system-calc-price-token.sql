@@ -27,6 +27,13 @@
   ⚠ Because the '$' lives INSIDE the column, the message body must NOT prefix
   it with another '$'. See the body snippet at the bottom.
 
+  ⚠ UPDATE 2026-09-09, AFTER A LIVE FIRE (order 6062441): column (2) is very
+  likely UNNECESSARY. price_edit was observed rendering 'Y' when overridden and
+  'N' when not -- NOT blank. P21 stores the literal 'N', so the view's
+  ISNULL(..., '') never engages. Keep (2) ONLY if Evan prefers 'Yes'/'No' over
+  'Y'/'N'; otherwise delete the column and its token below and ship only
+  system_calc_price. The original reasoning is left below for the record:
+
   Why (2) is here at all — delete this column and its token if not wanted:
   price_edit renders from ISNULL(oe_line.manual_price_overide, ''), so a line
   that was NOT overridden renders an EMPTY STRING -- "Price Overridden:" with
