@@ -114,18 +114,36 @@
 > does exactly that, and reads the **order** line's flag. That pattern *replaces* the description; Evan asked for **both**,
 > so do not copy it as-is. Unverified — the screen he is describing has not been seen.
 >
-> ### ⚠ Before any Play test — two consequences of the 2026-09-06 refresh
+> ### Before any Play test — pre-flight results, 2026-09-09
 >
-> 1. **Play's alerts now carry Prod's uids (104–107)** as well as the same names, because the refresh restored Play
->    *from* Prod. The uid is **no longer an environment discriminator**, and the identically-named Prod alerts are
->    **live and emailing real people**. Only the connection tells them apart.
-> 2. **The `[TEST-Play]` subject tag is gone** — Play's alert messages came from Prod, so a test fire produces an
->    email indistinguishable from a real Prod alert. `Sql-Scripts/Alerts/Update-P21Play-Alert-Message-Env-Tag.sql` is
->    idempotent and exists for this, but it works by replacing `'P21 Prod'` strings and may not tag these four — run
->    its read-only PREVIEW block first.
-> 3. Prod went live 9/4 with **real recipients**, so Play's restored copy is very likely **active (704) with real
->    recipients** on live SMTP. This has already bitten this project twice post-refresh.
->    **Run `Check-Play-Alert-State-Before-Test.sql` (Q1/Q2) before building any test order.**
+> `Check-Play-Alert-State-Before-Test.sql` run against P21Play. **A predicted hazard did not materialise, and a real
+> one did.**
+>
+> **Play was NOT clobbered by a refresh — an earlier note in this guide asserted it would be, and that was wrong.**
+> 104/105/106/107 are active (704) but their recipients are still **mgoldyn-only**, and `date_last_modified` reads
+> 8/3–8/28 — Play's own build history, not Prod's 9/4 go-live. The claim came from reading a commit note about a
+> **P21Dev** (server) refresh as a **P21Play** (database) refresh, without checking. Legacy 97/100 are 705, so their
+> real-people recipient lists are inert.
+>
+> **The real hazard is narrower:** `<rsm_email>` is an active **CC on 104**, and it resolves to the sales rep's actual
+> manager. Chosen workaround — build the test order under **The Carpet Group Inc (`1108592`)**, whose rep Kevin Isken
+> has no `sales_manager_id`, so the token resolves blank. That beats deactivating the recipient row: no state to
+> restore afterwards, and `alert_recipient` is never touched (avoiding both its counter-drift history and the
+> `ak_alert_recipient` unique-key trap).
+>
+> **Still true and verified:** Play's alerts carry **the same uids as Prod's** (104–107) *and* the same names, so the
+> uid does not identify the environment — only the connection does, and the Prod copies are live. Confirm the server
+> before editing a body.
+>
+> **Test recipe re-verified:** `MAP1785142` @ loc 100, **2,480 available**, MAC $15.31 / std $15.84 → at $16.00 that is
+> **4.3% off MAC / 1.0% off standard**, both under 5%, both trip.
+>
+> **Second sample, for the not-overridden rendering:** `MAP36691` (order 6062411) — priced from page 87444,
+> `manual_price_overide = N`, −5.18% off MAC. A genuine low-margin line with a populated Price Page Description and no
+> override. Stock not yet checked.
+>
+> **Unverified, still to confirm:** whether the `[TEST-Play]` subject tag is actually present on 104/105 (asserted
+> earlier in this guide, never checked); Kevin Isken's blank manager still holding; `MAP36691` availability.
 >
 > **Status: Phase 1 agreed, NOT executed — nothing changed in any environment.** Session ended for a reboot.
 > RESUME: Play pre-flight → env tag → re-check `MAP1785142` stock at loc 100 → one-line body edit **in the
