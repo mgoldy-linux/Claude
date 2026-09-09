@@ -142,6 +142,21 @@
 > `manual_price_overide = N`, −5.18% off MAC. A genuine low-margin line with a populated Price Page Description and no
 > override. Stock not yet checked.
 >
+> ### ⚠ OPEN STATE TO RESTORE — `<rsm_email>` disabled on Play 104 (2026-09-09)
+>
+> The user **deactivated the `<rsm_email>` CC recipient on Play's "Low Margin Alert - Team" (104)** to remove the
+> live-email risk for Phase 1 testing. This is temporary state, not a design change. **Re-activate it once the test
+> emails are done** — otherwise Play's 104 no longer mirrors Prod's recipient set, and the next person to compare the
+> two (or the next `Compare-LowMarginAlert-Prod-vs-Play.ps1` run) sees a false drift. Recipient drift on this exact
+> table has already been found and fixed twice on this project.
+>
+> **Verify it landed in Play, not Prod.** Both environments have an alert named *Low Margin Alert - Team* at **uid
+> 104** — the uid does not distinguish them. Prod's `<rsm_email>` must remain **active (704)**; if it was switched off
+> there, real RSMs stop receiving live alerts with nothing to surface it.
+>
+> With RSM off in Play, the Carpet Group Inc (`1108592`) blank-manager workaround is **no longer required** — the
+> known-good recipe (All Tile / Carpet Factory Outlet chain) can be used directly.
+>
 > **Unverified, still to confirm:** whether the `[TEST-Play]` subject tag is actually present on 104/105 (asserted
 > earlier in this guide, never checked); Kevin Isken's blank manager still holding; `MAP36691` availability.
 >
