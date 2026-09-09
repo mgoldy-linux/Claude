@@ -184,6 +184,40 @@
 > left at program price. Confirm MAP36163000 stock first (recipe dates from July), and confirm which customer put
 > MAP36691 on page 87444 at $9.75 (order 6062411) — if it is not Flooring Systems, run line 2 under that customer.
 >
+> ### Test order 6062439 did not fire — diagnosed 2026-09-09 (Empire Today, third occurrence)
+>
+> Root cause, single and unambiguous: the order was built under **Empire Today Procurement LLC (`1046538`)**, whose
+> `corp_address_id` is also `1046538` — the exact value every one of these alerts excludes. The order is disqualified
+> at header level, so no line can ever fire.
+>
+> **Everything else passed**, which is worth recording because it rules a lot out: `new_order = Y` (`date_created` =
+> `date_last_modified` to the millisecond — the order was built in one save), `total_amount` $2,189.45, a primary
+> salesrep exists, not an RMA. `alert_queued_mail` was **empty**, so nothing generated and stalled at 1063 either. And
+> the live `where_clause` on all four alerts is intact — no `Price Edit` filter row crept in.
+>
+> **Line 1 fully qualified:** `MAP1785142`, 100 EA @ $16.00 override, loc 100 — `extended_standard_cost` **$1,584**,
+> 4.33% off MAC, 1.00% off standard, `low_margin_flag = Y`. That line would have fired but for the customer.
+>
+> **New trap — copying an order inherits the excluded customer.** Order 6062439 opens with `MAP1785142`, 100 EA @
+> $16.00, byte-for-byte line 1 of order **6062411** — itself one of the failed Empire Today attempts from 8/26. Copying
+> a previous test order as a template drags its customer along, which is how Empire Today keeps reappearing despite
+> being documented twice. **Build test orders fresh; do not copy.**
+>
+> Lines 2–8 were all qty 1 and failed `extended_standard_cost > 500` regardless, and `MAP36163000` came in at its
+> program price **$190.99 with `manual_price_overide = N`** — the intended override was never applied to it.
+>
+> **Diagnostic:** `Diagnose-Alert-Did-Not-Fire.sql` (read-only) evaluates every where_clause condition pass/FAIL against
+> any order, reconstructed from the view's own expressions, plus the joins that silently drop rows. Reusable — change
+> `@order`.
+>
+> **Two view details worth knowing, both able to drop rows with no trace:** `INNER JOIN oe_hdr_salesrep ... AND
+> primary_salesrep = 'Y'` removes the **entire order** when no primary rep is set, and `INNER JOIN supplier ON
+> oe_line.supplier_id` removes individual lines. Also `extended_standard_cost` is **not** `qty * standard_cost` — the
+> view computes `standard_cost / pricing_unit_size * unit_quantity * unit_size`.
+>
+> **Next attempt:** build fresh under **All Tile, Inc. (`1000260`)**; line 1 `MAP1785142` 100 EA @ $16.00 (proven), and
+> optionally line 2 `MAP36163000` 12 EA @ $102.00 (ext_std $1,291) for a populated-price-page-plus-override sample.
+>
 > **Status: Phase 1 agreed, NOT executed — nothing changed in any environment.** Session ended for a reboot.
 > RESUME: Play pre-flight → env tag → re-check `MAP1785142` stock at loc 100 → one-line body edit **in the
 > client** (per the standing preference on this alert family) → fire a test order → read the `price_edit` rendering
