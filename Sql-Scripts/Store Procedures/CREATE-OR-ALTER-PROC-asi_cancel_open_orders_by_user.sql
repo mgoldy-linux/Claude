@@ -7,11 +7,18 @@
 -- CHANGE LOG
 -- ----------
 -- 2026-07-22  Bus App Team  Initial creation
+-- 2026-09-09  MG/Claude     Pass @lost_sales_uid / @write_lost_sales through to
+--                           asi_cancel_order (Phase 5).
 -- =====================================================
 CREATE OR ALTER PROCEDURE dbo.asi_cancel_open_orders_by_user
     @user_id        VARCHAR(50),            -- oe_hdr.taker value to match
     @cancelled_by   VARCHAR(50) = NULL,     -- last_maintained_by on the updates; defaults to @user_id
-    @preview_only   CHAR(1)     = 'N'       -- 'Y' = list eligible orders, make no changes
+    @preview_only   CHAR(1)     = 'N',      -- 'Y' = list eligible orders, make no changes
+    @lost_sales_uid   INT       = 16,      -- lost-sale reason passed to asi_cancel_order; 16 = 'OTHER'
+    @write_lost_sales CHAR(1)   = 'Y'      -- 'N' skips the lost_sales_transaction rows entirely.
+                                           -- Consider 'N' for pure test-order cleanup: those rows
+                                           -- feed usage/demand history, so replaying them injects
+                                           -- fake lost demand from orders that only existed to test.
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -69,8 +76,10 @@ BEGIN
     BEGIN
         BEGIN TRY
             EXEC dbo.asi_cancel_order
-                @order_no = @current_order,
-                @user_id  = @cancelled_by_resolved;
+                @order_no         = @current_order,
+                @user_id          = @cancelled_by_resolved,
+                @lost_sales_uid   = @lost_sales_uid,
+                @write_lost_sales = @write_lost_sales;
 
             INSERT INTO @results (order_no, status, message)
             VALUES (@current_order, 'CANCELLED', NULL);
