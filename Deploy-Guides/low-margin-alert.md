@@ -164,11 +164,19 @@
 >   cosmetic, left alone.
 > - **Kevin Isken (contact `1049`) still has `sales_manager_id = NULL`** — the blank-RSM customer trick remains
 >   available, though it is moot while RSM is disabled on 104.
-> - **`MAP36691` is too thin to carry its own order** — loc 100 has only 5 available, and `total_amount > 1000` would
->   need 100+ units at $9.75; the best any single location holds is 89 (loc 142). **Use it as a second LINE instead:**
->   `extended_standard_cost > 500` and `low_margin_flag` are line-level while `total_amount` is order-level, so line 1
->   carries the total and line 2 needs only ~40+ units to qualify on its own (45 @ loc 142 = $580 ext std cost, $9.75 vs
->   MAC $11.98 = −22.8%). One order → one email → **both the overridden and not-overridden renderings side by side.**
+> - **`MAP36691` is unusable as a not-overridden sample — and the query that produced it was flawed.** Its $9.75 comes
+>   from page 87444, which belongs to **Empire Today (`1046538`)** — the very customer both alerts exclude via
+>   `corp_address_id <> 1046538`. The Q4 query in `Check-Play-Alert-State-Before-Test.sql` filtered on **margin only**,
+>   omitting the alert's own exclusions (corp address, the customer NOT IN list, taker, product group,
+>   `total_amount`), so its results are **not the alert's real population** — several rows are Empire Today lines that
+>   never fired at all. Anything drawn from that list must be re-checked against the full `where_clause`.
+>   Incidental: order 6062411's line 1 is `MAP1785142`, 100 units @ $16.00 — the documented 8/26 recipe — so 6062411 is
+>   one of the *failed* Empire Today attempts from that session, before the switch to All Tile and the clean 6062415.
+>   Corroborates the 8/26 note above.
+> - **Schema note for anyone rebuilding these queries:** `corp_address_id` is on **`address`**, not `customer`
+>   (`INNER JOIN address AS address_customer ON address_customer.id = oe_hdr.customer_id`), and the view's `taker` is
+>   **`users_taker.name`** via `LEFT JOIN users ON users.id = oe_hdr.taker` — filtering `oe_hdr.taker` directly compares
+>   against the user *id* and silently matches nothing. Copy joins from script 07's view rather than inventing them.
 >
 > **Preferred test order** (reproduces Evan's 6132881 shape — populated description *and* override, unlike
 > `MAP1785142`, which has no price page and renders `(no price page)`): customer **Flooring Systems Inc (`1020066`)**,
