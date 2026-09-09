@@ -157,8 +157,24 @@
 > With RSM off in Play, the Carpet Group Inc (`1108592`) blank-manager workaround is **no longer required** — the
 > known-good recipe (All Tile / Carpet Factory Outlet chain) can be used directly.
 >
-> **Unverified, still to confirm:** whether the `[TEST-Play]` subject tag is actually present on 104/105 (asserted
-> earlier in this guide, never checked); Kevin Isken's blank manager still holding; `MAP36691` availability.
+> **Verified 2026-09-09 (closing out the earlier unknowns):**
+> - **The `[TEST-Play]` env tag was NOT lost** — a second wrong prediction from the same bad refresh inference. All six
+>   Play alerts are tagged; **104 reads `[P21Play] Low Margin - ... TEST EMAIL`**, ideal for a sample forwarded to a
+>   stakeholder. Tagging is inconsistent across the family (`[P21Play]` on 97/100/104/105, `[TEST-Play]` on 106/107) —
+>   cosmetic, left alone.
+> - **Kevin Isken (contact `1049`) still has `sales_manager_id = NULL`** — the blank-RSM customer trick remains
+>   available, though it is moot while RSM is disabled on 104.
+> - **`MAP36691` is too thin to carry its own order** — loc 100 has only 5 available, and `total_amount > 1000` would
+>   need 100+ units at $9.75; the best any single location holds is 89 (loc 142). **Use it as a second LINE instead:**
+>   `extended_standard_cost > 500` and `low_margin_flag` are line-level while `total_amount` is order-level, so line 1
+>   carries the total and line 2 needs only ~40+ units to qualify on its own (45 @ loc 142 = $580 ext std cost, $9.75 vs
+>   MAC $11.98 = −22.8%). One order → one email → **both the overridden and not-overridden renderings side by side.**
+>
+> **Preferred test order** (reproduces Evan's 6132881 shape — populated description *and* override, unlike
+> `MAP1785142`, which has no price page and renders `(no price page)`): customer **Flooring Systems Inc (`1020066`)**,
+> line 1 **`MAP36163000`** page-priced via 93854 then overridden under 5%, line 2 **`MAP36691`** ~45 units at loc 142
+> left at program price. Confirm MAP36163000 stock first (recipe dates from July), and confirm which customer put
+> MAP36691 on page 87444 at $9.75 (order 6062411) — if it is not Flooring Systems, run line 2 under that customer.
 >
 > **Status: Phase 1 agreed, NOT executed — nothing changed in any environment.** Session ended for a reboot.
 > RESUME: Play pre-flight → env tag → re-check `MAP1785142` stock at loc 100 → one-line body edit **in the
