@@ -2,7 +2,7 @@
 P21 ENVIRONMENT STATUS - CUSTOMIZATIONS / OPEN ITEMS
 ========================================================================
 Source:       C:\Claude\Docs\P21 Env Status-20260827.pdf
-Last updated: 2026-08-27  (reconciled against Work-Log.md + memory)
+Last updated: 2026-09-09  (reconciled against Work-Log.md + memory)
 Maintainer:   Update this file whenever a customization is added,
               changed, or closed in any environment.
 
@@ -53,6 +53,11 @@ P21Dev  (Dev)  -  middleware 3448
 
 ========================================================================
 P21Play  (Dev / QA)  -  middleware 3445
+  - Low Margin Alert (Team uid 104) - Phase 1 "Price Overridden" line added to the line-item body using the STOCK <price_edit> token (oe_line.manual_price_overide); renders Y/N, no view change needed. Proven on test order 6062441. Awaiting Evan Jenkins (back 9/14) on wording/placement before Prod   [IN TEST]
+  - Low Margin Alert (Team uid 104) - <rsm_email> CC recipient DEACTIVATED 2026-09-09 so test fires could not reach a real sales manager. TEMPORARY - must be re-enabled; Play then no longer mirrors Prod's recipient set   [OPEN]
+  - Low Margin Alert (Team uid 104) - subject temporarily carries [OVR=<price_edit>] from the subject-token experiment; the token does NOT resolve there (available_areas 36 lacks the subject bit 11) so it prints literally. Strip it   [OPEN]
+  - Test orders 6062439 / 6062441 / 6062442 left in Play from the Low Margin Phase 1 testing - cancel them   [OPEN]
+  - asi_cancel_order + asi_cancel_open_orders_by_user - redeployed 2026-09-09 with Phase 5 (writes lost_sales_transaction, which the client does in its application layer and the earlier trace-derived version missed). NOT yet tested. Deliberately NOT in Prod, so every refresh-from-Prod deletes them and they must be redeployed   [IN TEST]
 ========================================================================
   - Custom import settings for EDI   [OPEN]
   - User Neil Van Walbeck (NVANWALBECK, branch 100, role_uid 1 "All") - SA 51571; lower-env-only contractor account, refresh-fragile (wiped by the 2026-08-03 refresh-from-Prod, since re-added manually via the P21 client; present again as of the 2026-08-27 audit). asi_proc_copy_p21_user has an open bug so re-adds are manual   [OPEN]
