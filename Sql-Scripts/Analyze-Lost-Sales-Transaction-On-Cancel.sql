@@ -56,13 +56,33 @@ WHERE  c.object_id = OBJECT_ID('dbo.lost_sales_transaction')
 ORDER BY c.column_id;
 GO
 
-PRINT '=== Q2b: is there a counter row for this table? ===';
-/*  P21 keeps allocation counters in a counter table; the exact name is
-    confirmed by Q1a. Adjust the table name below if it differs.            */
-IF OBJECT_ID('dbo.counter') IS NOT NULL
-    EXEC sp_executesql N'SELECT * FROM dbo.counter WHERE counter_name LIKE ''%lost%'';';
-ELSE
-    PRINT '  -> dbo.counter not found; use Q1a output to locate the counter table.';
+PRINT '=== Q2b: P21 counter for this table ===';
+/*  P21 does NOT expose counters as a queryable table -- they are read by
+    calling p21_set_counter with no arguments, which returns every counter as
+    (id, description, counter_num). Convention, per
+    Sql-Scripts\Alerts\Check-Fix-Alert-Table-Counters-Play.sql: counter_id is
+    simply the table name, so look for 'lost_sales_transaction'.
+
+    Reading it alongside the real MAX(uid) answers two things at once:
+      - a counter row exists      -> the table IS counter-managed, so any INSERT
+                                     must allocate through p21_set_counter
+      - counter_num < real max    -> it has ALREADY drifted, i.e. something has
+                                     previously inserted rows raw
+      - no counter row at all     -> not counter-managed; check is_identity (Q2a)   */
+DECLARE @counters TABLE (id VARCHAR(50), description VARCHAR(255), counter_num INT);
+INSERT @counters EXEC p21_set_counter;
+
+SELECT id, description, counter_num,
+       real_max_uid = (SELECT MAX(lost_sales_transaction_uid) FROM dbo.lost_sales_transaction),
+       verdict = CASE
+                    WHEN counter_num < (SELECT MAX(lost_sales_transaction_uid) FROM dbo.lost_sales_transaction)
+                         THEN '*** COUNTER HAS DRIFTED ***'
+                    ELSE 'counter ahead of / level with max -- healthy'
+                 END
+FROM   @counters
+WHERE  id LIKE '%lost%' OR description LIKE '%lost%';
+
+PRINT '  (no rows above = not counter-managed; rely on is_identity from Q2a)';
 GO
 
 /*------------------------------------------------------------------ Q3 -----
