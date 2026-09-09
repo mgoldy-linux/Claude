@@ -44,7 +44,24 @@ If the session produced or changed a deployable artifact (view, business rule, p
 - Update the row in `Deploy-Guides/README.md` with the current status.
 - Make sure deploy **order** and **rollback** are right. If a view now backs a `.srd`, the view deploys first.
 
-## 4. Update memory
+## 4. Update P21-Env-Status-Customizations.txt
+
+File: `C:\Claude\Docs\P21-Env-Status-Customizations.txt` — per-environment mirror of the
+"Customizations / Open Items" the user hand-copies into OneNote.
+
+If the session added, changed, or closed a customization in any P21 environment (SQL,
+business rule, portal, DynaChange, view, user setup, alert, etc.), update the matching
+environment section:
+
+- Keep the STANDARD FORMAT: `<short title> - <detail>  [STATUS]`, STATUS one of
+  OPEN | IN TEST | ON HOLD | BROKEN | DONE | RETIRED | REFERENCE.
+- Update the existing line in place if the item is already tracked there; otherwise add a
+  new line at the bottom of the correct environment's section.
+- Bump the `Last updated:` date at the top of the file.
+- If nothing environment-facing changed this session, skip this step — don't add a line for
+  its own sake.
+
+## 5. Update memory
 
 `C:\Users\mgoldyn\.claude\projects\C--Claude\memory\`
 
@@ -53,16 +70,16 @@ If the session produced or changed a deployable artifact (view, business rule, p
 - Add the one-line pointer to `MEMORY.md`.
 - Prefer updating an existing file over creating a near-duplicate.
 
-## 5. Commit
+## 6. Commit
 
 - Stage the work; don't sweep in unrelated modified files. Check `git status` first and say what you're leaving out.
 - Write a message that explains **why**, not just what. The commit is the durable record — the reasoning belongs in it.
 - Follow the repo convention: end with `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
 - Branch first if on the default branch and the change warrants it. Do not push unless asked.
 
-## 6. Report back
+## 7. Report back
 
 Lead with status. Then:
-- What was written where (daily log, guide, memory) and the commit SHA.
+- What was written where (daily log, guide, customizations tracker, memory) and the commit SHA.
 - **What is still open** — the next action, and anything blocked on someone else.
 - Anything you could not verify, stated plainly.
