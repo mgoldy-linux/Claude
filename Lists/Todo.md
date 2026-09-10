@@ -2,23 +2,23 @@
 
 *(Blocked / date-gated items moved to `Waiting-On-Info.md`.)*
 
-1. Finish business rules picture documentation
-2. Learn how to create a HAR
-3. Ensure BRs, portals & Crystal are equal between environments
-4. Create a test order through the API
-5. Add SSRS email check to the PowerShell launch menu
-6. Ask Aziz about the IIS on AHI-API1 — remove middleware extra pools
-7. For Chad — create BR flow path for OE
-8. For Chad — ensure Purpose, Roles and Logic are up to date on [Order Entry Improvement – Design Changes.docx](https://alltileccs.sharepoint.com/sites/ITTeam/Shared%20Documents/Business%20Applications/Platforms/Order%20Entry%20Improvement%20Project/Order%20Entry%20Improvement%20-%20Design%20Changes.docx?web=1)
-9. ⏳ before 9/14 — find the source of all OE popups (per popup: Business Rule, P21 setting, or DynaChange)
-10. Low Margin alerts — is it possible to show whether the price was edited? — **answered: yes, and free.** `<price_edit>` renders `Y`/`N` with no view change; live in the Play Team alert. Reply drafted to Evan (out to **9/14**) asking wording + placement. Blocked on his answer.
-11. Finish testing the cancel-orders stored procs — Phase 5 (`lost_sales_transaction`) is written and **redeployed in Play but never run**. Cancel a throwaway multi-line order and diff its rows against the client-cancelled 6062441 (expect N line rows + 1 trailer, `transaction_code_no` 2143). Also decide the two defaults: `@write_lost_sales`, and `@lost_sales_uid` (16 Other vs 31 Doesn t Need, far more common in real data).
-12. For Jossy — update P21 **Training**: `replenishment_method`, ABC (anc) class, and minimum inventory = 0. See Teams message. (Groundwork done 9/9: `SELECT replenishment_method, COUNT(*) FROM inv_loc WHERE delete_flag = 'N' GROUP BY replenishment_method` — column is `varchar`, not a numeric code; the "Invalid column name" squiggle was stale SSMS IntelliSense.)
+1. Learn how to create a HAR
+2. Ensure BRs, portals & Crystal are equal between environments
+   - Also check **deleted P21 users** across environments — other people are deleting users (`users.delete_flag='Y'`), so the set is drifting between envs. Diff who's deleted where and reconcile.
+3. Create a test order through the API
+4. AHI-API1 IIS cleanup — Outlook draft to Aziz ready (Drafts, screenshot attached) recommending removal of **P21Production**, **P21Upgrade**, **P21Play2** SOA sites (all dead on that box). **Next:** send it; open a SysAid ticket if Aziz wants one; remove sites + app pools once he confirms.
+5. For Chad — create BR flow path for OE
+6. For Chad — ensure Purpose, Roles and Logic are up to date on [Order Entry Improvement – Design Changes.docx](https://alltileccs.sharepoint.com/sites/ITTeam/Shared%20Documents/Business%20Applications/Platforms/Order%20Entry%20Improvement%20Project/Order%20Entry%20Improvement%20-%20Design%20Changes.docx?web=1)
+7. ⏳ before 9/14 — find the source of all OE popups (per popup: Business Rule, P21 setting, or DynaChange)
+8. Finish testing the cancel-orders stored procs — Phase 5 (`lost_sales_transaction`) is written and **redeployed in Play but never run**. Cancel a throwaway multi-line order and diff its rows against the client-cancelled 6062441 (expect N line rows + 1 trailer, `transaction_code_no` 2143). Also decide the two defaults: `@write_lost_sales`, and `@lost_sales_uid` (16 Other vs 31 Doesn t Need, far more common in real data).
+9. For Jossy — update P21 **Training**: `replenishment_method`, ABC (anc) class, and minimum inventory = 0. See Teams message. (Groundwork done 9/9: `SELECT replenishment_method, COUNT(*) FROM inv_loc WHERE delete_flag = 'N' GROUP BY replenishment_method` — column is `varchar`, not a numeric code; the "Invalid column name" squiggle was stale SSMS IntelliSense.)
 
 ---
 
 ## Done
 
+- ~~Finish business rules picture documentation~~ — 9/10
+- ~~Add SSRS email check to the PowerShell launch menu~~ — 9/10
 - ~~Add Order Ack business rules to P21 Business Rules~~ — 9/8
 - ~~Answer Chad's questions (yellow highlight) on Order Entry Improvement – Design Changes.docx~~ — 9/8
 - ~~Modify stored procedure "Delete User V2" — check lower environments~~ — 9/3
