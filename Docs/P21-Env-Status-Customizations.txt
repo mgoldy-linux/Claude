@@ -2,7 +2,7 @@
 P21 ENVIRONMENT STATUS - CUSTOMIZATIONS / OPEN ITEMS
 ========================================================================
 Source:       C:\Claude\Docs\P21 Env Status-20260827.pdf
-Last updated: 2026-09-09  (reconciled against Work-Log.md + memory)
+Last updated: 2026-09-11  (reconciled against Work-Log.md + memory)
 Maintainer:   Update this file whenever a customization is added,
               changed, or closed in any environment.
 
@@ -50,6 +50,7 @@ P21Dev  (Dev)  -  middleware 3448
   - SA 50622 Read Only Global Price Level Name - added to Sales Price Book & Page (P21Dev and P21Bus); done by user directly   [DONE]
   - Missing locations - 500 / 501 / 520 / 540 / 560 do not exist at all in P21Dev (no row, not just an untagged name); deliberately not raw-INSERTed (location has ~150 cols incl. GL/tax linkage)   [OPEN]
   - asi_proc_copy_p21_user deployed here 2026-08-04 under the standard name (retiring kb_proc_copy_user)   [DONE]
+  - Imports/Exports System Settings sa login - stored in the P21Dev database, so a refresh-from-Prod overwrites it with Prod's sa credentials, which don't match this SQL Server instance (confirmed same instance as P21Training via @@SERVERNAME, 2026-09-11). Breaks Build/Update Items ("Login failed for user 'sa'", DB error 18456; "Unable to connect to the database for import temp table activity"; Pricing Service temp import table update fails) until reset to match P21Training's value. Confirmed same root cause on P21Play, P21Dev, P21Training, AND P21BusinessRules 2026-09-11 (BusinessRules initially looked different - "Cannot load file: Carriage return character missing", "Access to the path is denied" in of_normalizelineendings - but that was an unrelated import-file line-ending bug (LF-only, no CR) in the test files; once fixed, BusinessRules hit the identical sa error). Emailed Tony Neuman 2026-09-11 to fix all four. Not something to "back up" separately - just re-apply after every refresh. Add to the post-refresh checklist (see BusinessRules' AHI-API1 app-pool-recycle item below for the same pattern)   [OPEN]
 
 ========================================================================
 P21Play  (Dev / QA)  -  middleware 3445
