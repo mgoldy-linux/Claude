@@ -147,6 +147,36 @@ Once Assembly Name is confirmed (or confirmed blank) for a row, delete it via th
 | 53 | RMA_RestockAdj_V3 | Front Counter Order | not checked | ⚠ has an ACTIVE sibling row elsewhere on the same rule_name — verify uid 53 specifically before deleting, do not touch the active one |
 | 60 | kb_Customer_Closed_Workflow_r1 | Customer Maintenance | **blank (confirmed)** | ready to delete |
 
+## 2026-09-11 — live-share re-audit ahead of a BRR refresh, plus a protection fix
+
+Re-listed BRR's live `BusinessRulesDLL` share (63 files) and its `_Archive` subfolder (43 files
+— more than this guide's original 24+13 tally, confirming files kept getting added since) while
+prepping for today's refresh. Confirmed the **13 `kb_`/`js_`-prefixed files still live**:
+
+| File | Status |
+|---|---|
+| `kb_Order_RequiredDate_r3.dll` | ACTIVE — protected (SA-46321) |
+| `kb_Order_Validator_v2.dll` | ACTIVE — protected (in-progress replacement project) |
+| `jsTextValidator.dll` | ACTIVE (2026-09-01 `business_rule` snapshot, Purchasing-restricted) |
+| `kb_Shipping_IBFSurcharge.dll` | Active sibling exists (`kb_RMA_IBFSurcharge_Add`) — do not re-archive without checking every embedded rule name (see the 2026-08-07 incident above) |
+| `kb_Order_Validator.dll` | uid 55, already flagged above as protected-family pending |
+| `jsDateFix.dll`, `jsTextValidator_singleproc.dll`, `kb_FrontCounter_CotF_CheckWC_AskShipWC.dll`, `kb_Notepad_Entry.dll`, `kb_ProperCase.dll`, `kb_RibbonMetrics.dll`, `kb_RibbonMetrics_r1.dll`, `kb_ValidateOO_SetCustomer.dll` | **Unresolved** — no evidence-based check run yet this pass |
+
+Not archiving any of the unresolved ones on filename pattern alone — run
+`Get-BusinessRuleDllStatus.ps1 -Instance BusinessRules` (or the reflection variant) first, same
+methodology as the rest of this project.
+
+**Protection fix, separate from the archive project itself but found because of it:**
+`C:\PowerShell-Scripts\PS_Skills\File-Ops\Copy-Missing-P21-Files.ps1` (the tool that syncs
+"missing" files between two environments' shares from a `Sync-Steps-*.xlsx` comparison) had no
+awareness that a file "missing from BRR" might mean *deliberately archived*, not *never copied*.
+Since Prod's own `BusinessRulesDLL` cleanup (see "Target environments" above) was never finished,
+running that sync tool Prod→BusinessRules today would have copied a chunk of these same 43
+archived files straight back into BRR's live share, undoing this project. **Fixed**: the script
+now checks the target's `_Archive`/`Inactive` subfolder for each candidate file before copying,
+and skips (logs `SKIPPED`) anything found there. Checks live folder contents each run rather than
+a hardcoded file list, so it stays correct as more files get archived.
+
 ## Open items
 - **New reflection-based tooling available for the 17-row checklist above** (`Get-BusinessRuleDllStatus-Reflection.ps1`/`Test-BusinessRuleDll.ps1`, 2026-08-10) — gives the exact `GetName()`/`GetDescription()` a DLL's class declares, cross-referenced against `business_rule` by exact match, as a second opinion alongside the byte-scan script and the manual Edit Business Rule review. Confirmed 2026-08-10: `business_rule_log` does **not** record ordinary rule executions (only ~150 `Invoke` rows total on Prod since 2018, none of them order-entry logic) — don't rely on that table to confirm whether any of these 17 rows is actually still firing.
 - Run `Delete-BusinessRules-Batch.sql` against Dev/Play/Training/Upgrade, then Prod (DLL archive + row deletion both, last).
