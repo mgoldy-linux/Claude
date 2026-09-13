@@ -6,6 +6,9 @@
 -- Fix #13: the summary PRINT's "Role:" was actually printing job_title (e.g. "Sr
 -- Buyer"), not the security role (e.g. "Purchasing") — now looks up roles.role via
 -- role_uid. Also added Buyer ID (contact_id) to the line, alongside Salesrep ID.
+-- Fix #15: ops_region and sales_region were never copied to users_ud — the
+-- hardcoded column list in that section (unlike the dynamic `users` table
+-- section) had simply never been updated to include them.
 CREATE OR ALTER PROCEDURE [dbo].[asi_proc_copy_p21_user]
     @strUserToCopy          VARCHAR(30)
     ,@strNewUserID          VARCHAR(30)
@@ -262,6 +265,11 @@ BEGIN
                   ,claims_terr        = src.claims_terr
                   ,salesrep_id        = @salesrep_id
                   ,price_family_id    = src.price_family_id
+                  -- Fix #15: ops_region and sales_region were missing from this hardcoded
+                  -- column list (unlike the `users` table section above, which discovers
+                  -- columns dynamically via p21_fnt_ColumnList and so never drifts)
+                  ,ops_region         = src.ops_region
+                  ,sales_region       = src.sales_region
                   ,power_bi_user      = ISNULL(@power_bi_user, src.power_bi_user)
                   -- Fix #12: fall back to source user's description/job title, matching power_bi_user's pattern above
                   ,user_description   = ISNULL(@user_description, src.user_description)
@@ -276,6 +284,7 @@ BEGIN
         BEGIN
             INSERT INTO users_ud (
                 id, ar_terr, claims_terr, salesrep_id, price_family_id,
+                ops_region, sales_region,
                 power_bi_user, user_description, job_title,
                 date_last_modified, last_maintained_by, date_created, created_by
             )
@@ -284,6 +293,8 @@ BEGIN
                    ,src.claims_terr
                    ,@salesrep_id
                    ,src.price_family_id
+                   ,src.ops_region
+                   ,src.sales_region
                    ,ISNULL(@power_bi_user, src.power_bi_user)
                    -- Fix #12: fall back to source user's description/job title, matching power_bi_user's pattern above
                    ,ISNULL(@user_description, src.user_description)
