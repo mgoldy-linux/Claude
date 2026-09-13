@@ -15,15 +15,15 @@ USE P21Training;
 GO
 
 /* ==== STEP 0 : rollback image before touching anything =================== */
-IF OBJECT_ID('dbo.zz_inv_loc_bkp_20260911') IS NOT NULL DROP TABLE dbo.zz_inv_loc_bkp_20260911;
+IF OBJECT_ID('dbo.zz_inv_loc_bkp_20260913') IS NOT NULL DROP TABLE dbo.zz_inv_loc_bkp_20260913;
 SELECT inv_mast_uid, location_id,
        replenishment_method, inv_min, safety_stock_type,
        date_last_modified, last_maintained_by
-INTO   dbo.zz_inv_loc_bkp_20260911
+INTO   dbo.zz_inv_loc_bkp_20260913
 FROM   dbo.inv_loc
 WHERE  delete_flag = 'N';
 
-SELECT COUNT(*) AS rows_backed_up FROM dbo.zz_inv_loc_bkp_20260911;
+SELECT COUNT(*) AS rows_backed_up FROM dbo.zz_inv_loc_bkp_20260913;
 GO
 
 /* ==== STEP 1 : batched update ============================================ */
@@ -61,7 +61,7 @@ BEGIN
     INSERT INTO dbo.zz_inv_loc_batch_log (batch_num, rows_updated)
     VALUES (@BatchNum, @RowsAffected);
 
-    RAISERROR('Batch %d: %d rows updated. Running total: %d', 0, 1, @BatchNum, @RowsAffected, @TotalRows) WITH NOWAIT;
+    RAISERROR('Batch %d: %d rows updated. Running total: %d', 0, 1, @BatchNum, @RowsAffected, CAST(@TotalRows AS INT)) WITH NOWAIT;
 
     IF @RowsAffected > 0
         WAITFOR DELAY '00:00:00.250';   -- brief pause between batches
