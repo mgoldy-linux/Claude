@@ -2,7 +2,7 @@
 P21 ENVIRONMENT STATUS - CUSTOMIZATIONS / OPEN ITEMS
 ========================================================================
 Source:       C:\Claude\Docs\P21 Env Status-20260827.pdf
-Last updated: 2026-09-13  (inv_loc replenishment bulk update RUN on Training)
+Last updated: 2026-09-14  (SA 52078 header/grouping + Subtotal fixes in Play)
 Maintainer:   Update this file whenever a customization is added,
               changed, or closed in any environment.
 
