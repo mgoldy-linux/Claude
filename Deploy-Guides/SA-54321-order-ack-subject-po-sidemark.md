@@ -1,14 +1,19 @@
 # Deployment Guide — Order Ack email subject: add customer PO (SA 54321)
 
-> **Status (2026-09-15): WORKING in BRR.** PO#-only, v1.0.0.4, no content
-> scrubbing. Rebuild after the 9/11 refresh needed three fixes (see the
-> 9/15 entry below) — all three now applied and confirmed by a live send:
-> PO stamps into the delivered Order Ack subject. Outstanding before Play/
-> Prod: promote uid 165 + `asi_email_context_flag`'s Field Selector fix
-> through Play, decide whether to run `Create-asi-email-context-flag.sql`
-> against Prod now to stop the `document_nos`-column trap recurring on
-> future refreshes (still not done), and rewrite the stale Outlook draft to
-> Jossy Vadakkel.
+> **Status (2026-09-15): DEPLOYED to P21Play, confirmed working, ticket
+> updated — ready for UAT.** PO#-only, v1.0.0.4, no content scrubbing.
+> BRR rebuild after the 9/11 refresh needed three fixes (business_rule row,
+> document_nos column, Field Selector) — see the 9/15 entries below. Play
+> needed the same table/Field-Selector class of fix applied separately
+> there (Play's `asi_email_context_flag` predates SA 54321 entirely — it's
+> SA 53475's live rule, edited in place, not recreated): `document_nos`
+> ALTER re-run against P21Play, and `document_nos` added to its already-live
+> Field Selector alongside `form_type`. Confirmed working with a live send
+> in Play. Posted a UAT-readiness note to the SysAid ticket (SA-54321) via
+> clipboard. Outstanding: user acceptance sign-off, then Prod promotion;
+> decide whether to run `Create-asi-email-context-flag.sql` against Prod now
+> to stop the `document_nos`-column trap recurring on future BRR refreshes
+> (still not done); rewrite the stale Outlook draft to Jossy Vadakkel.
 >
 > Also 2026-09-15: Rule Manager's **Create PreSQL rule** IMPORT threw
 > "does not pass the validation test" on both this rule's and
@@ -154,6 +159,53 @@ registered next. Suggested replacement, if/when that file is next touched:
 ```csharp
 return "SA 54321: prepends customer PO to the Order Ack email subject (cb_ok).";   // 70 chars
 ```
+
+## 2026-09-15 (c) — P21Play deployment, ready for UAT
+
+Play is not a fresh environment for this shared table — `asi_email_context_flag`
+was already live there for SA 53475 (uid 165 in Play — a **different** rule
+instance than BRR's uid 165, same number by coincidence) since 2026-08-26, and
+predates `document_nos` entirely.
+
+**Applied:**
+- Bumped `AssemblyVersion` on both DLLs before rebuilding, per
+  [[feedback_p21_presql_rule_registration]] — P21 holds a DLL in a loaded
+  AppDomain and keeps serving the old binary silently otherwise;
+  `business_rule_log.rule_assembly_name` is the only way to prove which
+  binary actually ran, which mattered here specifically because a stale
+  `asi_email_context_flag.dll` would reproduce the exact same
+  "`document_nos` empty" symptom as a real bug.
+- Ran `Create-asi-email-context-flag.sql` against **P21Play** — the table
+  already existed there (0 rows, SA 53475), idempotent ALTER added
+  `document_nos`. Hit the same mistake once: a first attempt landed against
+  the wrong catalog (BRR and Play share one SQL Server —
+  `P21Dev.allsurfaces.com` — as separate catalogs, easy to re-run a script
+  against the wrong one right after doing this exact thing in BRR). Fixed by
+  explicitly confirming `SELECT DB_NAME()` before rerunning.
+- **Edited `asi_email_context_flag`'s Field Selector in place in Play — did
+  not delete/recreate it**, since that rule is SA 53475's live UAT
+  dependency. Added `document_nos` under `EmailDataMisc`, kept `form_type`
+  checked.
+- Registered `asi_oe_order_ack_email_subject` fresh in Play (same shape as
+  BRR: On-Demand, `cb_ok`/`w_email_response`, multi-row, Field Selector
+  `d_dw_email_info` → `subject` + `company_id`, not `memo`).
+
+**Confirmed:** live test send in Play — PO number appears correctly in the
+delivered Order Acknowledgment subject. Rule Manager's "Test Business Rule"
+pane again threw `Data.Fields cannot be accessed in a multi-row rule` on the
+self-test — same known false alarm as BRR
+([[feedback_p21_rule_manager_test_pane_multirow]]), not a real failure;
+ignored in favor of the live-send test.
+
+**Posted to SysAid ticket SA-54321** (clipboard, no API —
+[[feedback_sysaid_means_worklog]]): UAT-readiness note, PO#-only scope
+called out explicitly since the original ask also named Sidemark.
+
+**Not yet done — regression check owed:** confirm SA 53475's ASAP memo
+message still appends correctly in Play after editing its shared
+`asi_email_context_flag` dependency. Editing that rule's Field Selector
+carries real risk to SA 53475 (Rule Manager save replaces the whole element
+list) even though this edit was additive, not a save-triggered rebuild.
 
 ## 2026-09-08 — built, proven, measured, then put on hold
 

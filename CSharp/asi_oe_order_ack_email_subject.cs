@@ -1,14 +1,17 @@
 ﻿// ============================================================
 // asi_oe_order_ack_email_subject.cs
 // ============================================================
-// Description : SA 54321 -- inserts the customer PO number and Sidemark
-//               (oe_hdr.po_no / oe_hdr.job_name) into the SUBJECT line of
-//               Order Acknowledgment emails, so customers and territory
-//               managers can find an ack by a number they recognise.
+// Description : SA 54321 -- inserts the customer PO number (oe_hdr.po_no)
+//               into the SUBJECT line of Order Acknowledgment emails, so
+//               customers and territory managers can find an ack by a
+//               number they recognise.
 //               Result looks like:
 //                 ** ... ** - Acknowledgement# 5977563 | PO JS001561 <rep's text>
-//               The PO/Sidemark are inserted right after the order-number
-//               digits, ahead of whatever the rep typed.
+//               The PO is inserted right after the order-number digits,
+//               ahead of whatever the rep typed.
+//               PO-ONLY as of 2026-09-14 -- Sidemark (oe_hdr.job_name) was
+//               dropped from scope by business decision (2026-09-11,
+//               confirmed 2026-09-14). See CHANGE LOG.
 //
 // Event       : On-Demand rule attached to window w_email_response
 //               ("Email Order Acknowledgment"), trigger control cb_ok --
@@ -65,12 +68,15 @@
 // Safety      : Writes ONE field (subject), plain text. Reversible by
 //               deregistration. RuleResult.Success is always true -- a
 //               failure here never blocks the email window from closing or
-//               the email from sending. Free-text guarding on po_no /
-//               job_name (see SegmentPolicy) so internal notes staff park
-//               in those fields are not shipped to a customer. Per the
-//               2026-07-28 incident (feedback_p21_test_env_live_email) test
-//               only against an order whose recipient address you control --
-//               BRR / Play have real customer data and a live SMTP path.
+//               the email from sending. No content filtering on po_no as of
+//               2026-09-14 (business decision -- PO#-only scope, whatever is
+//               in the field ships as-is); only whitespace is collapsed
+//               (CR/LF/TAB -> single space, defuses subject-header
+//               injection) and the SubjectCap length guard still applies.
+//               Per the 2026-07-28 incident
+//               (feedback_p21_test_env_live_email) test only against an
+//               order whose recipient address you control -- BRR / Play
+//               have real customer data and a live SMTP path.
 //
 // OPEN ITEMS BEFORE GOING LIVE:
 //   1. RESOLVED 2026-09-06 -- "subject" reports ReadOnly=False here and the
@@ -82,8 +88,10 @@
 //      not enforcing) but the Return XML gives the real DataWindow width:
 //      char(60). SubjectCap is 60, NOT the 255 originally assumed. The
 //      runtime clamp below still applies if MaxLength ever reports sane.
-//   3. Decide SegmentPolicy after reviewing the SA 54321 content scan of
-//      2026 po_no / job_name values. Default IdentifierOnly (safest).
+//   3. RESOLVED 2026-09-14 -- no SegmentPolicy / content filtering. Business
+//      call: PO#-only scope needs no scrubbing, po_no goes through verbatim.
+//      The SA 54321 content-scan concern (internal notes in free-text
+//      fields) is accepted as out of scope, not mitigated in code.
 //   4. Requires asi_email_context_flag v1.0.0.2+ (writes document_nos) and
 //      the document_nos column on the flag table. Against an older flag
 //      writer this rule logs "no order number" and changes nothing -- safe,
@@ -156,6 +164,38 @@
 //     job_name='Serena Residence' correctly suppressed by IdentifierOnly.
 //     Prerequisite confirmed in the same run: dbo.asi_email_context_flag
 //     has document_nos (its absence was error 207 in the 10:09 run).
+//
+// 2026-09-14  Bus App Team
+//   - v1.0.0.4 -- SCOPE NARROWED to PO# only. Business decision 2026-09-11,
+//     confirmed 2026-09-14: Sidemark dropped entirely, no reason given.
+//     Reworked accordingly:
+//       * SidemarkLabel, the job_name lookup, the PO/Sidemark dedup, and
+//         Join() all DELETED -- there is only one segment now.
+//       * TryGetOrderRefs -> TryGetOrderPoNo, selects po_no only.
+//       * BuildSegment no longer takes a dedupAgainst parameter.
+//       * Drop-order logic collapsed: PO is the only segment, so "cap
+//         exceeded" now means give up, not fall back to a shorter segment.
+//     Same day, same version (still 1.0.0.4 -- both changes shipped together
+//     before any BRR run): dropped all content filtering. SegmentPolicy
+//     enum, IdentifierOnly/ScrubAndCap, MaxSegmentLen, BlockedTerms,
+//     LooksLikeIdentifier(), ContainsBlockedTerm() all DELETED -- business
+//     call is PO#-only needs no scrubbing, po_no ships verbatim.
+//     CollapseWhitespace() is the only thing still applied (CR/LF/TAB
+//     hygiene, not content filtering) and the SubjectCap length guard is
+//     unchanged.
+//     uid 171 (the BRR registration that proved v1.0.0.3 end to end) was
+//     wiped by the 2026-09-11 BRR refresh-from-Prod (BRR-only row, not
+//     preserved on purpose) -- this version needs a fresh registration,
+//     not an edit-in-place.
+//
+// 2026-09-15 (b)  Bus App Team
+//   - GetDescription() shortened -- the apostrophe in "rep's" was confirmed
+//     (against asi_email_context_flag.cs's identical symptom, fixed the same
+//     day) to trigger "does not pass the validation test" on Rule Manager's
+//     DLL-share IMPORT scan. Cosmetic (GetDescription is import-time
+//     metadata only, never read at execute time), but shortened to plain
+//     text with no apostrophe so it stops reappearing in every environment
+//     this DLL lands in next (Play, then Prod).
 // ============================================================
 
 using P21.Extensions.BusinessRule;
@@ -174,14 +214,9 @@ namespace asi_OeOrderAckEmailSubject
         // FALSE = actually set row["subject"]. Flip only after OPEN ITEMS 1-2.
         private const bool ReadOnlyProbe = false;
 
-        // Assembled as  label + value  ->  "| PO 12345", then joined with a
-        // single space and prepended to the rep's own text.
-        private const string PoLabel       = "| PO ";
-        private const string SidemarkLabel = "| Sidemark ";
-
-        // Per-field ceiling. IdentifierOnly drops a longer value; ScrubAndCap
-        // truncates it.
-        private const int MaxSegmentLen = 30;
+        // Assembled as  label + value  ->  "| PO 12345", prepended to the
+        // rep's own text.
+        private const string PoLabel = "| PO ";
 
         // Ceiling for THIS field, which is the rep's free-text portion of the
         // subject, not the whole line -- P21 prefixes its own
@@ -191,40 +226,6 @@ namespace asi_OeOrderAckEmailSubject
         // so .NET will not catch an overrun and a too-long write risks the
         // client-side PowerBuilder error. The clamp below is the only guard.
         private const int SubjectCap = 60;
-
-        // How much of a free-text value we are willing to put in a
-        // customer-facing subject.
-        //   IdentifierOnly : include a field only if it looks like a bare
-        //                    token (no spaces, <= MaxSegmentLen, chars in
-        //                    [A-Za-z0-9/#._-]). Kills the internal-note prose
-        //                    staff park in these fields (e.g. "ROACH CHRIS",
-        //                    "put on wrong account", "Replacement for Leyza").
-        //   ScrubAndCap    : include any non-blank value with control chars
-        //                    stripped and length capped, UNLESS it hits the
-        //                    blocklist. Looser -- only after the content scan.
-        private enum SegmentPolicy { IdentifierOnly, ScrubAndCap }
-        private const SegmentPolicy Policy = SegmentPolicy.IdentifierOnly;
-
-        // Used only by ScrubAndCap. Mirrors the High-severity buckets of the
-        // SA 54321 content scan.
-        private static readonly string[] BlockedTerms =
-        {
-            "fuck", "f*ck", "shit", "sh!t", "asshole", "bitch", "idiot",
-            "moron", "stupid", "dumbass",
-            "pita", "nightmare", "liar", "deadbeat", "cheapskate", "rude",
-            "credit hold", "past due", "collection", "wont pay", "won't pay",
-            "slow pay", "no pay", "non pay", "cod only", "prepay only",
-            "hold for payment",
-            "lawsuit", "attorney", "lawyer", "chargeback", "charge back",
-            "fraud",
-            "margin", "markup", "mark up", "our cost", "profit margin",
-            "commission", "rebate", "spiff",
-            "our fault", "our error", "our mistake", "rep error",
-            "wrong material", "wrong item", "shipped wrong", "wrong account",
-            "incorrectly shipped", "misship", "mis-ship", "messed up",
-            "screwed up", "defective", "complaint",
-            "do not use", "asdf", "test order"
-        };
 
         // ---- Entry point ------------------------------------------------
 
@@ -287,10 +288,9 @@ namespace asi_OeOrderAckEmailSubject
             }
 
             // Idempotency -- never stamp twice.
-            if (originalSubject.IndexOf(PoLabel, StringComparison.OrdinalIgnoreCase) >= 0
-                || originalSubject.IndexOf(SidemarkLabel, StringComparison.OrdinalIgnoreCase) >= 0)
+            if (originalSubject.IndexOf(PoLabel, StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                LogRuleInfo("Subject already carries a PO/Sidemark stamp -- skipping. subject='" + originalSubject + "'");
+                LogRuleInfo("Subject already carries a PO stamp -- skipping. subject='" + originalSubject + "'");
                 return;
             }
 
@@ -304,19 +304,18 @@ namespace asi_OeOrderAckEmailSubject
 
             string companyId = t.Columns.Contains("company_id") ? (row["company_id"] as string ?? string.Empty) : string.Empty;
 
-            if (!TryGetOrderRefs(orderNo, companyId, out string poNo, out string sidemark, out string lookupDetails))
+            if (!TryGetOrderPoNo(orderNo, companyId, out string poNo, out string lookupDetails))
             {
                 LogRuleInfo(lookupDetails + " -- subject left unchanged.");
                 return;
             }
 
-            string poSeg = BuildSegment(PoLabel, poNo, null);
-            string smSeg = BuildSegment(SidemarkLabel, sidemark, poNo);   // dedup Sidemark against PO
+            string poSeg = BuildSegment(PoLabel, poNo);
 
-            if (poSeg.Length == 0 && smSeg.Length == 0)
+            if (poSeg.Length == 0)
             {
-                LogRuleInfo("Policy=" + Policy + " order " + orderNo
-                    + ": nothing usable to add (po_no='" + poNo + "' job_name='" + sidemark + "'). Subject left unchanged.");
+                LogRuleInfo("order " + orderNo
+                    + ": po_no is blank. Subject left unchanged.");
                 return;
             }
 
@@ -327,42 +326,25 @@ namespace asi_OeOrderAckEmailSubject
             // Prepend, so that once P21 puts its own
             // "All Surfaces - Acknowledgement# <order>" in front at send time the
             // stamp lands between the order number and the rep's comment.
-            string newSubject = Compose(Join(poSeg, smSeg), originalSubject);
+            string newSubject = Compose(poSeg, originalSubject);
 
             if (newSubject.Length > effectiveCap)
             {
-                // Drop Sidemark first, then give up -- never truncate a value.
-                // If PO was the segment that got dropped by policy, there is
-                // nothing left to fall back to.
-                if (poSeg.Length == 0)
-                {
-                    LogRuleInfo("order " + orderNo + ": Sidemark alone would exceed the " + effectiveCap
-                        + "-char cap on this field (rep's text is already " + originalSubject.Length
-                        + " chars) and there is no PO to fall back to. Subject left unchanged.");
-                    return;
-                }
-
-                newSubject = Compose(poSeg, originalSubject);
-                if (newSubject.Length > effectiveCap)
-                {
-                    LogRuleInfo("order " + orderNo + ": adding PO would exceed the " + effectiveCap
-                        + "-char cap on this field (rep's text is already " + originalSubject.Length
-                        + " chars). Subject left unchanged.");
-                    return;
-                }
-
-                LogRuleInfo("order " + orderNo + ": Sidemark dropped to fit the " + effectiveCap + "-char cap.");
+                LogRuleInfo("order " + orderNo + ": adding PO would exceed the " + effectiveCap
+                    + "-char cap on this field (rep's text is already " + originalSubject.Length
+                    + " chars). Subject left unchanged.");
+                return;
             }
 
             if (ReadOnlyProbe)
             {
-                LogRuleInfo("PROBE (no write) order " + orderNo + " Policy=" + Policy
+                LogRuleInfo("PROBE (no write) order " + orderNo
                     + " -- would set subject '" + originalSubject + "' -> '" + newSubject + "'");
             }
             else
             {
                 row["subject"] = newSubject;
-                LogRuleInfo("order " + orderNo + " Policy=" + Policy
+                LogRuleInfo("order " + orderNo
                     + " -- subject '" + originalSubject + "' -> '" + newSubject + "'");
             }
         }
@@ -438,20 +420,19 @@ namespace asi_OeOrderAckEmailSubject
         // SA 54321). company_id from d_dw_email_info is used when present;
         // otherwise the newest oe_hdr row for that order_no is taken, which
         // is correct for a single-company install.
-        private bool TryGetOrderRefs(string orderNo, string companyId,
-            out string poNo, out string sidemark, out string details)
+        private bool TryGetOrderPoNo(string orderNo, string companyId,
+            out string poNo, out string details)
         {
             poNo = string.Empty;
-            sidemark = string.Empty;
 
             bool haveCompany = !string.IsNullOrEmpty(companyId);
 
             // oe_hdr.order_no is varchar in P21 -- pass a string param.
             string sql = haveCompany
-                ? @"SELECT po_no, job_name
+                ? @"SELECT po_no
                       FROM oe_hdr
                      WHERE order_no = @OrderNo AND company_id = @CompanyId"
-                : @"SELECT TOP (1) po_no, job_name
+                : @"SELECT TOP (1) po_no
                       FROM oe_hdr
                      WHERE order_no = @OrderNo
                      ORDER BY date_created DESC";
@@ -472,22 +453,13 @@ namespace asi_OeOrderAckEmailSubject
                     }
 
                     poNo = r["po_no"] as string ?? string.Empty;
-                    sidemark = r["job_name"] as string ?? string.Empty;
-                    details = "oe_hdr: po_no='" + poNo + "' job_name='" + sidemark + "'";
+                    details = "oe_hdr: po_no='" + poNo + "'";
                     return true;
                 }
             }
         }
 
         // ---- Subject assembly ---------------------------------------
-
-        // Space-joins the two segments, skipping whichever is empty.
-        private static string Join(string a, string b)
-        {
-            if (a.Length == 0) return b;
-            if (b.Length == 0) return a;
-            return a + " " + b;
-        }
 
         // Prepends the segment to the rep's own text. The delivered subject is
         // P21's "All Surfaces - Acknowledgement# <order>" + this value, so the
@@ -497,69 +469,19 @@ namespace asi_OeOrderAckEmailSubject
             return originalSubject.Length == 0 ? segment : segment + " " + originalSubject;
         }
 
-        // ---- Segment building / free-text guarding ------------------
+        // ---- Segment building ----------------------------------------
 
-        // Returns "" (nothing added) or e.g. "| PO JS001561".
-        private string BuildSegment(string label, string rawValue, string dedupAgainst)
+        // Returns "" (nothing added) or e.g. "| PO JS001561". No content
+        // filtering -- po_no goes through verbatim, whatever staff typed.
+        // Only whitespace is collapsed (see CollapseWhitespace); the overall
+        // subject-length cap (SubjectCap, checked by the caller) is the only
+        // other guard.
+        private string BuildSegment(string label, string rawValue)
         {
             if (string.IsNullOrWhiteSpace(rawValue))
                 return string.Empty;
 
-            // Collapse whitespace first -- also turns CR/LF/TAB into a single
-            // space, which defuses subject-header injection.
-            string val = CollapseWhitespace(rawValue);
-
-            // PO and Sidemark hold the same string on a large share of orders
-            // -- suppress the duplicate.
-            if (dedupAgainst != null
-                && string.Equals(val, CollapseWhitespace(dedupAgainst), StringComparison.OrdinalIgnoreCase))
-                return string.Empty;
-
-            switch (Policy)
-            {
-                case SegmentPolicy.IdentifierOnly:
-                    if (!LooksLikeIdentifier(val))
-                        return string.Empty;
-                    break;
-
-                case SegmentPolicy.ScrubAndCap:
-                    if (ContainsBlockedTerm(val))
-                        return string.Empty;
-                    if (val.Length > MaxSegmentLen)
-                        val = val.Substring(0, MaxSegmentLen).TrimEnd();
-                    break;
-            }
-
-            return label + val;
-        }
-
-        // Bare token: no spaces, sane length, only chars you'd expect in a
-        // real PO / job code.
-        private static bool LooksLikeIdentifier(string s)
-        {
-            if (string.IsNullOrEmpty(s) || s.Length > MaxSegmentLen)
-                return false;
-
-            foreach (char c in s)
-            {
-                if (char.IsLetterOrDigit(c))
-                    continue;
-                if (c == '/' || c == '#' || c == '.' || c == '_' || c == '-')
-                    continue;
-                return false;
-            }
-            return true;
-        }
-
-        private static bool ContainsBlockedTerm(string val)
-        {
-            string lower = val.ToLowerInvariant();
-            foreach (string term in BlockedTerms)
-            {
-                if (lower.IndexOf(term, StringComparison.Ordinal) >= 0)
-                    return true;
-            }
-            return false;
+            return label + CollapseWhitespace(rawValue);
         }
 
         private static string CollapseWhitespace(string s)
@@ -642,7 +564,7 @@ namespace asi_OeOrderAckEmailSubject
 
         public override string GetDescription()
         {
-            return "SA 54321 -- prepends customer PO (oe_hdr.po_no) and Sidemark (oe_hdr.job_name) to the rep's portion of the Order Acknowledgment email subject, on the cb_ok button of w_email_response. Gated on asi_email_context_flag, which also supplies the order number (document_nos). Free-text guarded so internal notes in those fields are not sent to customers. Independent of SA 53475.";
+            return "SA 54321: prepends customer PO to the Order Ack email subject (cb_ok).";
         }
 
         public override string GetName()
