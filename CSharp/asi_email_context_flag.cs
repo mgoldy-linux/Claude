@@ -55,6 +55,10 @@
 //     that over the same way it hands over form_type. Nothing about the
 //     is_order_ack behaviour changes; asi_oe_email_close_diag is
 //     unaffected and needs no rebuild for this.
+// 2026-09-15  Bus App Team
+//   - GetDescription() shortened -- the long form caused an import error in
+//     P21 Rule Manager (exact cause not confirmed -- possibly length, the
+//     em dashes, or the apostrophe in "window's"). Shortened to plain text.
 // ============================================================
 
 using P21.Extensions.BusinessRule;
@@ -209,7 +213,7 @@ namespace asi_EmailContextFlag
 
         public override string GetDescription()
         {
-            return "Records the about-to-open email window's context -- whether it is an Order Acknowledgment (form_type) and which order it is for (document_nos) -- into asi_email_context_flag, for asi_oe_email_close_diag and asi_oe_order_ack_email_subject to read at the cb_ok attach point.";
+            return "Records Order Ack email context (form_type, document_nos) for the subject rule.";
         }
 
         public override string GetName()

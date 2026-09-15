@@ -1,20 +1,159 @@
-# Deployment Guide — Order Ack email subject: add customer PO + Sidemark (SA 54321)
+# Deployment Guide — Order Ack email subject: add customer PO (SA 54321)
 
-> **Status (2026-09-08): ON HOLD.** The build is finished and proven end to end
-> in BRR — but the CIO (Tina) noted that **ASAP already shows and searches order
-> history by PO# and Sidemark**, for all of a customer's orders, not just those
-> placed in ASAP. That substantially satisfies the original justification
-> ("so customers and territory managers can search their email for a number
-> they're familiar with"), which makes this a convenience rather than a gap.
-> No decision to cancel — paused pending a business call on whether it is still
-> worth doing given ASAP.
+> **Status (2026-09-15): WORKING in BRR.** PO#-only, v1.0.0.4, no content
+> scrubbing. Rebuild after the 9/11 refresh needed three fixes (see the
+> 9/15 entry below) — all three now applied and confirmed by a live send:
+> PO stamps into the delivered Order Ack subject. Outstanding before Play/
+> Prod: promote uid 165 + `asi_email_context_flag`'s Field Selector fix
+> through Play, decide whether to run `Create-asi-email-context-flag.sql`
+> against Prod now to stop the `document_nos`-column trap recurring on
+> future refreshes (still not done), and rewrite the stale Outlook draft to
+> Jossy Vadakkel.
 >
-> **Before leaving it:** `asi_oe_order_ack_email_subject` (uid 171, v1.0.0.3)
-> is registered in BRR with `ReadOnlyProbe = false`, i.e. actively writing
-> subjects on an environment with real customer data and live SMTP. Set it
-> `row_status_flag = 705`. Do **not** touch uid 169 (`asi_email_context_flag`)
-> or uid 170 (`asi_oe_email_close_diag`) — 170 is SA 53475's approved ASAP
-> message and 169 feeds its gate.
+> Also 2026-09-15: Rule Manager's **Create PreSQL rule** IMPORT threw
+> "does not pass the validation test" on both this rule's and
+> `asi_email_context_flag`'s `GetDescription()`. Cosmetic, cause is the
+> **apostrophe** (not the length — the 80-char cut is display truncation).
+> Fixed in `asi_email_context_flag` and rebuilt; **this rule's repo source
+> still carries the apostrophe** — see the 2026-09-15 (b) section before
+> rebuilding it for Play/Prod.
+>
+> **Status (2026-09-14): SCOPE NARROWED to PO# only, no scrubbing.**
+> Business decisions: 2026-09-11 dropped Sidemark entirely (no
+> reason given); 2026-09-14 dropped all content filtering too — PO#-only
+> needs no scrubbing, `po_no` ships to the customer verbatim.
+> `CSharp\asi_oe_order_ack_email_subject.cs` is now **v1.0.0.4**: Sidemark
+> label, `job_name` lookup, and PO/Sidemark dedup are gone, and so is
+> `SegmentPolicy` (`IdentifierOnly` / `ScrubAndCap`), `MaxSegmentLen`, and
+> `BlockedTerms` — the only thing still applied to the value is whitespace
+> collapsing (CR/LF/TAB -> space, for subject-header hygiene, not content
+> filtering) and the overall 60-char `SubjectCap`. Everything below this
+> banner describes the PO+Sidemark, `IdentifierOnly`-filtered v1.0.0.3 build
+> that was proven in BRR; it is historical record, not the current target.
+> The measurement numbers (PO coverage 88%/98%, subject-length impact) still
+> apply to the PO segment; **Concerns #1 and #2 below (internal-note
+> free text, dropped legitimate project names) are now moot** — the code no
+> longer filters, so nothing is dropped or blocked, by decision.
+>
+> **uid 171 no longer exists** — wiped by the 2026-09-11 BRR
+> refresh-from-Prod (`business_rule` wiped wholesale from Prod's backup;
+> BRR-only row, not preserved on purpose — confirmed do-not-preserve).
+> Rebuild fresh in BRR with v1.0.0.4: register `asi_oe_order_ack_email_subject`
+> On-Demand on `cb_ok` / `w_email_response`, multi-row, Field Selector
+> `d_dw_email_info` → `subject` + `company_id`, Buttons → `cb_ok` (Selected +
+> Triggers Rule). Not `memo` — that belongs to uid 170
+> (`asi_oe_email_close_diag`, SA 53475's ASAP message). Probe first
+> (`ReadOnlyProbe = true`), confirm a clean PO-only "would set subject" line,
+> then flip to `false` and verify a live send. Test-env live-SMTP hazard
+> applies — see Concern #6 below.
+>
+> **Outlook draft to Jossy Vadakkel is now stale** — it was written and
+> updated for the PO+Sidemark build and predates both Tina's ASAP point and
+> the scope narrowing. Needs a rewrite, not a resend, once this is live.
+>
+> **2026-09-15 — the `document_nos` trap recurred, root-caused in two
+> layers.** Rebuilt subject rule fired as **uid 165** (not 171 — new uid on
+> rebuild, as expected). Rule Manager "Test Business Rule" showed PASSED
+> (expected, doesn't exercise `Data.Set`). Live send #1
+> (order 6135555, `** BusinessRules 20260911 **`) failed with
+> `Invalid column name 'document_nos'` — **layer 1, fixed:** the 9/11 BRR
+> refresh-from-Prod restores the whole database from Prod's backup, not just
+> `business_rule`, so `asi_email_context_flag` reverted to Prod's schema,
+> which never got the 9/6 `document_nos` ALTER. Re-ran
+> `Sql-Scripts\Business-Rules\Create-asi-email-context-flag.sql` against BRR
+> (idempotent) — confirmed fixed, the SQL exception is gone.
+>
+> Live send #2, same order, now failed differently:
+> `Context flag says Order Ack but carries no usable order number in
+> document_nos`, with the flag-check log showing
+> `document_nos='' updated_at=2026-09-06T15:35:43.3030000` — **a 9-day-stale
+> row**, not a fresh write. **Layer 2, root cause:** `asi_email_context_flag`
+> **was** registered on FormPreEmail (not wiped after all), but its Field
+> Selector had only `Form Type` checked — `Document Nos` was unchecked, so
+> the rule never even saw the column to write it. **Fixed 2026-09-15:**
+> checked `Document Nos` in the Field Selector (`Form Type` left checked
+> too), saved. **User confirmed working on retest — PO now stamps into the
+> live Order Ack subject.**
+>
+> **To stop the layer-1 trap recurring on every future refresh:** run
+> `Create-asi-email-context-flag.sql` once against Prod too — nullable
+> column, no current Prod writer, safe no-op for SA 53475 — so future
+> BRR-from-Prod refreshes inherit the column instead of losing it. Not yet
+> done as of this writing.
+
+## 2026-09-15 (b) — Rule Manager IMPORT: "does not pass the validation test"
+
+Cosmetic, resolved, but worth knowing before the Play/Prod promotion because it
+will reappear in every environment this rule lands in.
+
+**Symptom.** Clicking **Create PreSQL rule** in Rule Manager threw a chain of
+dialogs:
+
+```
+Item 'Records the about-to-open email window's context -- whether it is an Order Ackno'
+does not pass the validation test.
+        -> Item validation error on IMPORT. Continue IMPORT?
+Item 'SA 54321 -- prepends customer PO (oe_hdr.po_no) to the rep's portion of the Orde'
+does not pass the validation test.
+```
+
+**What it is.** Nothing to do with the Pre-SQL rule being created. That button
+makes Rule Manager re-**IMPORT** rule metadata scanned out of every DLL in
+`\\ASP21FS1.ahi.local\{Instance}\BusinessRulesDLL\` — the same all-DLL scan
+documented in `businessrulesdll-share-cleanup.md` as the source of the
+`business_rule_log` `Initialize` noise. The quoted text is each rule's
+**`GetDescription()`** return value.
+
+**The 80-character cut is display truncation, not the validator.** Both quoted
+strings measure exactly 80 characters — that is the message box's own limit.
+Treating length as the cause leads to the wrong fix.
+
+**The trigger is the apostrophe.** Compared against what is actually deployed in
+BRR's share (not against the whole `CSharp/` folder, most of which is
+never-deployed diagnostic iterations):
+
+| Deployed DLL | Desc len | has `--` | has `'` | Flagged |
+|---|---|---|---|---|
+| `asi_oe_email_close_diag` | 251 | yes | no | no |
+| `asi_item_maint_loc_sort_t1` | 212 | no | no | no |
+| `asi_Order_Validator_t2` | 156 | no | no | no |
+| `asi_ribbon_rm_default_products` | 121 | no | no | no |
+| `asi_email_context_flag` | 272 | yes | **yes** | **YES** |
+| `asi_oe_order_ack_email_subject` | 396 | yes | **yes** | **YES** |
+
+`asi_oe_email_close_diag` imports clean from the same folder at 251 chars *with*
+`--` in it, which rules out both length and the double-dash. The apostrophe
+(`window's`, `rep's`) is the only attribute unique to the two failures. The
+apparent mechanism is Rule Manager building the import validation expression as
+a string that an unescaped `'` terminates early — not proven at the PowerBuilder
+level, but the deployed-DLL evidence is one-sided.
+
+**Impact: none functionally.** `GetDescription()` is import-time metadata, never
+read at execute time. The subject rule was tested live in the same session and
+confirmed still firing correctly. Answering **Yes** to "Continue IMPORT?" skips
+the offending rows and imports the rest.
+
+**Do not "fix" it by saving the rule in Rule Manager.** Saving replaces the whole
+`business_rule_data_element` list and silently drops every DataWindow the UI had
+not loaded — the mechanism that damaged `asi_Order_Validator` uid 133 on
+2026-09-01. Fix in source, rebuild, redeploy the DLL.
+
+**Applied.** `asi_email_context_flag.GetDescription()` shortened to
+`"Records Order Ack email context (form_type, document_nos) for the subject rule."`
+(79 chars, no apostrophe, no `--`) and rebuilt. Both DLLs on BRR's share carry
+2026-09-15 timestamps (`asi_oe_order_ack_email_subject.dll` 11:54,
+`asi_email_context_flag.dll` 11:56). User confirms the error no longer appears.
+
+**OPEN — carry into the Play/Prod promotion.** The repo copy of
+`CSharpsi_oe_order_ack_email_subject.cs` still returns the original 396-char
+description containing `rep's`; only `asi_email_context_flag.cs` was edited.
+Rebuilding the subject rule from repo source as it stands would reintroduce the
+apostrophe and, with it, the import error in whichever environment it is
+registered next. Suggested replacement, if/when that file is next touched:
+
+```csharp
+return "SA 54321: prepends customer PO to the Order Ack email subject (cb_ok).";   // 70 chars
+```
 
 ## 2026-09-08 — built, proven, measured, then put on hold
 
