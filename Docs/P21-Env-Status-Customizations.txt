@@ -2,7 +2,7 @@
 P21 ENVIRONMENT STATUS - CUSTOMIZATIONS / OPEN ITEMS
 ========================================================================
 Source:       C:\Claude\Docs\P21 Env Status-20260827.pdf
-Last updated: 2026-09-15  (SA-54321 Order Ack PO stamp - deployed to P21Play, confirmed working, ready for UAT)
+Last updated: 2026-09-16  (SA-55014 Sales Invoiced Yesterday portal - kb_ retirement, deployed to Prod, awaiting user sign-off)
 Maintainer:   Update this file whenever a customization is added,
               changed, or closed in any environment.
 
@@ -32,6 +32,7 @@ P21  (Production)  -  web 3443
   - kbenish (departed 01/2025) - full orphaned DB-user object (131 grant rows incl. db_securityadmin/db_accessadmin) still present in Prod; SQL login disabled since 2025-01-27 so dormant. Deliberately left in place - user's call   [OPEN]
   - Derek's "Test" DynaChange screen_orders_hdr_date_popup_all - web/Extensibility "Screen" design (design/assignment framework) created by Derek Sievertsen (departed); description only "Test", assigned to role All, hid the option to update the required date on the Order Header date popup. Derek confirmed 2026-08-26 it was no longer needed; deleted from Prod 2026-08-27   [DONE]
   - Location 501 - "could not be retrieved" error everywhere P21 references it, despite location.delete_flag='N' (active). Root cause: linked address.id=501 has delete_flag='Y' (Jossy deleted it), and the stock d_ds_location_maint_wfc DataWindow INNER JOINs address then filters delete_flag='N', so the whole row vanishes. Email sent to Jossy Vadakkel 2026-09-15 asking whether 501 should be reactivated or the location itself formally deleted; awaiting his reply   [OPEN]
+  - SA 55014 BR SAL Sales Invoiced Yesterday portal - retired kb_sales_history_report_view/kb_view_invoice_line_rewards/kb_fn_date_rng_calc/kb_fnt_get_user_loc, replaced with new inline TVF dbo.asi_fnt_sa55014_sales_invoiced_yesterday; EXCEPT-verified 0/0 (439=439 rows) vs Prod, deployed 2026-09-16, live-matched for a 2nd user (mgoldyn, 192 rows); awaiting John's sign-off   [IN TEST]
 
 ========================================================================
 P21  (Data Warehouse - ASDWDB01)  -  nightly 2:05 restore from Prod
