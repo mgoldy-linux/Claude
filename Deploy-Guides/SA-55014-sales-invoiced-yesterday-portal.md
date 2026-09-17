@@ -2,8 +2,9 @@
 
 > Produced during development. Update as the artifact changes; commit with the code.
 
-**Status: 🟡 Deployed to Prod 2026-09-16, engineering-verified — awaiting feedback from the end
-user (John) before this is actually closed out.** Old `.srd` kept by the user for rollback.
+**Status: 🟢 Closed 2026-09-17 — deployed to Prod 2026-09-16, John confirmed the live output looks
+correct.** Old `.srd` kept by the user for rollback. TVF/retrieve SQL/`EXCEPT` verification
+script now committed to `Portals\SA-55014\`.
 
 ## Request
 Existing portal (built by Karen Benish, 2016) shows John yesterday's invoiced sales for his
@@ -20,11 +21,9 @@ the portal's behavior.
   `portal_element`/`dc_nav_drill` rows (this is an edit to an existing portal, not a new one).
 - Ticket: SA-55014
 
-**⚠️ Not yet committed to the repo.** The TVF creation script, the `.srd` retrieve SQL, and the
-`EXCEPT` verification script only exist in this session's scratch folder and clipboard history.
-They need to be written into `Portals\SA-55014\` (mirroring the `Portals\SA-53270\` pattern)
-before this guide's artifact list is actually backed by anything durable. Do this before/at the
-next touch of this ticket.
+Committed to `Portals\SA-55014\` (TVF creation script, `.srd` retrieve SQL, `EXCEPT` verification
+script, README). The actual deployed `.srd` file itself was never pulled back into the repo — see
+that folder's README.
 
 ## kb_ objects retired
 | kb_ object | Replaced with |
@@ -123,11 +122,13 @@ DROP FUNCTION dbo.asi_fnt_sa55014_sales_invoiced_yesterday;
 ```
 
 ## Open items
-- [ ] **Get John's sign-off** that the live Prod numbers look right — this is the actual blocker
-      on calling the ticket closed.
-- [ ] **Commit the TVF/`.srd`/`EXCEPT`-verification scripts to `Portals\SA-55014\`** — currently
-      only in scratch/clipboard history, not durable.
 - [x] `EXCEPT` equivalence proof against Prod (0/0, 439=439).
 - [x] Live spot-check against a second real user post-deploy (mgoldyn, 192 rows).
 - [x] `kb-replacement-tracker.csv` updated (4 rows).
 - [x] SysAid ticket note drafted and copied to clipboard for pasting.
+- [x] **John's sign-off** — confirmed 2026-09-17, live output looks correct.
+- [x] **Commit the TVF/retrieve SQL/`EXCEPT`-verification scripts to `Portals\SA-55014\`** —
+      done 2026-09-17 (the deployed `.srd` file itself was never pulled back into the repo — see
+      `Portals\SA-55014\README.md`).
+
+**Nothing open — ticket closed.**
