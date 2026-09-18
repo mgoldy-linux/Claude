@@ -1,5 +1,115 @@
 # Deployment Guide — Order Ack email subject: add customer PO (SA 54321)
 
+## 2026-09-18 — evidence pack for the Tina call (analysis only, nothing deployed)
+
+No code shipped and no environment touched. A `ExcludedTakers` change was
+written and then **reverted** — the ask turned out to be a manager's
+feasibility question, and leaving an unapproved behaviour change in the source
+while Play UAT is live risks it being picked up by a rebuild. Saved only as a
+scratchpad patch, which is not durable.
+
+**Source data.** 216,912 Order Acks from 2026 (`email_log` joined to `oe_hdr`),
+exported as SSMS fixed-width text — 1.77 GB, because `subject` is
+`varchar(8000)` and every row pads to full width. Parsed by deriving column
+offsets from the dashes ruler line. Because the export carries the *delivered*
+subject, each rep's typed portion is recoverable, so the length modelling below
+is measured rather than estimated.
+
+### Job Name is a notes field, not a label
+
+187,889 orders (86.6%) carry a value; 110,501 distinct. Of those:
+
+| Signal | Job Name | PO (for contrast) |
+|---|---|---|
+| Appears on exactly one order | **47.5%** | 61.8% (expected — POs are per-order) |
+| Contains a space | **47.8%** | 11.5% |
+| Four or more words | **10.4%** | 1.8% |
+| Placeholder junk (`.`, `x`, `NA`, `None`) | 2,970 | 1,294 |
+| Typed past the column limit | 224 (at 40) | 11 (at 50) |
+
+A genuine job label would repeat across that job's orders. These do not. 224
+values sit truncated mid-word in the database itself
+(`Return - Order should have been cancelle`). This is not staff misusing the
+field — nothing ever told them it was customer-facing.
+
+### What customers would receive
+
+`fucked job job I lose money on` (5890394) · `pool shit` (5691146) ·
+`didnt ship  !!!!!!` · `new knee pads!!! :)` · `??`
+
+~45 orders carry a written admission of our own error: `Shipping Error`
+(11 orders), `Entry Error. Roppe UOM Change at fault`,
+`Delivery Mistake - 6098817`, `Driver Return - Wrong Material Sent`,
+`WHAT SHOULD HAVE BEEN CHARGED`, `Material Refused by Customer`. Plus internal
+fulfillment notes naming employees (`Cesar picked up`, `Mike Dipalo picked up`).
+
+**Method limit — state it before someone else finds it.** 89,282 values are
+used on exactly one order. This was pattern-matching against a fixed
+vocabulary, not a read of all 110,501 distinct values, so the true count is
+**higher than the above, not lower**. Conversely most automated flags were
+false positives on real business names and were individually reviewed out
+(`Goddard School`, `Pita Way`, `LAZY BOY`, `Dirt Cheap`, `JERKE`,
+`PsychoTherapy`) — the whole "insult" category had zero true positives.
+
+### The mechanical cost
+
+The writable subject is `char(60)`, shared with whatever the rep types.
+
+| Scope | Orders degraded per year | Rate |
+|---|---|---|
+| PO only (current) | 1,440 | 0.69% |
+| PO + Job Name | 16,193 | **7.50%** |
+
+~11× worse, and ~14,750 of those lose the Job Name **silently** — the rule
+drops whole segments, it never truncates.
+
+### Two ideas rejected, with the evidence
+
+1. **Truncate the PO at 50** — a no-op. `po_no` is `varchar(50)`, the longest
+   value all year is exactly 50 (11 orders), and `"| PO " + 50 = 55` can never
+   overflow 60. **Zero** of the 1,440 failures involve a PO longer than 50.
+2. **Truncate the PO to whatever room remains** — rejected. A partial
+   identifier looks valid, matches nothing, and defeats the feature's only
+   purpose. Median cut would be 7 characters; 215 orders would have no room at
+   all, another 208 would keep 1–4 characters.
+
+Every failure is driven by the **rep's own text** (median 45 chars in the
+failing set, against a median PO of 19) — never by the PO alone. Current
+give-up behaviour is the right one; it fails honestly and visibly.
+
+### The PO field's own flaws (do not oversell it)
+
+96.8% of orders have a PO and only 1.8% read as prose, and it is the customer's
+own reference by definition. But 3,831 orders use it as a notes field too
+(`8263 S Saginaw Street, Suite 5, Grand Blanc, MI 48`,
+`CG615562 Cance Jolly and send rest of items Monday`), 1,294 are placeholders,
+and one marketplace account (SHAGTOOLS, 48 orders) carries Amazon order IDs
+(`114-3566541-4487415`). None of this changes the recommendation; it is in the
+talking points on purpose so nobody produces a bad PO mid-meeting.
+
+### Trap — SSMS renders a database NULL as the literal word `NULL`
+
+The first pass counted 28,716 orders as having the *typed string* "NULL" and
+framed it as a data-quality problem. They are simply 29,023 orders (13.4%) with
+**no** Job Name, which the rule already skips correctly. Caught before the
+deliverable went out; every published figure treats NULL as absent. Applies to
+any SSMS Results-to-Text export.
+
+### Open question this raised — NOT resolved
+
+The 2026-09-17 note records that ShagTools acknowledgments are never emailed,
+but **48 SHAGTOOLS orders appear in this `email_log` export**. The export has no
+`transaction_type` filter, so those rows may be quotations or invoices rather
+than acknowledgments. One query settles it, and it decides whether a SHAGTOOLS
+exclusion is meaningful or moot.
+
+### Deliverable
+
+`C:\_P25\SA54321-Talking-Points-Tina-20260918.txt` (also clipboarded). Asks
+Tina for three decisions: confirm PO-only as the final Prod scope; rule on a
+SHAGTOOLS exclusion; and whether the profanity / error-admission findings go to
+Ops separately — they exist today whether or not the field is ever emailed.
+
 > **Status (2026-09-15): DEPLOYED to P21Play, confirmed working, ticket
 > updated — ready for UAT.** PO#-only, v1.0.0.4, no content scrubbing.
 > BRR rebuild after the 9/11 refresh needed three fixes (business_rule row,
