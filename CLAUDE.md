@@ -7,7 +7,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A personal developer productivity workspace containing:
 - Enhanced PowerShell 7 profiles (Terminal + VSCode variants)
 - C# business rules for Prophet21/ERP EDI integration
-- Utility scripts for SQL Server and document processing
+- Ad hoc SQL scripts (`Sql-Scripts/`, `SQL-Schema/`) and P21 deploy guides/docs
+
+General-purpose PowerShell utility scripts live in the separate `C:\PowerShell-Scripts` git
+repo, not here — moved out 2026-09-20 (see `Docs/PowerShell-Reorganization-2026-09-20.md`).
+Only profile-artifact scripts (`PowerShell-Profile/`) stay in this repo.
 
 ## Working with PowerShell Profiles
 
