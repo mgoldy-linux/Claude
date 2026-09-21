@@ -450,6 +450,31 @@ All four steps independently re-verified via direct SQL re-reads against Prod af
 
 **Status: 🟢 LIVE on Prod, feature-complete.** Only open item is the cosmetic token-126 rename display mystery — zero functional impact, not worth further investigation unless it recurs on a token that matters.
 
+## 2026-09-21 (later) — three real fired alerts, one new feature scoped + built in Play
+
+Three real alert emails from Evan generated their own findings, each answered on its own thread:
+
+1. **Order 6138356 (Lippert Tile Co) — genuine item-costing error, not an alert bug.** Evan asked whether Standard Cost was mistakenly entered at the Purchase Pricing Unit. Checked the item master: `purchase_pricing_unit_size = 1.0` (already each-based) — so it was the raw dollar value itself keyed at the case rate ($63.61 ≈ 12 × the real $5.30 each cost), not a UOM setup problem. Confirmed `unit_mac`/`unit_standard_cost` in the view use identical formulas with the same `pricing_unit_size` multiplier — no calculation bug on our side. Already corrected in the data by Purchasing the same day. **Follow-on catalog scan** (120-day order history, real orders only): 6 more items with the same near-round-ratio signature (Tego, After It, SCI Luxury, Mapeguard corner trim — ratios ~10x–21x), plus a separate finding of 33 items across 40+ orders sitting at P21's literal `$99,999`/`$99,999.99` "never costed" placeholder instead of a real cost. Delivered as a two-tab spreadsheet, `Reports\Standard-Cost-Anomalies-2026-09-21.xlsx` (not committed to the repo — ad hoc output), attached to a reply looping in Erik Bullock.
+2. **Order 6143117 (Arlun Floor Covering Denver) — root cause of the earlier PAD-threshold bug, explained on request.** Evan asked why 1.52% margin fired when he thought the PAD threshold was -5%. This order was built 9/10, four days *before* the 9/14 fix — at that time the PAD Team alert (106) still used the main alerts' `low_margin_flag` (hardcoded `<5%`, positive) instead of `<-5%`. 1.52% is under 5%, so it correctly fired under the bug live that day; it would not fire today. Owned as a build mistake in the reply.
+3. **Order 6163019 (Tim's Construction Group) — new feature, scoped then built.** Evan asked whether contract pricing info could be shown when `Price Page Description` reads `(no price page)`. Traced the price to P21's **Job/Contract Pricing** mechanism (`job_price_hdr`/`job_price_line`) — separate from Price Pages, which the view never looked at. Measured over 120 days: of 228,898 lines showing `(no price page)`, 35,986 (~16%) have an active, approved contract price behind them.
+
+### Contract/job price fallback — scoped and built in Play, NOT yet proven by a live fire
+
+`Alerts\Low-Margin-Alert\11-add-contract-price-description-PLAY.sql` (committed). Additive `LEFT JOIN`s only (`job_price_line`, `job_price_hdr`, the latter filtered to `approved='Y' AND cancelled='N'`) — **no new token, no body-template edit needed**, since `price_page_description` is already wired into every alert's body. `price_page_description` now falls back:
+
+```
+1) real price page description (unchanged)
+2) "Contract Price[: <job_description>][ (Contract #<contract_no>)]" when
+   price_page_uid=0 but an approved, active job/contract price exists
+3) "(no price page)" (unchanged, when neither applies)
+```
+
+Verified structurally against real Play data (job #5787, contract #1023680, customer "Efrain Reyes(ASI)", blank `job_description`) — renders cleanly as `Contract Price (Contract #1023680)`, no double-space artifact from the blank description field (first draft of the CASE expression had that bug, fixed before committing).
+
+**Test recipe, not yet run:** customer **1023680** ("Efrain Reyes(ASI)", confirmed not excluded by the alert's own `where_clause` — not in the excluded customer list, `corp_address_id = 1023680` ≠ the excluded `1046538`), item **`XLBXLGS4G`**, ship-from location **220** (546 available), qty **340 EA**, let the sell price auto-populate from the active contract (should land at $3.00/EA vs. $31.57 standard cost — trivially trips low margin). Expect `total_amount ≈ $1,020`, `extended_standard_cost ≈ $10,734`. Check the email for `Contract Price (Contract #1023680)` in place of `(no price page)`.
+
+**Status: 🟡 scoped + built in Play, structurally verified, no live-fire proof yet. No Prod script exists.** Reply to Evan sent as non-committal ("I'll investigate whether it's possible") since this hasn't been proven live. Tracked as Todo-BusApps #21.
+
 ## Separate, unresolved finding from the same testing session — order cancellation/deletion mechanics (KB0022345)
 
 While cleaning up Low Margin Alert test orders (6062516–6062520), investigated the difference between P21's **Cancel** action and the `delete_flag` on `oe_hdr`, using **KB0022345** for reference. This is **not part of the Low Margin Alert feature** — it belongs to the Cancel-order stored procs project and is documented there (`Deploy-Guides\cancel-order-stored-procs.md`, `project_2026_09_09_cancel_order_procs.md`) — noted here only because it was found during this alert's test-order cleanup. Per the user's explicit instruction, KB0022345 is to be referenced when reporting these findings to Matt (not yet drafted).
