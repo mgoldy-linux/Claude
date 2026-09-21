@@ -37,13 +37,15 @@ DECLARE @expected105 NVARCHAR(MAX) = 'total_amount > 1000 AND customer_id NOT IN
 DECLARE @expected106 NVARCHAR(MAX) = 'total_amount > 1000 AND customer_id NOT IN (3021352,3023035,3023036) AND corp_address_id <> 1046538 AND taker NOT LIKE ''%ESTORE%''  AND product_group_id = ''PAD'' AND new_order = ''Y'' AND extended_standard_cost > ''500'' AND (percent_profit_off_mac < -5 OR percent_profit_off_standard_cost < -5) AND rma_flag <> ''Y''';
 DECLARE @expected107 NVARCHAR(MAX) = 'total_amount > 1000 AND customer_id NOT IN (3021352,3023035,3023036) AND corp_address_id <> 1046538 AND taker NOT LIKE ''%ESTORE%''  AND product_group_id = ''PAD'' AND new_order = ''Y'' AND extended_standard_cost > ''500'' AND percent_profit_off_mac < -5 AND rma_flag <> ''Y''';
 
-IF NOT EXISTS (SELECT 1 FROM alert_implementation WHERE alert_implementation_uid=104 AND where_clause = @expected104)
+-- where_clause is a legacy text column -- must CAST to nvarchar(max) before comparing
+-- to an nvarchar(max) variable (text/nvarchar(max) '=' is not directly comparable).
+IF NOT EXISTS (SELECT 1 FROM alert_implementation WHERE alert_implementation_uid=104 AND CAST(where_clause AS NVARCHAR(MAX)) = @expected104)
 BEGIN RAISERROR('uid 104 where_clause has drifted from the 9/14 baseline -- STOP, re-verify before editing.',16,1); RETURN; END
-IF NOT EXISTS (SELECT 1 FROM alert_implementation WHERE alert_implementation_uid=105 AND where_clause = @expected105)
+IF NOT EXISTS (SELECT 1 FROM alert_implementation WHERE alert_implementation_uid=105 AND CAST(where_clause AS NVARCHAR(MAX)) = @expected105)
 BEGIN RAISERROR('uid 105 where_clause has drifted from the 9/14 baseline -- STOP, re-verify before editing.',16,1); RETURN; END
-IF NOT EXISTS (SELECT 1 FROM alert_implementation WHERE alert_implementation_uid=106 AND where_clause = @expected106)
+IF NOT EXISTS (SELECT 1 FROM alert_implementation WHERE alert_implementation_uid=106 AND CAST(where_clause AS NVARCHAR(MAX)) = @expected106)
 BEGIN RAISERROR('uid 106 where_clause has drifted from the 9/14 baseline -- STOP, re-verify before editing.',16,1); RETURN; END
-IF NOT EXISTS (SELECT 1 FROM alert_implementation WHERE alert_implementation_uid=107 AND where_clause = @expected107)
+IF NOT EXISTS (SELECT 1 FROM alert_implementation WHERE alert_implementation_uid=107 AND CAST(where_clause AS NVARCHAR(MAX)) = @expected107)
 BEGIN RAISERROR('uid 107 where_clause has drifted from the 9/14 baseline -- STOP, re-verify before editing.',16,1); RETURN; END
 
 PRINT 'All four where_clause values match the expected baseline -- proceeding.';
