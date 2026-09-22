@@ -1,20 +1,20 @@
 ---
 name: kbjs
-description: Audit code for leftover kb_ / js_ references and recommend measured performance improvements. Use when the user shares SQL, a business rule, a portal .srd, a report, or a PowerShell script and wants it checked before it ships — or whenever code is being touched anyway.
+description: Audit code for leftover kb_ / js_ / ds_ references and recommend measured performance improvements. Use when the user shares SQL, a business rule, a portal .srd, a report, or a PowerShell script and wants it checked before it ships — or whenever code is being touched anyway.
 ---
 
-# kb_ / js_ + Performance Audit
+# kb_ / js_ / ds_ + Performance Audit
 
 Two jobs, every time. Do **both** even if the user only asked about one, and even if the finding is outside the immediate task.
 
-KB and JS both left the company. Retiring their objects is an explicit 2026 goal, and the standing rule is: *"if I touch something I want to ensure it is up to date and best performance."* Code already open for edit is the cheapest moment to fix both — a missed reference survives another release.
+KB and JS both left the company. Retiring their objects is an explicit 2026 goal, and the standing rule is: *"if I touch something I want to ensure it is up to date and best performance."* Code already open for edit is the cheapest moment to fix both — a missed reference survives another release. `ds_` marks old DataWindow-sourced views (e.g. `ds_view_transfers`, converted to `v_*`/`p21_view_*`-based objects) — same retirement logic, flag it alongside `kb_`/`js_`.
 
-## 1. Flag every `kb_` and `js_` reference
+## 1. Flag every `kb_`, `js_`, and `ds_` reference
 
-Search the code and everything it depends on. A view can hide a `kb_` call two levels down — check object definitions, not just the file in front of you.
+Search the code and everything it depends on. A view can hide a `kb_` (or `ds_`) call two levels down — check object definitions, not just the file in front of you.
 
 ```
-rg -i '\b(kb_|js_)\w+'
+rg -i '\b(kb_|js_|ds_)\w+'
 ```
 
 For SQL, also expand the dependency chain — a clean-looking query over `kb_view_x` is not clean:
@@ -36,6 +36,7 @@ When a reference is actually replaced, log it per the KB replacement tracker con
 | `kb_view_item_classifications_loc100` | `inv_mast` + `price_family` |
 | `kb_view_users` (price_family_id) | `users_ud` |
 | `kb_SQLHelper` | `P21SqlConnection` + native `business_rule_log` |
+| `ds_view_transfers` | `v_transfer_portal_status` |
 
 New replacement logic belongs in an `asi_view_*` / `asi_fnt_*` object, with grants to `p21_application_role` and `PxxiUser`.
 
@@ -81,4 +82,4 @@ WHERE t.text LIKE '%<tag>%';
 - **`users.delete_flag` in Play is not representative** — Play's refresh flags most accounts as deleted. Never size a user-based filter from Play; use Prod.
 
 ## Output
-Lead with the `kb_`/`js_` hits (or state plainly that there are none), then the performance findings with the measured numbers behind them. Flag anything you could not verify rather than asserting it.
+Lead with the `kb_`/`js_`/`ds_` hits (or state plainly that there are none), then the performance findings with the measured numbers behind them. Flag anything you could not verify rather than asserting it.
