@@ -12,17 +12,31 @@
 7. For Chad — create BR flow path for OE
 8. For Chad — ensure Purpose, Roles and Logic are up to date on [Order Entry Improvement – Design Changes.docx](https://alltileccs.sharepoint.com/sites/ITTeam/Shared%20Documents/Business%20Applications/Platforms/Order%20Entry%20Improvement%20Project/Order%20Entry%20Improvement%20-%20Design%20Changes.docx?web=1)
 9. ⏳ before 9/14 — find the source of all OE popups (per popup: Business Rule, P21 setting, or DynaChange)
-10. Missing UPC/EAN report, v2 — stockable items only, primary supplier only, broken down by count missing **per location**. Follow-up to the 9/2 delivery (`Sql-Scripts\Inventory\Items-Missing-Supplier-UPC-EAN.sql`), where "by location" was flagged as a misconception since UPC/EAN lives on `inventory_supplier` per supplier, not per location — so this needs a real location join (e.g. `inventory_supplier_x_loc`) filtered to primary supplier + stockable. If running it for all locations is slow, do location 221 first.
-11. Surfacing/Closeout/E&O — Closeout/E&O exclusion should apply to all four alerts
-12. Reply to "FW: Low PAD Margin - Order# 6143117 for Arlun Floor Covering Denver - Total: $6448.99"
-13. Create sales order deletion test cases — testing P21's native order deletion criteria (separate from the custom cancel-order SPs in #3). Before & after captures, record timing per test, perform in the P21 web client, letter each test case (A, B, C, ...).
-14. Explain the difference between a cancelled order and a deleted order in P21 — is it possible to bring a deleted order back up (recover/undelete) in P21?
-15. Ensure all salesreps have a valid email — clean up deleted salesreps
+10. Ensure all salesreps have a valid email — clean up deleted salesreps
+11. Ensure all Business Apps team members have access to P21 Play, BRR, Training & Dev
+12. Order Ack subject email (SA 54321) — exclude ShagTools from the PO/Job Number stamping
+13. Create a design doc for the Order Ack subject email (SA 54321) — requirement: if the rep already typed a subject line, don't append PO & Job Number
+14. Send email to Tina about poorly written Job Numbers
+15. Investigate pulling contract/job pricing info into the Low Margin Alert when Price Page Description shows "(no price page)" — Evan Jenkins ask (order 6163019, Tim's Construction Group). P21's Job/Contract Pricing (`job_price_hdr`/`job_price_line`) is a separate mechanism from Price Pages the alert doesn't look at today; measured 16% of "(no price page)" lines (35,986/228,898 over 120d) actually have an active contract price behind them.
+16. Edit why each business rule exists — the "reason it exists" description must be written in human/business terms, not technical/code jargon.
+17. Find which roles have access to Schedule Task Manager
+18. Find who has access to PO Receipts
+19. Could a DynaChange prevent cancel on PO Receipts?
+20. Find who has access to cancel PO Receipts
+21. Expired-quote deletion — pull a count of how many quotes would be deleted (by year, 2016–2025 full year + 2026 past the screen's default expiration cutoff), before running the native P21 deletion screen — see `project_2026_09_20_expired_quote_deletion.md`
+22. Email Michelle & Lynette about SA 55209 (173 ship-to accounts with real payment terms but Freight Code = Prepaid) — ask which is actually correct for these accounts, the terms or the freight code — see `project_2026_09_23_sa55209_freight_codes.md`
+23. APC business rule documentation — Atlas Surcharge Rule dedicated pass, 5 of 7 `apc_*` objects still need one-pagers built (`apc_fe_conv_limit_class_surcharge`, `apc_fe_val_update_surcharge_price`, `apc_od_apply_surcharge_fc`, `apc_od_apply_surcharge_shipping`, `apc_os_conv_validate_surcharge_shipping`). Real source found for all 5 (no reverse-engineering needed) — `.cs`/`.sql` in `C:\Business_Rules`, plus `P21_BR01 REQ Surcharge Business Rule v1.5.docx` for the "Why It Exists" business rationale. Same template as the other one-pagers.
 
 ---
 
 ## Done
 
+- ~~Missing UPC/EAN report, v2~~ — 9/22
+- ~~Surfacing/Closeout/E&O — Closeout/E&O exclusion applied to all four alerts~~ — 9/22
+- ~~Reply to "FW: Low PAD Margin - Order# 6143117 for Arlun Floor Covering Denver"~~ — 9/22
+- ~~Create sales order deletion test cases~~ — 9/22 (full matrix run, Matt's summary + follow-up sent/answered — see `project_2026_09_21_order_deletion_criteria_test_cases.md`)
+- ~~Explain cancelled vs. deleted order in P21~~ — 9/22 (KB0022345 cancel-vs-delete mechanics confirmed, owed to Matt)
+- ~~Monday's Meeting (9/21) — WWMS: should users be using it?~~ — 9/22
 - ~~Answer Chad's questions (yellow highlight) on Order Entry Improvement – Design Changes.docx~~ — 9/8
 - ~~Add SSRS email check to the PowerShell launch menu~~ — 9/10
 - ~~Complete corporate training~~ — 9/2
