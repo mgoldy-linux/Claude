@@ -240,6 +240,72 @@
 > client** (per the standing preference on this alert family) → fire a test order → read the `price_edit` rendering
 > → forward samples to Evan → await his feedback.
 
+## 2026-09-24/25 — a Prod alert that never delivered. Investigated, root cause DISPROVED, closed as a one-off.
+
+**What happened.** Order **6171951** (Vanguard Concrete Coating, −41.37% off MAC, $4,339.44) generated a Low
+Margin alert that reached **nobody** — not just the rep, but Alex, Erik, Justine and the Order Taker too. It sat
+in `alert_queued_mail` as row **239**: `row_status_flag 1063` ("Email Pending"), `reason_cd 1060` ("Email system
+down"), `email_to` ending in a malformed `Sales Rep <>` because the order was on a house account whose rep has no
+email.
+
+**The mechanism behind `Name <>`** — real, read from P21 source, and worth knowing even though it is not the
+cause here. `p21_fn_validate_email_address` returns `<email_not_found/>` for NULL or empty input (P21's own comment:
+"a string that the alert SPs see as a flag that needs special treatment"). In `p21_sp_alert_generation`, when SMTP is
+enabled, recipients are built **name-first, before token substitution**:
+
+```sql
+Coalesce(alert_email_name + ' <' + alert_email_address + '>', alert_email_address)
+```
+
+so the string becomes `Sales Rep <<email_not_found/>>`, and the strip that follows removes **only the marker**,
+leaving `Sales Rep <>`.
+
+**The fix that followed was wrong.** The plan was to NULL `alert_email_name` on the three token recipient rows
+(NULL specifically — an empty string still leaves ` <>`), collapsing the Coalesce to the bare address so the strip
+removes the recipient cleanly. **A Play test disproved it.** Play 104 had only a hardcoded To recipient and so could
+not reproduce anything, so a rig was built: `<primary_salesrep_email>` added as a To recipient, house-rep contact
+1041 pointed at the user's own mailbox, and a **control run first** (email arrived, address twice — rig proven).
+Then the rep's email was cleared and the order rebuilt. **It sent anyway** — identical `Sales Rep <>`, and
+`alert_queued_mail` completely empty afterwards, not even the junk `<email_not_found/>` diagnostic row.
+
+**The CC hypothesis died too.** Prod's RSM was suspected, since Play's was inactive. Reconstructing 6171951's chain:
+rep contact 7913 (All Surfaces House Supplies) has a NULL email and resolves to the marker as expected, **but its
+manager is contact 1047, Al Ross, `aross@allsurfaces.com`** — valid. Prod's CC was clean.
+
+**Conclusion.** Prod's queue held exactly **one** row — no cluster — and the user confirms alerts have been arriving
+normally in the BCC-to-self since. A brief mail-relay failure at 14:17:31 on 9/24 caught the one alert in flight.
+**Prod recipients were left untouched; the proposed fix would have changed nothing.** The 14 rows captured as a
+rollback were never used.
+
+**Corrects a standing assumption.** Trap 1 in `feedback_p21_alerts` has held since 2026-08-26 that a dynamic
+recipient resolving blank "appears to stall the whole multi-recipient send." That was an inference from one
+incident and is now **disproved by direct test**.
+
+**Also learned:** P21 **does** warn about undelivered alert mail when the client opens — so these are not strictly
+silent. But the warning is dismissible and clearing it also clears the row, destroying the evidence.
+
+**Alert Maintenance note.** Adding the recipient through the client threw *"An error has occurred accessing alert
+information"* on save. Checked immediately whether that failed save had already fired trap 10's `where_clause`
+regeneration — **it had not**; Play 104's clause still matched script 10 byte-for-byte, including the grid-less
+`job_name NOT LIKE '%CLOSEOUT%'` and `'%E&O%'` conditions. The recipient was added by SQL instead and the counter
+realigned via `Check-Fix-Alert-Table-Counters-Play.sql`.
+
+**New monitoring:** `C:\PowerShell-Scripts\Alerts\Check-Stuck-Alert-Emails.ps1` (commits `f97f2e0`, `07ea131`) —
+a daily check for rows sitting in `alert_queued_mail`, reporting age, decoded reason/status codes and a
+malformed-recipient flag that is **deliberately labelled triage context rather than a diagnosis**, so it cannot
+re-assert the theory disproved here. Follows the `Check-Job-History.ps1` record format. Parse-verified, **not yet
+run live**.
+
+**House-account fallback — considered and declined.** A blank rep slot could route to a group mailbox
+(`pricingsupport@allsurfaces.com`, already named in the alert footer). Decided against changing the view: six real
+people still receive a house-account alert, including Alex Sivongsay, who *is* the pricing team in Evan's own
+escalation sequence. If it is ever built, note that `primary_salesrep_email` is shared across all five OE alerts —
+a fallback belongs in a **new additive column**, not in that token. A question was drafted to Evan instead
+(**not sent**).
+
+**Play left clean:** test recipient 208 deleted, contact 1041 reverted to NULL, test orders cancelled. `<rsm_email>`
+remains deactivated on Play 104, as before.
+
 ## Artifact(s)
 All under `C:\Claude\Alerts\Low-Margin-Alert\`, run **in numbered order**:
 
