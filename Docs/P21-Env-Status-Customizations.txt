@@ -2,7 +2,7 @@
 P21 ENVIRONMENT STATUS - CUSTOMIZATIONS / OPEN ITEMS
 ========================================================================
 Source:       C:\Claude\Docs\P21 Env Status-20260827.pdf
-Last updated: 2026-09-25  (BusinessRules deleted-user cleanup re-run - 15 Prod-deleted users synced, incl. KYOCOM via manual fix; gap remains structurally OPEN)
+Last updated: 2026-09-27  (P21Upgrade - native DC usage-push / TRG-exclude feature enabled for testing)
 Maintainer:   Update this file whenever a customization is added,
               changed, or closed in any environment.
 
@@ -135,6 +135,7 @@ P21 Upgrade  (P21 2025.02 Testing)  -  version 25.2.5776.92   -  last refresh 20
   - Only MG & AZ users enabled   [OPEN]
   - Need Print Service   [OPEN]
   - asi_proc_copy_p21_user deployed here 2026-08-04; the pre-existing duplicate asi_copy_p21_user was renamed to remove the collision   [DONE]
+  - DC usage push + TRG exclude TBO (Epicor quote F_DistributionCenters) - ran native p21_enable_distribution_center_functionality 2026-09-27: push_usage_to_replen_loc=Y, trg_exclude_tbo_stock_requirements=Y, one-time usage backfilled to 15 hubs. Snapshot tables zz_dc_ss_before/zz_dc_loc_before/zz_dc_expected/zz_dc_counts_before left in place. Still ON; real-time push (T3) + turn-off (Step 4) not yet tested. Service Broker is OFF here (P21 falls back to synchronous). Script: Sql-Scripts\Inventory\DC-Enable-Test-P21Upgrade.sql   [IN TEST]
 
 ========================================================================
 CROSS-ENV USER AUDIT  (2026-08-27)
