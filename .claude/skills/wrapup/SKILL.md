@@ -1,6 +1,6 @@
 ---
 name: wrapup
-description: End-of-session wrap-up — append the session to the daily tasks log, refresh the deploy guide and memory if anything changed, then commit. Use when the user says wrap up, log this, or we're done for the day.
+description: End-of-session wrap-up — append the session to the daily tasks log, refresh the deploy guide and memory if anything changed, draft starter queries/questions for tomorrow's open items, then commit. Use when the user says wrap up, log this, or we're done for the day.
 ---
 
 # Session Wrap-Up
@@ -70,16 +70,33 @@ environment section:
 - Add the one-line pointer to `MEMORY.md`.
 - Prefer updating an existing file over creating a near-duplicate.
 
-## 6. Commit
+## 6. Draft tomorrow's starters
+
+File: `C:\_P25\Tomorrow-Starters.md` — **overwrite** it each run; this is a scratch list for
+the next morning, not an accumulating log (`Daily-Tasks-Summary.md` is the permanent record).
+
+Walk Work-Log's Active table plus anything in `Lists\Todo-BusApps.md` / `Lists\Todo-Private.md`
+that isn't tracked there yet. For each item with a clear next action, draft one concrete
+starting point — not a status recap:
+
+- A specific, paste-ready SQL query (a few lines) when the next step is "find out X"
+- A specific question when the next step is "ask Y" or "decide Z"
+- Skip items with no clear next action rather than forcing one
+
+Keep each entry to 2–4 lines: item name, the starter itself, and the memory `project_*` file
+to open for full context. Note at the top of the file: **these are starting points to skim and
+adjust, not a queue — check for anything urgent first.**
+
+## 7. Commit
 
 - Stage the work; don't sweep in unrelated modified files. Check `git status` first and say what you're leaving out.
 - Write a message that explains **why**, not just what. The commit is the durable record — the reasoning belongs in it.
 - Follow the repo convention: end with `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
 - Branch first if on the default branch and the change warrants it. Do not push unless asked.
 
-## 7. Report back
+## 8. Report back
 
 Lead with status. Then:
-- What was written where (daily log, guide, customizations tracker, memory) and the commit SHA.
+- What was written where (daily log, guide, customizations tracker, memory, tomorrow's starters) and the commit SHA.
 - **What is still open** — the next action, and anything blocked on someone else.
 - Anything you could not verify, stated plainly.
