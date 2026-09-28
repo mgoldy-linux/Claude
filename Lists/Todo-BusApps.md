@@ -2,29 +2,30 @@
 
 *(Blocked / date-gated items moved to `Waiting-On-Info.md` in the repo's `Lists/` folder. Personal/non-BusApps items live in `Todo-Private.md`.)*
 
-1. Ensure BRs, portals & Crystal are equal between environments
+1. Call Epicor about the Directs Auto-Buy case again — CS0005626127 (SysAid 53769). Root cause trace-confirmed 9/24 (`default_to_order` never captured); 🟡 awaiting Purchasing/Jami traced test — see `project_2026_08_21_directs_auto_buy_scheduler.md`
+2. Ensure BRs, portals & Crystal are equal between environments
    - Also check **deleted P21 users** across environments — other people are deleting users (`users.delete_flag='Y'`), so the set is drifting between envs. Diff who's deleted where and reconcile.
-2. Create Customer Price List — management wants: enter a customer ID, generate a price list for that customer based on their discounts & contracts. Session note: exists as SSRS v2.2, clears 6 `kb_` — decide with Mark/Jossy whether to reuse v2.2 or rebuild
-3. Clean up test orders (cancel) / finish testing the cancel-order stored procs — `Sql-Scripts\asi_cancel_order.sql` and `asi_cancel_open_orders_by_user.sql` already built 8/31 (uncommitted, never run/verified). Phase 5 (`lost_sales_transaction`) is written and **redeployed in Play but never run**. Cancel a throwaway multi-line order and diff its rows against the client-cancelled 6062441 (expect N line rows + 1 trailer, `transaction_code_no` 2143). Also decide the two defaults: `@write_lost_sales`, and `@lost_sales_uid` (16 Other vs 31 Doesn't Need, far more common in real data). `Cancel_Order_SP_Guide.docx` + `Cancel-Order-Trace.csv` are the supporting profiler trace/docs.
-4. Use API to cancel orders — same 8/31 starting point as #3, but not yet proven through the API path specifically (existing procs are SQL, called directly)
-5. Delete Users — need to also check sales rep & portals too (beyond the Delete User V2 stored-procedure check already done on lower environments)
-6. AHI-API1 IIS cleanup — Outlook draft to Aziz ready (Drafts, screenshot attached) recommending removal of **P21Production**, **P21Upgrade**, **P21Play2** SOA sites (all dead on that box). **Next:** send it; open a SysAid ticket if Aziz wants one; remove sites + app pools once he confirms.
-7. For Chad — create BR flow path for OE
-8. For Chad — ensure Purpose, Roles and Logic are up to date on [Order Entry Improvement – Design Changes.docx](https://alltileccs.sharepoint.com/sites/ITTeam/Shared%20Documents/Business%20Applications/Platforms/Order%20Entry%20Improvement%20Project/Order%20Entry%20Improvement%20-%20Design%20Changes.docx?web=1)
-9. ⏳ before 9/28 — find the source of all OE popups (per popup: Business Rule, P21 setting, or DynaChange)
-10. Ensure all Business Apps team members have access to P21 Play, BRR, Training & Dev
-11. Order Ack subject email (SA 54321) — exclude ShagTools from the PO/Job Number stamping
-12. Create a design doc for the Order Ack subject email (SA 54321) — requirement: if the rep already typed a subject line, don't append PO & Job Number
-13. Send email to Tina about poorly written Job Numbers
-14. Investigate pulling contract/job pricing info into the Low Margin Alert when Price Page Description shows "(no price page)" — Evan Jenkins ask (order 6163019, Tim's Construction Group). P21's Job/Contract Pricing (`job_price_hdr`/`job_price_line`) is a separate mechanism from Price Pages the alert doesn't look at today; measured 16% of "(no price page)" lines (35,986/228,898 over 120d) actually have an active contract price behind them.
-15. Edit why each business rule exists — the "reason it exists" description must be written in human/business terms, not technical/code jargon.
-16. Find which roles have access to Schedule Task Manager
-17. Find who has access to PO Receipts
-18. Could a DynaChange prevent cancel on PO Receipts?
-19. Find who has access to cancel PO Receipts
-20. Expired-quote deletion — pull a count of how many quotes would be deleted (by year, 2016–2025 full year + 2026 past the screen's default expiration cutoff), before running the native P21 deletion screen — see `project_2026_09_20_expired_quote_deletion.md`
-21. Email Michelle & Lynette about SA 55209 (173 ship-to accounts with real payment terms but Freight Code = Prepaid) — ask which is actually correct for these accounts, the terms or the freight code — see `project_2026_09_23_sa55209_freight_codes.md`
-22. APC business rule documentation — Atlas Surcharge Rule dedicated pass, 5 of 7 `apc_*` objects still need one-pagers built (`apc_fe_conv_limit_class_surcharge`, `apc_fe_val_update_surcharge_price`, `apc_od_apply_surcharge_fc`, `apc_od_apply_surcharge_shipping`, `apc_os_conv_validate_surcharge_shipping`). Real source found for all 5 (no reverse-engineering needed) — `.cs`/`.sql` in `C:\Business_Rules`, plus `P21_BR01 REQ Surcharge Business Rule v1.5.docx` for the "Why It Exists" business rationale. Same template as the other one-pagers.
+3. Create Customer Price List — management wants: enter a customer ID, generate a price list for that customer based on their discounts & contracts. Session note: exists as SSRS v2.2, clears 6 `kb_` — decide with Mark/Jossy whether to reuse v2.2 or rebuild
+4. Clean up test orders (cancel) / finish testing the cancel-order stored procs — `Sql-Scripts\asi_cancel_order.sql` and `asi_cancel_open_orders_by_user.sql` already built 8/31 (uncommitted, never run/verified). Phase 5 (`lost_sales_transaction`) is written and **redeployed in Play but never run**. Cancel a throwaway multi-line order and diff its rows against the client-cancelled 6062441 (expect N line rows + 1 trailer, `transaction_code_no` 2143). Also decide the two defaults: `@write_lost_sales`, and `@lost_sales_uid` (16 Other vs 31 Doesn't Need, far more common in real data). `Cancel_Order_SP_Guide.docx` + `Cancel-Order-Trace.csv` are the supporting profiler trace/docs.
+5. Use API to cancel orders — same 8/31 starting point as #4, but not yet proven through the API path specifically (existing procs are SQL, called directly)
+6. Delete Users — need to also check sales rep & portals too (beyond the Delete User V2 stored-procedure check already done on lower environments)
+7. AHI-API1 IIS cleanup — Outlook draft to Aziz ready (Drafts, screenshot attached) recommending removal of **P21Production**, **P21Upgrade**, **P21Play2** SOA sites (all dead on that box). **Next:** send it; open a SysAid ticket if Aziz wants one; remove sites + app pools once he confirms.
+8. For Chad — create BR flow path for OE
+9. For Chad — ensure Purpose, Roles and Logic are up to date on [Order Entry Improvement – Design Changes.docx](https://alltileccs.sharepoint.com/sites/ITTeam/Shared%20Documents/Business%20Applications/Platforms/Order%20Entry%20Improvement%20Project/Order%20Entry%20Improvement%20-%20Design%20Changes.docx?web=1)
+10. ⏳ before 9/28 — find the source of all OE popups (per popup: Business Rule, P21 setting, or DynaChange)
+11. Ensure all Business Apps team members have access to P21 Play, BRR, Training & Dev
+12. Order Ack subject email (SA 54321) — exclude ShagTools from the PO/Job Number stamping
+13. Create a design doc for the Order Ack subject email (SA 54321) — requirement: if the rep already typed a subject line, don't append PO & Job Number
+14. Send email to Tina about poorly written Job Numbers
+15. Investigate pulling contract/job pricing info into the Low Margin Alert when Price Page Description shows "(no price page)" — Evan Jenkins ask (order 6163019, Tim's Construction Group). P21's Job/Contract Pricing (`job_price_hdr`/`job_price_line`) is a separate mechanism from Price Pages the alert doesn't look at today; measured 16% of "(no price page)" lines (35,986/228,898 over 120d) actually have an active contract price behind them.
+16. Edit why each business rule exists — the "reason it exists" description must be written in human/business terms, not technical/code jargon.
+17. Find which roles have access to Schedule Task Manager
+18. Find who has access to PO Receipts
+19. Could a DynaChange prevent cancel on PO Receipts?
+20. Find who has access to cancel PO Receipts
+21. Expired-quote deletion — pull a count of how many quotes would be deleted (by year, 2016–2025 full year + 2026 past the screen's default expiration cutoff), before running the native P21 deletion screen — 🟡 waiting on Matt (menu path / P21Dev availability) — see `project_2026_09_20_expired_quote_deletion.md`
+22. SA 55209 — 🔵 in progress: ship_to (173) + 7 open orders + ~13 live quotes confirmed for Prepaid → Out Freight; Play pre-check done (180 rows), UPDATE + client-save test not yet run in any environment — see `project_2026_09_23_sa55209_freight_codes.md`
+23. APC business rule documentation — Atlas Surcharge Rule dedicated pass, 5 of 7 `apc_*` objects still need one-pagers built (`apc_fe_conv_limit_class_surcharge`, `apc_fe_val_update_surcharge_price`, `apc_od_apply_surcharge_fc`, `apc_od_apply_surcharge_shipping`, `apc_os_conv_validate_surcharge_shipping`). Real source found for all 5 (no reverse-engineering needed) — `.cs`/`.sql` in `C:\Business_Rules`, plus `P21_BR01 REQ Surcharge Business Rule v1.5.docx` for the "Why It Exists" business rationale. Same template as the other one-pagers.
 
 ---
 
