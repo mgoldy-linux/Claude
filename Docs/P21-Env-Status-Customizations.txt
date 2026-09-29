@@ -2,7 +2,7 @@
 P21 ENVIRONMENT STATUS - CUSTOMIZATIONS / OPEN ITEMS
 ========================================================================
 Source:       C:\Claude\Docs\P21 Env Status-20260827.pdf
-Last updated: 2026-09-29  (Prod - Suppressor/asi_oe_suppress_oe_msgs message-suppression consolidation)
+Last updated: 2026-09-29  (Prod/DW/Play - SA 56034 Customer Price List proc fix)
 Maintainer:   Update this file whenever a customization is added,
               changed, or closed in any environment.
 
@@ -38,6 +38,7 @@ P21  (Production)  -  web 3443
   - SA 55232 Transfer Portal stuck-Partial fix - v_transfer_portal_status + ds_view_transfers both patched: UOM-conversion transfers (system-generated off a branch's PO receipt) left a rounding residue (e.g. qty_shipped=0.999999996 vs qty_to_transfer=1.000000000) that kept native shipped_flag='N' forever, permanently mislabeling the transfer status 5 "Shipped Partial / Received" even after full receipt. Added a tolerance branch (ABS diff < 0.0001) ahead of the exact-equality branches, routing to status 9 "Shipped Complete / Received Partial" instead; real partial shipments unaffected. Same fix mirrored into legacy ds_view_transfers (identical bug, plus a separate unfixed row-multiplication issue - no ROW_NUMBER/dedup, confirmed duplicate rows on some transfers). Verified against 7 real affected transfers (back to mid-June) + a genuine-partial regression case. Deployed & confirmed Prod 2026-09-22   [DONE]
   - ds_view_transfers retirement - 9 live portals confirmed referencing it via portal_user_defined.datawindow_name match (br_shp_open_xfer_rec_retrieval_v7, _rec, _rec_v7, _ship_retrieval_v9 [sources from BusinessRules share, not Prod - anomaly], _ship_v8, br_shp_transfer_weights_v3, my_open_xfers, open_xfer_search, ops_open_pt_tr_rma_V4), plus ~11 more .srd files in Test Cleanup/No longer Active folders not yet confirmed dead. Each live portal needs its own column-mapping + InfoMaker retrieval-SQL rewrite + test before ds_view_transfers can be dropped. Not started - see project_ds_view_transfers_retirement.md   [OPEN]
   - Suppressor / asi_oe_suppress_oe_msgs message-suppression consolidation - legacy Suppressor rule (business_rule_uid 46, created 2017 by shutchison, hardcoded to suppress only message_no 4347 "Export was successful") found still active alongside the newer asi_oe_suppress_oe_msgs data-driven framework (dbo.suppress_messages_p21_ud config table via usp_suppress_messages_p21_ud), both bound to the identical Message Box Opening event. Message 4347 was missing from the config table, so asi_oe_suppress_oe_msgs was logging a spurious ALERT entry into message_log_p21_ud every time it fired, even though the box was already being silently killed by the old rule. Added message_no=4347 (SUPPRESS) to suppress_messages_p21_ud 2026-09-28 via @action=ADD, confirmed in LIST output. Retirement of Suppressor itself (row_status_flag 704->705, business_rule_uid 46, drafted UPDATE ready) NOT yet run - awaiting a live export test to confirm the new config entry covers it before the old rule is turned off   [IN TEST]
+  - SA 56034 Customer Price List "Group Items by Class" fix - dbo.asi_proc_customer_pricing_loc_items patched 2026-09-29 (CREATE OR ALTER, one line): customer_price CASE in the class-grouped UNION branch used a bare cpaa.contract_price under GROUP BY (Msg 8120); now CASE WHEN MIN(cpaa.contract_price) IS NULL THEN MIN(cpaa.price) ELSE MIN(cpaa.contract_price) END. Tested Play + warehouse SSRS first. Group by Class = False never hit it. Awaiting Brian's confirmation. Script: Sql-Scripts\Customers\SA-56034-Fix-...group-by.sql; guide Deploy-Guides\SA-56034-...md   [DONE]
 
 ========================================================================
 P21  (Data Warehouse - ASDWDB01)  -  nightly 2:05 restore from Prod
@@ -46,6 +47,7 @@ P21  (Data Warehouse - ASDWDB01)  -  nightly 2:05 restore from Prod
   - SSRS "Inventory Usage 90 Days" - stray daily-1AM test subscription owned by mgoldyn since 2025-07-14 disabled 2026-08-25 (was rendering 72.8MB / 49,236 rows and hanging the mail relay)   [DONE]
   - 90 Day Usage Report - "mfg" Use Default Value fix (2026-07-27) validated 2026-08-12 across all 44 per-location subscriptions   [DONE]
   - SA 48715 Five Way Params - Null defaults on the -SA-48715-Fix report verified correct 2026-07-27; awaiting Jim Geerling's validation run (reminder email drafted, not sent)   [IN TEST]
+  - SA 56034 asi_proc_customer_pricing_loc_items - TEMPORARY patch applied 2026-09-29 for the SSRS retest (Customer Price List v2.2 reads this DB); reverted by tonight's ~2:05 restore. Lasting fix is the Prod patch (see Prod section), which arrives with the next restore   [DONE]
 
 ========================================================================
 P21Dev  (Dev)  -  middleware 3448
@@ -73,6 +75,7 @@ P21Play  (Dev / QA)  -  middleware 3445
   - Alert uid 102 "Test Verify Alerts" - confirmed ACTIVE (704) again as of 2026-09-18, contradicting the DONE line below (last verified 2026-08-xx) - fires a decoy on every order, expected noise during Low Margin testing, not re-deactivated   [OPEN]
   - asi_cancel_order + asi_cancel_open_orders_by_user - redeployed 2026-09-09 with Phase 5 (writes lost_sales_transaction, which the client does in its application layer and the earlier trace-derived version missed). NOT yet tested. Deliberately NOT in Prod, so every refresh-from-Prod deletes them and they must be redeployed   [IN TEST]
   - SA 55232 Transfer Portal stuck-Partial fix - v_transfer_portal_status + ds_view_transfers tolerance-branch patch (see Prod entry for full detail); built and proven here first (7 real residue-affected transfers flipped status 5->9, genuine-partial regression case confirmed unaffected), then promoted to Prod 2026-09-22   [DONE]
+  - SA 56034 asi_proc_customer_pricing_loc_items - patched 2026-09-29 and proven here first (cust 1034300, loc 140, 946 contract items: Group by Class Y = 801 rows / N = 839, no Msg 8120); later applied to Prod. Refresh-from-Prod will replace it with Prod's (patched) version   [DONE]
 ========================================================================
   - Custom import settings for EDI   [OPEN]
   - User Neil Van Walbeck (NVANWALBECK, branch 100, role_uid 1 "All") - SA 51571; lower-env-only contractor account, refresh-fragile (wiped by the 2026-08-03 refresh-from-Prod, since re-added manually via the P21 client; present again as of the 2026-08-27 audit). asi_proc_copy_p21_user has an open bug so re-adds are manual   [OPEN]
