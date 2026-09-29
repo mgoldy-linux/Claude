@@ -306,6 +306,87 @@ a fallback belongs in a **new additive column**, not in that token. A question w
 **Play left clean:** test recipient 208 deleted, contact 1041 reverted to NULL, test orders cancelled. `<rsm_email>`
 remains deactivated on Play 104, as before.
 
+## 2026-09-29 — a SECOND undelivered alert. Recipient theory dead; the P21 codes are meaningless; native notification is unreliable.
+
+**The 9/25 "one-off" call was wrong.** A second alert failed **2026-09-28 14:51:21** — `alert_queued_mail` row **240**,
+order **6177600** (The Carpet Group Inc(Pad), 3 PAD lines all negative margin, **$4,946.00**). Two in five days.
+
+**Row 240's `email_to` was entirely valid** — `Alex; Erik; Justine; Order Taker <ggierum@…>; Sales Rep
+<kevini@allsurfaces.com>`. No `<>`, no blank. Same `1060`/`1063`, still failed. **The recipient theory is dead**, which
+retrospectively confirms that leaving Prod's recipients untouched on 9/25 was correct.
+
+### ⚠ The codes are hardcoded — they are never a diagnosis
+
+`p21_sp_send_mail_error_handler` contains:
+
+```sql
+INSERT INTO alert_queued_mail (... reason_cd ... row_status_flag ...)
+VALUES (... 1060, -- Code = Email system down.
+        ... 1063  -- Code desc = Email Pending. )
+```
+
+**Every failed alert email gets `1060 / 1063` regardless of the real cause**, and unlike document email (which keeps
+`error_text`) the actual SMTP error is **never persisted**. Reading "Email system down" as literal is what aimed the
+9/24–9/25 investigation at recipients.
+
+### Ruled out, with evidence
+
+| Ruled out | Evidence |
+|---|---|
+| Relay down | **168** document emails in the 9/24 14:00 hour, **0 errors**; **192** on 9/28 |
+| SSRS saturating the shared relay | The 9/25 SSRS record covers 9/24 08:46→9/25 08:12: 6 sends, all OK, **none in the afternoon** |
+| Blank/malformed recipient | Row 240's To line entirely valid |
+| Empty sender → silent MAPI fallback | `p21_sp_send_mail` does have `IF @avc255_Senders = '' SET @MailType = 'MAPI'`, but all four alerts carry `sender_email_address` **NULL** (correct) and defaults resolve to `Internal Alert <noreply@allsurfaces.com>` |
+
+`mailitem_id` is NULL on both stuck rows — never handed off for dispatch. P21 sends via **CDOSYS**
+(`p21_sp_send_smtpmail`), not Database Mail, so there is no `msdb` trail either.
+
+### The resend result
+
+The user resent row 240 from the client and the queue went to **zero** — same message, same recipients, same body,
+away 19 hours later. **So the message itself is fine and the failures are transient.** ⚠ Not fully confirmed whether it
+genuinely delivered or the client action merely cleared the row; the BCC-to-self inbox is the only way to tell, and
+that check is still outstanding.
+
+### There is no log of successful alert sends
+
+`email_log` carries **17 transaction types** over 14 days (Order Ack 11,817, Invoice 3,079, Quotation, PO, RMA…) and
+**no ALERT type**. With the transient queue and NULL `mailitem_id`, the **BCC-to-self is the only audit trail** —
+reconfirming the 2026-08-27 conclusion.
+
+### ⚠ P21's own notification cannot be relied on
+
+The red badge comes from the same error handler, which inserts a `system_alerts` row (type 1065) — **but only for users
+who do not already have an undismissed one**:
+
+```sql
+WHERE users.receive_system_alerts = 'Y' AND users.delete_flag = 'N'
+  AND NOT EXISTS (... row_status_flag = 704 AND system_alert_type_cd = 1065)
+```
+
+**11 outstanding rows, all active (704), spanning 2019-03-28 → 2026-09-28** on `MMUNSON, JVADAKKEL, OROSVC, LBERRY,
+ADMIN, ADMINISTRATOR, CWOYTKO, JSAMUELS, DEREK, EDI, SHUTCHISON` — including **DEREK (`delete_flag='Y'`, departed)** and
+service accounts. Anyone who never dismisses theirs is **silently skipped for every subsequent failure**, in one case
+since 2019. Only **8 users** qualify at all. Dismissing is what re-arms it. **The absence of a red badge means nothing.**
+
+### Designed, NOT built
+
+SQL Agent job **`_asi_Alert_Queued_Mail_Monitor`** — every 15 minutes, emails via **Database Mail**, deliberately a
+different channel from the failing CDOSYS path so a P21 mail problem cannot swallow its own alarm. Filters to rows
+newer than ~20 minutes so a row stuck 19 hours emails once, not 76 times. The `_asi_` prefix means the existing
+`Check-Job-History.ps1` monitors the monitor.
+
+**Database Mail is enabled on Prod** — profile **`P21 Alerts`** / `P21_Alerts@allsurfaces.com` — but **dormant since
+2025-10-28** (0 sent, 0 failed in 30 days). It must be test-sent before anything depends on it. Permission requested,
+not yet given.
+
+⚠ Do **not** wire `Check-Stuck-Alert-Emails.ps1` into profile init — a dbatools call there is the exact pattern behind
+the SentinelOne / Arete #331962 incident. Use a Windows scheduled task.
+
+**Status: 🟡 open, waiting for the next failure.** Retroactive diagnosis is exhausted — P21 discards the only evidence
+that could answer it. The real route to a cause is the **SMTP relay / Exchange logs at 2026-09-24 14:17:31 and
+2026-09-28 14:51:21**; that is an IT ask and has not been made. Prod unchanged throughout.
+
 ## Artifact(s)
 All under `C:\Claude\Alerts\Low-Margin-Alert\`, run **in numbered order**:
 

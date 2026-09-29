@@ -2,7 +2,7 @@
 P21 ENVIRONMENT STATUS - CUSTOMIZATIONS / OPEN ITEMS
 ========================================================================
 Source:       C:\Claude\Docs\P21 Env Status-20260827.pdf
-Last updated: 2026-09-28  (Prod - Suppressor/asi_oe_suppress_oe_msgs message-suppression consolidation)
+Last updated: 2026-09-29  (Prod - Suppressor/asi_oe_suppress_oe_msgs message-suppression consolidation)
 Maintainer:   Update this file whenever a customization is added,
               changed, or closed in any environment.
 
@@ -15,7 +15,7 @@ STANDARD FORMAT
 
 ========================================================================
 P21  (Production)  -  web 3443
-  - Low Margin Alert - undelivered-alert incident 2026-09-24: order 6171951 generated an alert that reached none of its recipients; sat in alert_queued_mail row 239 (1063 Email Pending / 1060 Email system down). Investigated 9/25 - the malformed 'Sales Rep <>' in email_to was NOT the cause (disproved by Play test; Prod's CC was clean). One isolated row, alerts arriving normally since, so treated as a transient mail-relay failure. NO change made to Prod recipients or the view. New daily check built: C:\PowerShell-Scripts\Alerts\Check-Stuck-Alert-Emails.ps1 (live-verified 2026-09-25: ran clean against Prod, queue empty, 0 errors)   [DONE]
+  - Low Margin Alert - UNDELIVERED ALERTS, recurring (2026-09-24 row 239 order 6171951; 2026-09-28 row 240 order 6177600). Two in five days - the 9/25 'one-off' assessment was wrong. Recipient theory DISPROVED: row 240's To line was entirely valid. reason_cd 1060 / row_status_flag 1063 are HARDCODED literals in p21_sp_send_mail_error_handler and say nothing about the cause; the real SMTP error is never persisted for alerts. Relay was up both times (168/192 document emails per hour, 0 errors). Resending row 240 succeeded, so the message is fine and failures are transient. NO Prod change made. Root cause NOT determined - needs the SMTP relay/Exchange logs at 14:17:31 (9/24) and 14:51:21 (9/28), an IT ask not yet made. ALSO: P21's own red-badge notification only fires for users with no undismissed 1065 row - 11 are outstanding since as far back as 2019 incl. departed DEREK and service accounts, so absence of a badge proves nothing. Planned: SQL Agent job _asi_Alert_Queued_Mail_Monitor via Database Mail (profile 'P21 Alerts' exists but dormant since 2025-10-28, needs a test send)   [OPEN]
 ========================================================================
   - Excel report connection string - Provider=SQLOLEDB;Data Source=p21.allsurfaces.com;Trusted_connection=yes;Initial Catalog=P21   [REFERENCE]
   - SA 51376 RMA Transaction History - "Reason Code" column added to all 21 role versions of Transaction Master Inquiry Orders (RMA tab); source lost_sales_transaction; requestor sign-off 2026-08-06   [DONE]
