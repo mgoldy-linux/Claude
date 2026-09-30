@@ -2,7 +2,7 @@
 P21 ENVIRONMENT STATUS - CUSTOMIZATIONS / OPEN ITEMS
 ========================================================================
 Source:       C:\Claude\Docs\P21 Env Status-20260827.pdf
-Last updated: 2026-09-30  (Portal Cleanup Step 5 - kbenish portal_assignment cleanup, Play done/Prod pending)
+Last updated: 2026-09-30  (SA 55209 ship-to Freight Code Play test done, Prod pending approval)
 Maintainer:   Update this file whenever a customization is added,
               changed, or closed in any environment.
 
@@ -41,6 +41,7 @@ P21  (Production)  -  web 3443
   - SA 56034 Customer Price List "Group Items by Class" fix - dbo.asi_proc_customer_pricing_loc_items patched 2026-09-29 (CREATE OR ALTER, one line): customer_price CASE in the class-grouped UNION branch used a bare cpaa.contract_price under GROUP BY (Msg 8120); now CASE WHEN MIN(cpaa.contract_price) IS NULL THEN MIN(cpaa.price) ELSE MIN(cpaa.contract_price) END. Tested Play + warehouse SSRS first. Group by Class = False never hit it. Awaiting Brian's confirmation. Script: Sql-Scripts\Customers\SA-56034-Fix-...group-by.sql; guide Deploy-Guides\SA-56034-...md   [DONE]
   - kbenish portal_assignment cleanup - her 125 direct portal_assignment rows (role_uid IS NULL) soft-deleted to 705 (Inactive) in Play 2026-09-30, proven single-user test ahead of the deleted-users portal cleanup (Portal Cleanup Step 5). NOT yet applied to Prod - planned for after-hours 2026-09-30, needed so it survives the next refresh (same drift mechanism as the kbenish DB-user-object line below)   [OPEN]
 
+  - SA 55209 Ship-To Freight Code Prepaid -> Out Freight - 172 ship_to rows (Prod verify 9/30; Crew2 Inc. already fixed by tthousand) to change freight_code_uid 6 -> 2. Change request submitted, In Approval; planned 7 PM EDT after approval; ship_to only, open orders untouched. Backup table + Excel before UPDATE. Deploy guide: Deploy-Guides\SA-55209-ship-to-freight-code-prepaid-to-out-freight.md   [OPEN]
 ========================================================================
 P21  (Data Warehouse - ASDWDB01)  -  nightly 2:05 restore from Prod
 ========================================================================
@@ -95,6 +96,7 @@ P21Play  (Dev / QA)  -  middleware 3445
   - alert_message env-tagging - Play already carries the [P21Play] tag protection (reference for the sibling scripts)   [REFERENCE]
   - Portal Cleanup Step 5 - deleted-user portal_assignment cleanup re-run 2026-09-30, scoped to all delete_flag='Y' users: 0 rows still at 704 (KBENISH was the only one drifted back since the original 2026-06-22 fix, ~698 rows/149 users, which did not survive a later refresh-from-Prod). Play caught up as of today; will drift again at the next refresh until the same fix lands in Prod (see Prod section). Session log: C:\_P25\Portal-Cleanup-Progress.md, Session 9   [DONE]
 
+  - SA 55209 Ship-To Freight Code Prepaid -> Out Freight - 179 Play ship_to rows UPDATEd freight_code_uid 6 -> 2 on 2026-09-30 (left updated; UI checks passed). Backup table dbo.asi_bak_SA55209_ship_to_freight left in P21Play (wiped at next refresh). Scripts: Sql-Scripts\Customers\SA-55209-{Backup,Update,Restore}-*.sql   [DONE]
 ========================================================================
 Training  (Project Testing)  -  middleware 3447
 ========================================================================

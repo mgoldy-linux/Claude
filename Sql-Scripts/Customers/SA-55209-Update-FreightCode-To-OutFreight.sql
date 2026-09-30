@@ -23,7 +23,7 @@
    Run in SSMS (direct TDS connection from this session is blocked).
    Test on a lower environment (Play/Training) before Prod.
 */
-
+use [P21] -- P21Play;
 -- 1) Verify current state before changing anything -- expect exactly 173 rows, all Prepaid
 SELECT s.ship_to_id, c.customer_id, c.customer_name, a.name AS ship_to_name,
        c.terms_id, t.terms_desc, fc.freight_desc AS current_freight_code
@@ -40,6 +40,19 @@ ORDER BY c.customer_id, s.ship_to_id;
 
 -- STOP: if the row count above isn't 173, the underlying data has moved since 9/23 --
 -- re-diff against the report before proceeding, don't just run the UPDATE.
+
+-- 1b) Backup guard: SA-55209-Backup-ShipTo-FreightCode.sql must have been run first.
+--     Stops the batch if the backup table is missing or doesn't match the live Prepaid set.
+IF OBJECT_ID('dbo.asi_bak_SA55209_ship_to_freight') IS NULL
+   OR (SELECT COUNT(*) FROM dbo.asi_bak_SA55209_ship_to_freight b
+       JOIN ship_to s ON s.ship_to_id = b.ship_to_id AND s.customer_id = b.customer_id
+       WHERE s.freight_code_uid = 6) <>
+      (SELECT COUNT(*) FROM ship_to s JOIN customer c ON s.customer_id = c.customer_id
+       WHERE s.freight_code_uid = 6 AND c.delete_flag = 'N' AND s.delete_flag = 'N' AND c.terms_id <> '21')
+BEGIN
+    RAISERROR('Backup missing or out of sync with the rows to be updated - run the Backup script first. NOT updating.', 16, 1);
+    RETURN;
+END;
 
 -- 2) Apply the confirmed change
 UPDATE s
@@ -63,3 +76,10 @@ WHERE  s.freight_code_uid = 6
   AND  c.delete_flag = 'N'
   AND  s.delete_flag = 'N'
   AND  c.terms_id <> '21';
+
+
+  -- recent update
+ -- 1. Run this to see why they dropped off, meaning what they're now set to and who changed them:
+/*SELECT s.ship_to_id, s.customer_id, c.customer_name, s.freight_code_uid, s.delete_flag AS st_del, c.delete_flag AS cust_del, c.terms_id, s.last_maintained_by
+FROM ship_to s JOIN customer c ON c.customer_id = s.customer_id
+WHERE s.ship_to_id IN (1126566, 3001467);*/
