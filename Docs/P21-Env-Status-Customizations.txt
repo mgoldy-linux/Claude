@@ -2,7 +2,7 @@
 P21 ENVIRONMENT STATUS - CUSTOMIZATIONS / OPEN ITEMS
 ========================================================================
 Source:       C:\Claude\Docs\P21 Env Status-20260827.pdf
-Last updated: 2026-09-30  (Business Rules - team login/company access gaps found)
+Last updated: 2026-09-30  (Portal Cleanup Step 5 - kbenish portal_assignment cleanup, Play done/Prod pending)
 Maintainer:   Update this file whenever a customization is added,
               changed, or closed in any environment.
 
@@ -39,6 +39,7 @@ P21  (Production)  -  web 3443
   - ds_view_transfers retirement - 9 live portals confirmed referencing it via portal_user_defined.datawindow_name match (br_shp_open_xfer_rec_retrieval_v7, _rec, _rec_v7, _ship_retrieval_v9 [sources from BusinessRules share, not Prod - anomaly], _ship_v8, br_shp_transfer_weights_v3, my_open_xfers, open_xfer_search, ops_open_pt_tr_rma_V4), plus ~11 more .srd files in Test Cleanup/No longer Active folders not yet confirmed dead. Each live portal needs its own column-mapping + InfoMaker retrieval-SQL rewrite + test before ds_view_transfers can be dropped. Not started - see project_ds_view_transfers_retirement.md   [OPEN]
   - Suppressor / asi_oe_suppress_oe_msgs message-suppression consolidation - legacy Suppressor rule (business_rule_uid 46, created 2017 by shutchison, hardcoded to suppress only message_no 4347 "Export was successful") found still active alongside the newer asi_oe_suppress_oe_msgs data-driven framework (dbo.suppress_messages_p21_ud config table via usp_suppress_messages_p21_ud), both bound to the identical Message Box Opening event. Message 4347 was missing from the config table, so asi_oe_suppress_oe_msgs was logging a spurious ALERT entry into message_log_p21_ud every time it fired, even though the box was already being silently killed by the old rule. Added message_no=4347 (SUPPRESS) to suppress_messages_p21_ud 2026-09-28 via @action=ADD, confirmed in LIST output. Retirement of Suppressor itself (row_status_flag 704->705, business_rule_uid 46, drafted UPDATE ready) NOT yet run - awaiting a live export test to confirm the new config entry covers it before the old rule is turned off   [IN TEST]
   - SA 56034 Customer Price List "Group Items by Class" fix - dbo.asi_proc_customer_pricing_loc_items patched 2026-09-29 (CREATE OR ALTER, one line): customer_price CASE in the class-grouped UNION branch used a bare cpaa.contract_price under GROUP BY (Msg 8120); now CASE WHEN MIN(cpaa.contract_price) IS NULL THEN MIN(cpaa.price) ELSE MIN(cpaa.contract_price) END. Tested Play + warehouse SSRS first. Group by Class = False never hit it. Awaiting Brian's confirmation. Script: Sql-Scripts\Customers\SA-56034-Fix-...group-by.sql; guide Deploy-Guides\SA-56034-...md   [DONE]
+  - kbenish portal_assignment cleanup - her 125 direct portal_assignment rows (role_uid IS NULL) soft-deleted to 705 (Inactive) in Play 2026-09-30, proven single-user test ahead of the deleted-users portal cleanup (Portal Cleanup Step 5). NOT yet applied to Prod - planned for after-hours 2026-09-30, needed so it survives the next refresh (same drift mechanism as the kbenish DB-user-object line below)   [OPEN]
 
 ========================================================================
 P21  (Data Warehouse - ASDWDB01)  -  nightly 2:05 restore from Prod
@@ -92,6 +93,7 @@ P21Play  (Dev / QA)  -  middleware 3445
   - OE alert-view NULL-token hardening - 06-harden-oe-view-null-tokens.sql (6 unwrapped OE token columns) deployed to Play/Training/BusinessRules; NOT yet Prod   [DONE]
   - Alert uid 102 "Test Verify Alerts" - status flips between deactivated and active across refreshes; confirmed ACTIVE again 2026-09-18 (see the item above) - re-check row_status_flag before relying on this being off   [OPEN]
   - alert_message env-tagging - Play already carries the [P21Play] tag protection (reference for the sibling scripts)   [REFERENCE]
+  - Portal Cleanup Step 5 - deleted-user portal_assignment cleanup re-run 2026-09-30, scoped to all delete_flag='Y' users: 0 rows still at 704 (KBENISH was the only one drifted back since the original 2026-06-22 fix, ~698 rows/149 users, which did not survive a later refresh-from-Prod). Play caught up as of today; will drift again at the next refresh until the same fix lands in Prod (see Prod section). Session log: C:\_P25\Portal-Cleanup-Progress.md, Session 9   [DONE]
 
 ========================================================================
 Training  (Project Testing)  -  middleware 3447

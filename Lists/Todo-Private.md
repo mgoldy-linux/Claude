@@ -8,6 +8,7 @@
 4. Create price check tool
 5. Is it possible to create a widget for price check
 6. Is it possible to create a portal for price check
+7. Deleted users - remove portal assignment
 
 ---
 
