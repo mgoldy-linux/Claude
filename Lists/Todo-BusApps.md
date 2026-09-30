@@ -2,7 +2,6 @@
 
 *(Blocked / date-gated items moved to `Waiting-On-Info.md` in the repo's `Lists/` folder. Personal/non-BusApps items live in `Todo-Private.md`.)*
 
-1. Call Epicor about the Directs Auto-Buy case again — CS0005626127 (SysAid 53769). Root cause trace-confirmed 9/24 (`default_to_order` never captured); 🟡 awaiting Purchasing/Jami traced test — see `project_2026_08_21_directs_auto_buy_scheduler.md`
 2. Ensure BRs, portals & Crystal are equal between environments
    - Also check **deleted P21 users** across environments — other people are deleting users (`users.delete_flag='Y'`), so the set is drifting between envs. Diff who's deleted where and reconcile.
 3. Create Customer Price List — management wants: enter a customer ID, generate a price list for that customer based on their discounts & contracts. Session note: exists as SSRS v2.2, clears 6 `kb_` — decide with Mark/Jossy whether to reuse v2.2 or rebuild
@@ -12,8 +11,7 @@
 7. AHI-API1 IIS cleanup — Outlook draft to Aziz ready (Drafts, screenshot attached) recommending removal of **P21Production**, **P21Upgrade**, **P21Play2** SOA sites (all dead on that box). **Next:** send it; open a SysAid ticket if Aziz wants one; remove sites + app pools once he confirms.
 8. For Chad — create BR flow path for OE
 9. For Chad — ensure Purpose, Roles and Logic are up to date on [Order Entry Improvement – Design Changes.docx](https://alltileccs.sharepoint.com/sites/ITTeam/Shared%20Documents/Business%20Applications/Platforms/Order%20Entry%20Improvement%20Project/Order%20Entry%20Improvement%20-%20Design%20Changes.docx?web=1)
-10. ⏳ before 9/28 — find the source of all OE popups (per popup: Business Rule, P21 setting, or DynaChange)
-11. Ensure all Business Apps team members have access to P21 Play, BRR, Training & Dev
+10. ⏳ due Mon 10/5 — find the source of all OE popups (per popup: Business Rule, P21 setting, or DynaChange)
 12. Order Ack subject email (SA 54321) — exclude ShagTools from the PO/Job Number stamping
 13. Create a design doc for the Order Ack subject email (SA 54321) — requirement: if the rep already typed a subject line, don't append PO & Job Number
 14. Send email to Tina about poorly written Job Numbers
@@ -32,6 +30,8 @@
 
 ## Done
 
+- ~~Ensure all Business Apps team members have access to P21 Play, BRR, Training & Dev~~ — 9/30. Play/Dev/Training clean. Only BRR had gaps: Chad + Efrain `delete_flag='Y'`, and Chad/Efrain/Matt/Tina missing company 1. Scripts in `Sql-Scripts\Users\` (`Check-BusApps-Team-*.sql`, `Undelete-BusApps-Team-BRR.sql`, `Fix-BusApps-Team-Company-Access-BRR.sql`), committed a02fd76; BRR fixes not yet run there and a Prod refresh would overwrite them.
+- ~~Call Epicor about the Directs Auto-Buy case again — CS0005626127 (SysAid 53769)~~ — 9/30. Root cause trace-confirmed 9/24 (`default_to_order` never captured); see `project_2026_08_21_directs_auto_buy_scheduler.md`
 - ~~Ensure all salesreps have a valid email — clean up deleted salesreps~~ — 9/24
 - ~~Missing UPC/EAN report, v2~~ — 9/22
 - ~~Surfacing/Closeout/E&O — Closeout/E&O exclusion applied to all four alerts~~ — 9/22
