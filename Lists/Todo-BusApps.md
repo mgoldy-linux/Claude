@@ -26,6 +26,7 @@
 21. Expired-quote deletion — pull a count of how many quotes would be deleted (by year, 2016–2025 full year + 2026 past the screen's default expiration cutoff), before running the native P21 deletion screen — 🟡 waiting on Matt (menu path / P21Dev availability) — see `project_2026_09_20_expired_quote_deletion.md`
 22. SA 55209 — 🔵 in progress: ship_to (173) + 7 open orders + ~13 live quotes confirmed for Prepaid → Out Freight; Play pre-check done (180 rows), UPDATE + client-save test not yet run in any environment — see `project_2026_09_23_sa55209_freight_codes.md`
 23. APC business rule documentation — Atlas Surcharge Rule dedicated pass, 5 of 7 `apc_*` objects still need one-pagers built (`apc_fe_conv_limit_class_surcharge`, `apc_fe_val_update_surcharge_price`, `apc_od_apply_surcharge_fc`, `apc_od_apply_surcharge_shipping`, `apc_os_conv_validate_surcharge_shipping`). Real source found for all 5 (no reverse-engineering needed) — `.cs`/`.sql` in `C:\Business_Rules`, plus `P21_BR01 REQ Surcharge Business Rule v1.5.docx` for the "Why It Exists" business rationale. Same template as the other one-pagers.
+24. Discuss the DC purchase/transfer email (sent over the weekend) with Jossy in the 9/30 1:1 — see `project_2026_09_27_dc_porg_trg_feasibility.md`
 
 ---
 
