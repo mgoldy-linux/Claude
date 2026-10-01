@@ -49,7 +49,7 @@ P21  (Data Warehouse - ASDWDB01)  -  nightly 2:05 restore from Prod
   - SSRS "Inventory Usage 90 Days" - stray daily-1AM test subscription owned by mgoldyn since 2025-07-14 disabled 2026-08-25 (was rendering 72.8MB / 49,236 rows and hanging the mail relay)   [DONE]
   - 90 Day Usage Report - "mfg" Use Default Value fix (2026-07-27) validated 2026-08-12 across all 44 per-location subscriptions   [DONE]
   - SA 48715 Five Way Params - Null defaults on the -SA-48715-Fix report verified correct 2026-07-27; awaiting Jim Geerling's validation run (reminder email drafted, not sent)   [IN TEST]
-  - SA 56034 asi_proc_customer_pricing_loc_items - TEMPORARY patch applied 2026-09-29 for the SSRS retest (Customer Price List v2.2 reads this DB); reverted by tonight's ~2:05 restore. Lasting fix is the Prod patch (see Prod section), which arrives with the next restore   [DONE]
+  - SA 56034 asi_proc_customer_pricing_loc_items - Temporary patch applied 2026-09-29 for the SSRS retest (Customer Price List v2.2 reads this DB), then superseded by the Prod patch (proc modify_date 2026-09-29 4:34 PM). VERIFIED 2026-10-01: the 2:05 AM restore carried the Prod version here - proc contains MIN(cpaa.contract_price) IS NULL; fix is permanent in the warehouse. Still no Group by Class = True run from a user other than mgoldyn in ExecutionLog3 (all others used False)   [DONE]
 
 ========================================================================
 P21Dev  (Dev)  -  middleware 3448
