@@ -6,11 +6,11 @@
 - `Sql-Scripts\Customers\SA-55209-Backup-ShipTo-FreightCode.sql` — script, run FIRST. Copies the rows the UPDATE will touch into `dbo.asi_bak_SA55209_ship_to_freight`
 - `Sql-Scripts\Customers\SA-55209-Update-FreightCode-To-OutFreight.sql` — script, the change itself (`ship_to.freight_code_uid` 6 → 2). Refuses to run if the backup table is missing or out of sync
 - `Sql-Scripts\Customers\SA-55209-Restore-ShipTo-FreightCode.sql` — script, backout only
-- Ticket: SA 55209 (SysAid Change request submitted 9/30, status **In Approval**)
+- Ticket: SA 55209 (SysAid Change request submitted 9/30; executed 10/1)
 
 ## Target environments
 - Play (P21Play @ P21Dev.allsurfaces.com): **done 9/30** — tested end to end, left UPDATED
-- Prod (P21 @ P21.allsurfaces.com): **pending change approval.** Planned 7:00 PM EDT
+- Prod (P21 @ P21.allsurfaces.com): **DONE 10/1.** Backup 172 rows (min/max old uid = 6) → UPDATE, no errors, re-verify empty → spot-checked in the Prod client (both flagged accounts, Eckard, Sherwin Williams, confirmed Crew2 Inc. untouched) — all correct
 - Scope is `ship_to` rows only. Existing open orders/quotes are NOT touched (decision 9/30) — they keep Prepaid; new orders pick up the new default
 
 ## Dependencies & deploy order
@@ -22,19 +22,20 @@
 ## Backward-compatibility notes
 - Only changes `ship_to.freight_code_uid`. Nothing else is written. `oe_hdr.freight_code_uid` is a per-order snapshot and is independently set at entry, so existing orders are unaffected
 
-## Deploy steps
-1. SSMS, `USE [P21]`: run the step 1 verify SELECT (first query in the UPDATE script). Expect the count agreed above (172 on 9/30), all Prepaid. If it differs, stop and re-diff against `Reports\SA-55209-ShipTo-Terms-vs-FreightCode-2026-09-23.xlsx`
-2. Set `@ExpectedRows` in the Backup script, run the WHOLE script (F5). Expect backup_rows = that count, min/max old uid 6
-3. Export the backup grid to `Prod-before-Freight-Update.xlsx`; attach to the ticket
-4. Run the UPDATE script in full. Expect (N rows affected) in Messages and an empty final re-verify grid
-5. Email Michelle DeBartolo + Lynette Glenn; update ticket
+## Deploy steps — executed 10/1
+1. SSMS, `USE [P21]`: ran the step 1 verify SELECT. **172 rows**, all Prepaid — matched the 9/30 drift note exactly
+2. `@ExpectedRows = 172` in the Backup script (already set), ran in full. `backup_rows = 172, min_old_uid = 6, max_old_uid = 6`
+3. Backup grid exported for the ticket (per plan — not independently verified by me that the file landed in `Reports\`)
+4. Ran the UPDATE script in full. No errors; final re-verify grid came back empty (header only)
+5. Spot-checked in the Prod client: both flagged accounts, an Eckard Distributors location, a Sherwin Williams account, and confirmed Crew2 Inc. (1126566) wasn't re-touched — all correct
+6. SysAid ticket updated (clipboard). Reply-All drafted to Michelle DeBartolo + Lynette Glenn on the original SysAid notification thread — **sitting in Drafts, not yet sent** as of this guide's last update
 
 ## Verification
-- `SELECT s.freight_code_uid, COUNT(*) FROM ship_to s JOIN dbo.asi_bak_SA55209_ship_to_freight b ON b.ship_to_id=s.ship_to_id AND b.customer_id=s.customer_id GROUP BY s.freight_code_uid;` → expect one row, uid 2, N
-- Spot-check 3–5 accounts in the Prod client (Eckard, a Sherwin Williams account, 3000889, 3023115): Ship To tab shows Out Freight, edit/save clean, new order defaults to Out Freight
+- `SELECT s.freight_code_uid, COUNT(*) FROM ship_to s JOIN dbo.asi_bak_SA55209_ship_to_freight b ON b.ship_to_id=s.ship_to_id AND b.customer_id=s.customer_id GROUP BY s.freight_code_uid;` → expect one row, uid 2, 172 — not independently re-run after the UPDATE; the re-verify empty-grid result is the confirmation on hand
 - Play result 9/30: backup 179 → UPDATE 179 → restore 179 → re-UPDATE 179; UI checks clean, no errors
+- Prod result 10/1: backup 172 → UPDATE clean, empty re-verify → client spot-check clean
 
 ## Rollback
 - Run the Restore script (BEGIN TRAN; review preview + step 3 grid; then COMMIT or ROLLBACK by hand — an uncommitted restore blocks other sessions). Only restores rows still on Out Freight; rows changed since are skipped and listed
-- Keep the backup table and Excel until the ticket closes
-- Traps: two flagged accounts (3023115 "Transfer To Blakely", 3000889 NE Dept of Correctional Services) are in scope under "all confirmed"; Crew2 Inc. (1126566) is already Out Freight and drops out of the filter automatically
+- **Backup table and Excel being held a few hours (10/1) as a rollback window before cleanup** — not yet dropped. Keep until the ticket fully closes (Michelle/Lynette confirmation still pending)
+- Traps: two flagged accounts (3023115 "Transfer To Blakely", 3000889 NE Dept of Correctional Services) are in scope under "all confirmed," now live; Crew2 Inc. (1126566) is already Out Freight and drops out of the filter automatically
