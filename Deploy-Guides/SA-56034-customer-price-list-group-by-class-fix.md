@@ -31,10 +31,11 @@ The script begins with `USE P21; GO` — **change or remove that for any environ
 ## Status
 | Env | State |
 |---|---|
-| asdwdb01 `P21` (data warehouse — **the report's actual data source**, restored from Prod nightly ~2:05) | Bug reproduced 2026-09-29. A patch here is **temporary** (wiped by the nightly restore) — OK for testing in SSRS, but the lasting fix must be deployed to Prod first; it reaches the warehouse at the next restore |
+| asdwdb01 `P21` (data warehouse — **the report's actual data source**, restored from Prod nightly ~2:05) | Bug reproduced 2026-09-29. A patch here is **temporary** (wiped by the nightly restore) — OK for testing in SSRS. **Verified 2026-10-01: the 2:05 AM restore carried Prod's patched proc (modify_date 2026-09-29 4:34 PM, contains `MIN(cpaa.contract_price) IS NULL`) — permanent now** |
 | asdwdb01 SSRS test 2026-09-29 | Company-wide `Customer Price List v2.2`, Group by Class = True: **Msg 8120 before patch; after patch no error and price rows displayed** (temporary patch — nightly restore reverts it until Prod is patched) |
 | P21Play | **Patched and tested 2026-09-29** — cust 1034300, loc 140, 946 items: Group=Y 801 rows / Group=N 839 rows, no error |
-| Prod (`P21.allsurfaces.com`) | **Patched 2026-09-29** (user-confirmed). Warehouse picks it up at the next nightly restore |
+| Prod (`P21.allsurfaces.com`) | **Patched 2026-09-29** (user-confirmed) |
+| Requester verification | **Pending.** SSRS `ExecutionLog3` (as of 2026-10-01): no Group by Class = True run by anyone except mgoldyn since the fix — other users (bottavi, bkeller, kevini, jhaupt) all ran with False. Reminder sent to Brian via SysAid 2026-10-01; waiting for his reply. To re-check: `ReportServer.dbo.ExecutionLog3` on asdwdb01, filter `Parameters LIKE '%group_by_class=True%'` |
 
 Lower-env refresh from Prod overwrites the Play patch — the Prod deploy is what makes it stick.
 
