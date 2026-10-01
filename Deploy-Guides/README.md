@@ -10,6 +10,7 @@ Each guide covers: artifact(s) & ticket · target environments · dependency & d
 
 | Ticket | Title | Status |
 |--------|-------|--------|
+| SA-55678 | [Supplier Cost Changes in Last 7 Days — refreshable Excel](SA-55678-supplier-cost-changes-refreshable-query.md) | 🟡 **Built + verified 10/1, awaiting Jere's reply.** Refreshable copy of his workbook (Power Query, direct SQL on `audit_trail`; 118/7 rows = SSMS). No DB objects deployed; optional view drafts not deployed. |
 | SA-55209 | [Ship-To Freight Code: Prepaid → Out Freight](SA-55209-ship-to-freight-code-prepaid-to-out-freight.md) | 🟡 **Prod fix LIVE 2026-10-01** (172 accounts, backup+spot-check clean). Awaiting Michelle DeBartolo / Lynette Glenn's final confirmation before the ticket closes; backup table held a few hours as a rollback window. |
 | *(none)* | [Workbench `221-ORDER-PICKS` rolling print_date](workbench-221-order-picks-rolling-print-date.md) | ⏸ **Closed 2026-09-30 — reference only, not deployable.** Nightly job rewrites the saved date text (unsupported direct write); tested in P21BusinessRules, declined by management as a customization. Prod untouched. |
 | SA-55980 | [Customer Sales Rep Username export (daily CSV -> SFTP)](SA-55980-sales-rep-export.md) | ⏸ **Parked 2026-09-29 - draft only.** Proc + PS 5.1 script written, not run against SQL; column-name guesses unverified. Runs as scheduled task on ASWEB1. |
