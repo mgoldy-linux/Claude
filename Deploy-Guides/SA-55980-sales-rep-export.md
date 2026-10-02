@@ -17,6 +17,8 @@ Play-Dev: P21Dev.allsurfaces.com / P21Play -> /DEV | Play-Sandbox: same DB -> /S
 - Slot order: lowest salesrep_id, then username. More than 5 users: first 5 exported, rest logged as `OVER_5_USERS` (requester to confirm).
 - **House / placeholder accounts are ignored (Matt, 2026-10-02):** contact last name `House%`, last name `Rep`, or first name `( Unassigned%`. They never get a username and are not reported. Customers with only house reps stay in the file with blank columns. Pattern lives in the proc's NO_USERS_UD query.
 - Real reps with no login are reported as `NO_USERS_UD`. Logins whose `users_ud.salesrep_id` points at the wrong person would export the wrong username - check with the Prod mismatch query (open: JKUZEMCHAK/SWILLIAMS on 1260, CSKELTON/DNAGEL on 1303, RTAYLOR on 1088).
+- **Shared rep IDs: include ALL current logins (Matt, 2026-10-02)** - e.g. rep 1260 lists both `jkuzemchak` and `swilliams`. A current login carrying another person's rep ID (e.g. `CSKELTON` on 1303 in Prod) would list the wrong person - clear before go-live.
+- OPEN with Matt: who receives the exceptions file; is Sales Region (`users_ud.sales_region`) meant to be required (71 of 84 current rep logins blank; the 13 filled look like managers' regions); include or exclude employee accounts (customer class EM; 73 of 2,719 Oro customers).
 - OPEN with requester: ticket title says "Sales Manager", columns say salesRep - confirm rep vs manager.
 
 ## Dependencies & deploy order
