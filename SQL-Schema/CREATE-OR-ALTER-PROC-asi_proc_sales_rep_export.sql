@@ -9,51 +9,57 @@
 --      Customers with no eligible rep are included with blank rep columns.
 --   2. Exceptions (customer_id, issue, detail):
 --        OVER_5_USERS      customer has > 5 eligible user IDs (extras NOT in file)
---        NO_USERS_UD       active salesrep_id has no users_ud row
+--        NO_USERS_UD       active salesrep_id has no users_ud row (house / placeholder accounts are
+--                          ignored per Matt 10/2 - see the pattern in the exceptions query)
 --        NO_ELIGIBLE_USER  salesrep_id maps to users_ud row(s), but none are
 --                          active + not deleted in dbo.users
 --
 -- ASSUMPTIONS TO VERIFY FIRST -- run Sql-Scripts\SalesReps\Verify-SA55980-Schema.sql
---   * Oro role: dbo.contact_role (contact_role_uid, <name col>) joined from
---     dbo.contacts.contact_role_uid; customer key = contacts.address_id
---   * asi_table_customer_comclass_salesrep.row_status_flag = 704 means active
+--   * Oro role: VERIFIED 10/1 - dbo.contact_role.contact_role_id = 'Oro User' (uid 9),
+--     joined from dbo.contacts.contact_role_uid; customer key = contacts.address_id (decimal)
+--   * asi_table_customer_comclass_salesrep.row_status_flag = 704 (VERIFIED: only value present)
 --   * users_ud.salesrep_id (varchar) -> users_ud.id = users.id (login id)
---   * dbo.users.active = 'Y' and dbo.users.delete_flag = 'N'
+--   * Eligible user = dbo.users.delete_flag = 'N' only. users.active is 'N' for all current
+--     employees (checked 10/1) so it cannot mean 'enabled'; requester's 'Active = Y' must be clarified
 --   * Slot order = MIN(salesrep_id) then user id (deterministic; CONFIRM with requester)
 --
--- Test:  EXEC dbo.asi_proc_sales_rep_export
+-- Test:  EXEC dbo.asi_proc_sales_rep_export          (both result sets)
+--        EXEC dbo.asi_proc_sales_rep_export @ResultSet = 1   (snapshot only)
+--        EXEC dbo.asi_proc_sales_rep_export @IgnoreDeleteFlag = 1   (TEST ONLY - lower envs)
 -- =============================================================================
 CREATE OR ALTER PROCEDURE dbo.asi_proc_sales_rep_export
+    @IgnoreDeleteFlag BIT = 0,   -- TEST ONLY: 1 = treat deleted logins as eligible (lower envs with stale delete flags). NEVER 1 in Prod.
+    @ResultSet TINYINT = 0   -- 0 = both (production), 1 = snapshot only, 2 = exceptions only (lets INSERT...EXEC capture one set for testing)
 AS
 BEGIN
     SET NOCOUNT ON
 
     -- 1. Customers with at least one live 'Oro User' contact (deduped)
-    CREATE TABLE #cust (customer_id VARCHAR(20) NOT NULL PRIMARY KEY)
+    CREATE TABLE #cust (customer_id DECIMAL(19,0) NOT NULL PRIMARY KEY)
 
     INSERT #cust (customer_id)
-    SELECT DISTINCT CONVERT(VARCHAR(20), c.address_id)
+    SELECT DISTINCT c.address_id
     FROM dbo.contacts AS c
     JOIN dbo.contact_role AS r
       ON r.contact_role_uid = c.contact_role_uid
-    WHERE r.contact_role_desc = 'Oro User'      -- VERIFY column name
+    WHERE r.contact_role_id = 'Oro User'        -- verified 10/1: uid 9; desc is 'Oro customer user'
       AND c.delete_flag = 'N'
       AND c.address_id IS NOT NULL
 
     -- 2. Active assignments for those customers (deduped on customer + salesrep)
-    CREATE TABLE #asg (customer_id VARCHAR(20) NOT NULL, salesrep_id VARCHAR(16) NOT NULL,
+    CREATE TABLE #asg (customer_id DECIMAL(19,0) NOT NULL, salesrep_id VARCHAR(16) NOT NULL,
                        PRIMARY KEY (customer_id, salesrep_id))
 
     INSERT #asg (customer_id, salesrep_id)
     SELECT DISTINCT cu.customer_id, a.salesrep_id
     FROM #cust AS cu
     JOIN dbo.asi_table_customer_comclass_salesrep AS a
-      ON CONVERT(VARCHAR(20), a.customer_id) = cu.customer_id
+      ON a.customer_id = cu.customer_id
     WHERE a.row_status_flag = 704
-      AND a.salesrep_id IS NOT NULL
+      AND a.salesrep_id <> ''
 
     -- 3. Resolve salesrep_id -> eligible user id (deduped per customer + user)
-    CREATE TABLE #usr (customer_id VARCHAR(20) NOT NULL, user_id VARCHAR(30) NOT NULL,
+    CREATE TABLE #usr (customer_id DECIMAL(19,0) NOT NULL, user_id VARCHAR(30) NOT NULL,
                        sort_key VARCHAR(16) NOT NULL, rn INT NULL,
                        PRIMARY KEY (customer_id, user_id))
 
@@ -62,7 +68,7 @@ BEGIN
     FROM #asg AS a
     JOIN dbo.users_ud AS ud ON ud.salesrep_id = a.salesrep_id
     JOIN dbo.users    AS u  ON u.id = ud.id
-    WHERE u.active = 'Y' AND u.delete_flag = 'N'   -- VERIFY column names
+    WHERE (u.delete_flag = 'N' OR @IgnoreDeleteFlag = 1)   -- users.active NOT used: 'N' for every current employee (10/1)
     GROUP BY a.customer_id, LOWER(u.id)
 
     UPDATE x SET rn = y.rn
@@ -73,7 +79,8 @@ BEGIN
       ON y.customer_id = x.customer_id AND y.user_id = x.user_id
 
     -- Result set 1: snapshot
-    SELECT cu.customer_id                                        AS [P21 Customer ID],
+    IF @ResultSet IN (0, 1)
+    SELECT CONVERT(VARCHAR(20), cu.customer_id)                   AS [P21 Customer ID],
            MAX(CASE WHEN x.rn = 1 THEN x.user_id END)            AS [salesRep 1 Username],
            MAX(CASE WHEN x.rn = 2 THEN x.user_id END)            AS [salesRep 2 Username],
            MAX(CASE WHEN x.rn = 3 THEN x.user_id END)            AS [salesRep 3 Username],
@@ -85,7 +92,8 @@ BEGIN
     ORDER BY cu.customer_id
 
     -- Result set 2: exceptions (nothing silently omitted)
-    SELECT customer_id, issue, detail
+    IF @ResultSet IN (0, 2)
+    SELECT CONVERT(VARCHAR(20), customer_id) AS customer_id, issue, detail
     FROM (
         SELECT customer_id, 'OVER_5_USERS' AS issue,
                CONVERT(VARCHAR(10), COUNT(*)) + ' eligible users; omitted: ' +
@@ -100,6 +108,13 @@ BEGIN
         SELECT a.customer_id, 'NO_USERS_UD', a.salesrep_id
         FROM #asg AS a
         WHERE NOT EXISTS (SELECT 1 FROM dbo.users_ud AS ud WHERE ud.salesrep_id = a.salesrep_id)
+          -- Matt (10/2): non-sales-rep accounts are ignored, not reported. They never get a username anyway
+          -- (no login). Real reps who simply lack a login (e.g. Josh Weiss, Justin White) ARE still reported.
+          AND NOT EXISTS (SELECT 1 FROM dbo.contacts AS nc
+                          WHERE nc.id = a.salesrep_id
+                            AND (nc.last_name LIKE 'House%'              -- All Surfaces House *, Walcro House ###
+                              OR nc.last_name = 'Rep'                    -- IMC Rep, Vendor Rep
+                              OR nc.first_name LIKE '( Unassigned%'))    -- ( Unassigned )
 
         UNION ALL
         SELECT a.customer_id, 'NO_ELIGIBLE_USER', a.salesrep_id
@@ -108,7 +123,7 @@ BEGIN
           AND NOT EXISTS (SELECT 1 FROM dbo.users_ud AS ud
                           JOIN dbo.users AS u ON u.id = ud.id
                           WHERE ud.salesrep_id = a.salesrep_id
-                            AND u.active = 'Y' AND u.delete_flag = 'N')
+                            AND (u.delete_flag = 'N' OR @IgnoreDeleteFlag = 1))
     ) AS e
     ORDER BY issue, customer_id
 END

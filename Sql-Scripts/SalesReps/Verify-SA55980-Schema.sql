@@ -19,3 +19,19 @@ SELECT row_status_flag, COUNT(*) AS n FROM dbo.asi_table_customer_comclass_sales
 -- 4. Fan-out: salesrep_id mapping to more than one login, or none
 SELECT salesrep_id, COUNT(*) AS logins FROM dbo.users_ud WHERE salesrep_id IS NOT NULL
 GROUP BY salesrep_id HAVING COUNT(*) > 1;
+
+-- how do the doc's sample users look, and which other users columns could mean "enabled"?
+SELECT id, name, active, delete_flag, contact_id FROM dbo.users
+WHERE id IN ('dnagel','bstolz','jsharer','arestivo','cgaspar');
+SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'users' AND (COLUMN_NAME LIKE '%active%' OR COLUMN_NAME LIKE '%disab%'
+   OR COLUMN_NAME LIKE '%status%' OR COLUMN_NAME LIKE '%enab%' OR COLUMN_NAME LIKE '%login%' OR COLUMN_NAME LIKE '%lock%');
+
+   -- do the native columns agree with users_ud.salesrep_id, and are they populated?
+SELECT COUNT(*) AS users_total,
+       SUM(CASE WHEN u.salesrep_id      <> '' THEN 1 END) AS native_salesrep_id,
+       SUM(CASE WHEN u.user_salesrep_id <> '' THEN 1 END) AS native_user_salesrep_id,
+       SUM(CASE WHEN ud.salesrep_id     <> '' THEN 1 END) AS ud_salesrep_id,
+       SUM(CASE WHEN u.salesrep_id <> '' AND ud.salesrep_id <> '' AND u.salesrep_id <> ud.salesrep_id THEN 1 END) AS disagree
+FROM dbo.users u LEFT JOIN dbo.users_ud ud ON ud.id = u.id
+WHERE u.delete_flag = 'N';
