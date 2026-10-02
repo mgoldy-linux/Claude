@@ -63,9 +63,9 @@ FROM sys.database_query_store_options;
 ## Summary
 | Category | Count |
 |---|---|
-| Likely active — modified recently (2024–2026) | 27 |
-| Possibly active — modified 2020–2023 | 47 |
-| Retire candidates — old + clearly obsolete | 7 |
+| Likely active — modified recently (2024–2026) | 25 |
+| Possibly active — modified 2020–2023 | 45 |
+| Retire candidates — old + clearly obsolete | 11 |
 | **Total** | **81** |
 
 ---
@@ -94,8 +94,6 @@ FROM sys.database_query_store_options;
 | kb_view_edi_855_po_ack | 2020-01-30 |
 | kb_view_edi_manufacturers | 2023-06-05 |
 | kb_view_website_dsr_forms_rep_customer_list | 2023-06-22 |
-| kb_view_commission_report | 2024-08-05 |
-| kb_view_commission_report_adds | 2020-10-30 |
 | kb_view_salesrep_assignments | 2020-11-09 |
 | kb_sales_history_report_view | 2023-01-01 |
 | kb_sales_history_report_view_roii_costs | 2023-01-01 |
@@ -115,6 +113,10 @@ FROM sys.database_query_store_options;
 | kb_view_item_inch_unit_size | 2016-11-10 | 10 years old |
 | kb_view_item_sf_unit_size | 2016-10-21 | 10 years old |
 | kb_view_oe_line_auto_rewards | 2016-07-19 | 10 years old — rewards program may have changed |
+| kb_view_commission_report | 2024-08-05 | No SSRS report/dataset references `commission_report`; none in Query Store (45-day window); no Agent job or other object calls it. Relic of the commission-formula change (~2024). Verified 2026-10-02 |
+| kb_view_commission_report_adds | 2020-10-30 | Same (commission cluster) |
+| kb_view_commission_report_branches | 2019-04-29 | Same (commission cluster) |
+| kb_view_commission_report_ccs | 2020-10-30 | Same (commission cluster) |
 
 ---
 

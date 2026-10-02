@@ -10,8 +10,8 @@
 | Category | Count |
 |---|---|
 | Active — executed in window | 6 |
-| Investigate — periodic/on-demand | 68 |
-| Retire — strong candidates | 10 |
+| Investigate — periodic/on-demand | 64 |
+| Retire — strong candidates | 14 |
 | **Total** | **84** |
 
 ---
@@ -51,15 +51,12 @@ All 10 procs tied to the sale day pricing program. Cross-reference with table an
 
 ### Commission Reports
 Likely run monthly or quarterly — check SQL Agent history for last run date.
+*(2026-10-02: the 4 `kb_proc_commission_report_*` procs moved to RETIRE — see there. The rest of this group was not re-checked.)*
 
 | Proc | Last Modified |
 |---|---|
-| kb_proc_commission_report_individual | 2024-04-01 |
-| kb_proc_commission_report_ccs | 2024-10-01 |
-| kb_proc_commission_report_ccs_adds | 2024-07-01 |
 | kb_proc_commission_rule_copy | 2021-01-07 |
 | kb_proc_commission_rule_value_edit | 2019-07-23 |
-| kb_proc_commission_report_salesmanagers | 2020-11-12 |
 | kb_proc_ssrs_sales_dsr | 2021-06-29 |
 | kb_proc_turn_earn_report | 2020-01-09 |
 | kb_proc_turn_earn_report_ssrs | 2021-03-05 |
@@ -161,11 +158,15 @@ Utility procs for user management. Run rarely.
 | kb_proc_ar_GetPaymentReceipt | 2017-06-15 | 9 years old, PascalCase = very old style |
 | kb_proc_mkg_display_shipments | 2019-05-06 | 7 years, never run, display program likely inactive |
 | kb_proc_br_oe_sale_202006_XLB | 2020-06-12 | Date in name = 2020, superseded |
+| kb_proc_commission_report_individual | 2024-04-01 | Commission cluster: No SSRS report/dataset references `commission_report`; none in Query Store (45-day window); no Agent job or other object calls it. Relic of the commission-formula change (~2024). Verified 2026-10-02 |
+| kb_proc_commission_report_ccs | 2024-10-01 | Same (commission cluster) |
+| kb_proc_commission_report_ccs_adds | 2024-07-01 | Same (commission cluster) |
+| kb_proc_commission_report_salesmanagers | 2020-11-12 | Same (commission cluster) |
 
 ---
 
 ## Flags
 
 - **kb_proc_fino_update_monthly** (2019) — not run, but `kb_table_fino_monthly` was written 2 days ago. `kb_proc_update_fino_table` (the active proc) writes the daily table; this one may handle a separate monthly rollup — verify before retiring.
-- **kb_proc_grant_permissions** — maintenance proc that exists to re-grant permissions. Not operational, but retain — useful for post-refresh steps.
+- **kb_proc_grant_permissions** — maintenance proc that exists to re-grant permissions. Not operational, but retain — useful for post-refresh steps. **2026-10-02:** it GRANTs on the commission-cluster objects (and `kb_table_invoice_line_commission`) and nothing calls it (no Agent job, no refresh script). Edit or retire it in the same change that drops the commission objects, or it will fail with 'Cannot find the object'.
 - **Sale day cluster modified dates** — `kb_proc_br_oe_sale_day` was modified in May 2024, meaning someone actively maintained it recently. Program is not dead — likely just not triggered in this 17-day window.
