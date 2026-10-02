@@ -29,6 +29,13 @@ Play-Dev: P21Dev.allsurfaces.com / P21Play -> /DEV | Play-Sandbox: same DB -> /S
 5. Dry run on ASWEB1 (worked 10/2 for Play): `powershell.exe -NoProfile -File D:\SalesRepExport\scripts\Export-SalesRepSftp.ps1 -Instance Play-Dev -BaseDir D:\SalesRepExport -SkipUpload -IgnoreDeleteFlag`
 6. Real run with `-SftpHost`, then register the scheduled task (Matt).
 
+## Test everything on lower environments BEFORE Prod (user's rule, 2026-10-02)
+1. Add a `-ConfirmProd` switch so `Prod-Prod` cannot run (or be scheduled) by accident. [TODO]
+2. SFTP upload from ASWEB1 to the DEV / Sandbox / Stage folders (needs host, folders, service account from IT; Posh-SSH copied offline). [TODO]
+3. Failure drills: bad credential, wrong folder, missing proc -> exit code 1, record line `FAILED`, file left in `out\`, email summary. [TODO]
+4. Register the scheduled task for Play-Dev only; run now, then daily for several days; confirm under the service account (execution policy: `Unblock-File` or `-ExecutionPolicy Bypass`). [TODO]
+5. Only after Matt approves: create the proc on Prod -> cross-check on Prod -> dry run `-Instance Prod-Prod -ConfirmProd -SkipUpload` -> real run.
+
 ## Output layout (under `-BaseDir`, created automatically)
 `out\<instance>\` unsent files | `sent\<instance>\` backup copy of every SFTP'd file (SHA256-checked, kept 90 days) | `logs\<instance>\` run log | `logs\Record-of-<PC>-Scripts-Ran-yyyyMM.txt` one line per run | `secure\` credential.
 
