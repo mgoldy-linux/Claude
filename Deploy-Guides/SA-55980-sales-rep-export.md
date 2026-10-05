@@ -12,14 +12,17 @@
 Play-Dev: P21Dev.allsurfaces.com / P21Play -> /DEV | Play-Sandbox: same DB -> /Sandbox | Training-Stage: P21Dev.allsurfaces.com / P21Training -> /Stage | Prod-Prod: P21.allsurfaces.com / P21 -> /Prod. **SFTP host/folders are placeholders until IT confirms** (Prod folder unconfirmed).
 
 ## Business rules / decisions
-- Customers = distinct `contacts.address_id` where role `contact_role_id = 'Oro User'` and contact not deleted.
+- Customers = distinct `contacts.address_id` where role `contact_role_id = 'Oro User'` and contact not deleted. **Only addresses that are ACTIVE customers (`dbo.customer.delete_flag='N'`) - added 2026-10-05** after Matt asked why customer 100 was in the file (100 = Wood Dale location; also a vendor, two non-customers and one deleted customer; Prod 2,734 -> 2,729).
 - Reps = active rows (`row_status_flag = 704`) in `asi_table_customer_comclass_salesrep`; username = `users_ud.salesrep_id` -> `users.id`, only `users.delete_flag = 'N'` (`users.active` is unused). Lowercase, deduped.
 - Slot order: lowest salesrep_id, then username. More than 5 users: first 5 exported, rest logged as `OVER_5_USERS` (requester to confirm).
 - **House / placeholder accounts are ignored (Matt, 2026-10-02):** contact last name `House%`, last name `Rep`, or first name `( Unassigned%`. They never get a username and are not reported. Customers with only house reps stay in the file with blank columns. Pattern lives in the proc's NO_USERS_UD query.
 - Real reps with no login are reported as `NO_USERS_UD`. Logins whose `users_ud.salesrep_id` points at the wrong person would export the wrong username - check with the Prod mismatch query (open: JKUZEMCHAK/SWILLIAMS on 1260, CSKELTON/DNAGEL on 1303, RTAYLOR on 1088).
+- **Matt 2026-10-05:** Joseph Kuzemchak mirrors Sam Williams under 1260 (50/50 territory) - keep both; customers with no rep are NOT exceptions (exceptions = assigned rep with no current login); **YES to creating the proc in Prod** (user still tests lower envs first); file format for Lokion (BOM/quotes) - Matt checking; he will share the 'reps who left but still assigned' list with Customer Maintenance.
 - **Shared rep IDs: include ALL current logins (Matt, 2026-10-02)** - e.g. rep 1260 lists both `jkuzemchak` and `swilliams`. A current login carrying another person's rep ID (e.g. `CSKELTON` on 1303 in Prod) would list the wrong person - clear before go-live.
 - OPEN with Matt: who receives the exceptions file; is Sales Region (`users_ud.sales_region`) meant to be required (71 of 84 current rep logins blank; the 13 filled look like managers' regions); include or exclude employee accounts (customer class EM; 73 of 2,719 Oro customers).
 - OPEN with requester: ticket title says "Sales Manager", columns say salesRep - confirm rep vs manager.
+
+**PENDING (2026-10-05): re-run the proc's CREATE OR ALTER on Play, Training, Dev, BusinessRules, then `Crosscheck-SA55980-sales-rep-export.sql` (now checks 1-9; check 9 = every customer is active).**
 
 ## Dependencies & deploy order
 1. Verify with `Crosscheck-SA55980-sales-rep-export.sql` after each proc deploy (Play first; set `@ign = 1` in non-Prod to ignore stale delete flags).

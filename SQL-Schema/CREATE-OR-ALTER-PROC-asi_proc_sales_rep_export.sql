@@ -15,6 +15,8 @@
 --                          active + not deleted in dbo.users
 --
 -- ASSUMPTIONS TO VERIFY FIRST -- run Sql-Scripts\SalesReps\Verify-SA55980-Schema.sql
+--   * Customers: ONLY addresses that exist in dbo.customer with delete_flag = 'N' (added 10/5; excludes locations,
+--     vendors, non-customers and deleted customers that carry an Oro User contact)
 --   * Oro role: VERIFIED 10/1 - dbo.contact_role.contact_role_id = 'Oro User' (uid 9),
 --     joined from dbo.contacts.contact_role_uid; customer key = contacts.address_id (decimal)
 --   * asi_table_customer_comclass_salesrep.row_status_flag = 704 (VERIFIED: only value present)
@@ -34,7 +36,7 @@ AS
 BEGIN
     SET NOCOUNT ON
 
-    -- 1. Customers with at least one live 'Oro User' contact (deduped)
+    -- 1. Active customers with at least one live 'Oro User' contact (deduped)
     CREATE TABLE #cust (customer_id DECIMAL(19,0) NOT NULL PRIMARY KEY)
 
     INSERT #cust (customer_id)
@@ -45,6 +47,10 @@ BEGIN
     WHERE r.contact_role_id = 'Oro User'        -- verified 10/1: uid 9; desc is 'Oro customer user'
       AND c.delete_flag = 'N'
       AND c.address_id IS NOT NULL
+      -- Matt (10/5, "why is customer 100 in there?"): an Oro User contact can sit on an address that is
+      -- NOT a customer (100 = Wood Dale location, 3002460 = vendor) or on a deleted customer. Only active customers.
+      AND EXISTS (SELECT 1 FROM dbo.customer AS cu
+                  WHERE cu.customer_id = c.address_id AND cu.delete_flag = 'N')
 
     -- 2. Active assignments for those customers (deduped on customer + salesrep)
     CREATE TABLE #asg (customer_id DECIMAL(19,0) NOT NULL, salesrep_id VARCHAR(16) NOT NULL,

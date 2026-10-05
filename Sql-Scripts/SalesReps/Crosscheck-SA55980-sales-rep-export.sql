@@ -46,6 +46,7 @@ FROM (
                   WHERE c.address_id = a.customer_id
                     AND c.delete_flag = 'N'
                     AND r.contact_role_id = 'Oro User')
+      AND EXISTS (SELECT 1 FROM dbo.customer cu WHERE cu.customer_id = a.customer_id AND cu.delete_flag = 'N')
     GROUP BY a.customer_id, LOWER(u.id)
 ) AS x
 
@@ -61,7 +62,8 @@ PRINT '--- 0a. Informational: row counts ---'
 SELECT (SELECT COUNT(*) FROM #proc)                                    AS proc_customers,
        (SELECT COUNT(DISTINCT CONVERT(VARCHAR(20), c.address_id))
           FROM dbo.contacts c JOIN dbo.contact_role r ON r.contact_role_uid = c.contact_role_uid
-         WHERE r.contact_role_id = 'Oro User' AND c.delete_flag = 'N') AS expected_oro_customers,
+         WHERE r.contact_role_id = 'Oro User' AND c.delete_flag = 'N'
+           AND EXISTS (SELECT 1 FROM dbo.customer cu WHERE cu.customer_id = c.address_id AND cu.delete_flag = 'N')) AS expected_oro_customers,
        (SELECT COUNT(*) FROM #proc WHERE u1 IS NOT NULL)               AS customers_with_a_rep,
        (SELECT COUNT(*) FROM #proc WHERE u1 IS NULL)                   AS customers_with_no_rep,
        (SELECT COUNT(*) FROM #proc WHERE u5 IS NOT NULL)               AS customers_with_5_reps,
@@ -75,11 +77,13 @@ GROUP BY reps ORDER BY reps
 PRINT '--- 1. Customer set: expected Oro customers vs proc rows (both directions; expect 0 rows) ---'
 SELECT 'in proc, not expected' AS issue, p.cust FROM #proc p
 WHERE NOT EXISTS (SELECT 1 FROM dbo.contacts c JOIN dbo.contact_role r ON r.contact_role_uid = c.contact_role_uid
-                  WHERE CONVERT(VARCHAR(20), c.address_id) = p.cust AND c.delete_flag = 'N' AND r.contact_role_id = 'Oro User')
+                  WHERE CONVERT(VARCHAR(20), c.address_id) = p.cust AND c.delete_flag = 'N' AND r.contact_role_id = 'Oro User'
+                    AND EXISTS (SELECT 1 FROM dbo.customer cu WHERE cu.customer_id = c.address_id AND cu.delete_flag = 'N'))
 UNION ALL
 SELECT 'expected, missing from proc', CONVERT(VARCHAR(20), c.address_id)
 FROM dbo.contacts c JOIN dbo.contact_role r ON r.contact_role_uid = c.contact_role_uid
 WHERE c.delete_flag = 'N' AND r.contact_role_id = 'Oro User' AND c.address_id IS NOT NULL
+  AND EXISTS (SELECT 1 FROM dbo.customer cu WHERE cu.customer_id = c.address_id AND cu.delete_flag = 'N')
   AND NOT EXISTS (SELECT 1 FROM #proc p WHERE p.cust = CONVERT(VARCHAR(20), c.address_id))
 
 PRINT '--- 2. (customer, username) pairs: proc vs expected, slots 1-5 only (expect 0 rows) ---'
@@ -133,6 +137,21 @@ WHERE a.row_status_flag = 704 AND a.salesrep_id <> ''
   AND NOT (c.last_name LIKE 'House%' OR c.last_name = 'Rep' OR c.first_name LIKE '( Unassigned%')
   AND EXISTS (SELECT 1 FROM dbo.contacts o JOIN dbo.contact_role r ON r.contact_role_uid = o.contact_role_uid
               WHERE o.address_id = a.customer_id AND o.delete_flag = 'N' AND r.contact_role_id = 'Oro User')
+  AND EXISTS (SELECT 1 FROM dbo.customer cu WHERE cu.customer_id = a.customer_id AND cu.delete_flag = 'N')
   AND NOT EXISTS (SELECT 1 FROM @exc x WHERE x.customer_id = CONVERT(VARCHAR(20), a.customer_id) AND x.issue = 'NO_USERS_UD' AND x.detail = a.salesrep_id)
 
-PRINT '--- Done. All numbered checks 1-8 should return no rows. ---'
+PRINT '--- 9. Every customer in the output is an ACTIVE customer (not a location / vendor / deleted customer; expect 0 rows) ---'
+SELECT p.cust
+FROM #proc p
+WHERE NOT EXISTS (SELECT 1 FROM dbo.customer cu WHERE CONVERT(VARCHAR(20), cu.customer_id) = p.cust AND cu.delete_flag = 'N')
+
+PRINT '--- 9b. Informational: addresses with an Oro User contact that are EXCLUDED because they are not active customers ---'
+SELECT DISTINCT CONVERT(VARCHAR(20), c.address_id) AS excluded_address_id,
+       CASE WHEN cu_any.customer_id IS NULL THEN 'not in customer table' ELSE 'customer is deleted' END AS why
+FROM dbo.contacts c
+JOIN dbo.contact_role r ON r.contact_role_uid = c.contact_role_uid
+LEFT JOIN (SELECT DISTINCT customer_id FROM dbo.customer) cu_any ON cu_any.customer_id = c.address_id
+WHERE r.contact_role_id = 'Oro User' AND c.delete_flag = 'N' AND c.address_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM dbo.customer cu WHERE cu.customer_id = c.address_id AND cu.delete_flag = 'N')
+
+PRINT '--- Done. All numbered checks 1-9 should return no rows. ---'
