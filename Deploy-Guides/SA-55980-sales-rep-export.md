@@ -28,16 +28,21 @@ Play-Dev: P21Dev.allsurfaces.com / P21Play -> /DEV | Play-Sandbox: same DB -> /S
 1. Verify with `Crosscheck-SA55980-sales-rep-export.sql` after each proc deploy (Play first; set `@ign = 1` in non-Prod to ignore stale delete flags).
 2. Deploy the proc: Play, Training (done), then **Prod** (not done).
 3. Copy the ONE script to ASWEB1 `D:\SalesRepExport\scripts\`, then `Unblock-File` it (policy RemoteSigned; copying over RDP marks it).
-4. SFTP: Posh-SSH copied offline (`Save-Module` on a PC, copy into `C:\Program Files\WindowsPowerShell\Modules`; no `Install-Module` on the server - SentinelOne #331962). Credential: `Get-Credential | Export-Clixml <BaseDir>\secure\sftp-salesrep.cred.xml` as the account that runs the task.
+4. **SUPERSEDED 2026-10-05 (Tony: sftp.exe + SSH key, nothing installed)** - was: SFTP: Posh-SSH copied offline (`Save-Module` on a PC, copy into `C:\Program Files\WindowsPowerShell\Modules`; no `Install-Module` on the server - SentinelOne #331962). Credential: `Get-Credential | Export-Clixml <BaseDir>\secure\sftp-salesrep.cred.xml` as the account that runs the task.
 5. Dry run on ASWEB1 (worked 10/2 for Play): `powershell.exe -NoProfile -File D:\SalesRepExport\scripts\Export-SalesRepSftp.ps1 -Instance Play-Dev -BaseDir D:\SalesRepExport -SkipUpload -IgnoreDeleteFlag`
 6. Real run with `-SftpHost`, then register the scheduled task (Matt).
 
 ## Test everything on lower environments BEFORE Prod (user's rule, 2026-10-02)
 1. Add a `-ConfirmProd` switch so `Prod-Prod` cannot run (or be scheduled) by accident. [TODO]
-2. SFTP upload from ASWEB1 to the DEV / Sandbox / Stage folders (needs host, folders, service account from IT; Posh-SSH copied offline). [TODO]
+2. SFTP upload from ASWEB1 to the DEV / Sandbox / Stage folders (Tony's team creates the Serv-U user + public key and the Windows service account; script uses sftp.exe with the key; guided test from ASWEB1). [TODO]
 3. Failure drills: bad credential, wrong folder, missing proc -> exit code 1, record line `FAILED`, file left in `out\`, email summary. [TODO]
 4. Register the scheduled task for Play-Dev only; run now, then daily for several days; confirm under the service account (execution policy: `Unblock-File` or `-ExecutionPolicy Bypass`). [TODO]
 5. Only after Matt approves: create the proc on Prod -> cross-check on Prod -> dry run `-Instance Prod-Prod -ConfirmProd -SkipUpload` -> real run.
+
+## SFTP method (decided 2026-10-05, Tony Neuman)
+- `sftp.exe` (already on ASWEB1) with an SSH key; public key on a dedicated Serv-U user (key-only, limited to the SalesRepImport folder(s)); host `ftp.allsurfaces.com`, Play-Dev `/Dev/SalesRepImport/`; Sandbox/Stage/Prod folders TBD (Matt). Private key stays on ASWEB1, readable only by the job's Windows account (empty passphrase; protected by file ACL); verify the server fingerprint on first connect.
+- NOT Posh-SSH/WinSCP: nothing is installed or downloaded. The script's upload step still uses Posh-SSH and must be rewritten for `sftp.exe -i <key> -b <batchfile>` (exit code + `ls -l` size check). [TODO]
+- Accounts: ecommerce jobs on ASWEB1 connect to SQL as SQL login `orosvc` (db_datareader/db_datawriter + CONNECT + EXECUTE in P21, P21Play, P21Training - no new SQL grants needed); the job still needs a WINDOWS account (not pimsvc - not a PIM job) to run on ASWEB1 and hold the key, plus CONNECT/EXECUTE for that account if the script keeps Windows authentication. Open with Tony's team.
 
 ## Output layout (under `-BaseDir`, created automatically)
 `out\<instance>\` unsent files | `sent\<instance>\` backup copy of every SFTP'd file (SHA256-checked, kept 90 days) | `logs\<instance>\` run log | `logs\Record-of-<PC>-Scripts-Ran-yyyyMM.txt` one line per run | `secure\` credential.
