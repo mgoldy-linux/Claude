@@ -625,3 +625,88 @@ Verified structurally against real Play data (job #5787, contract #1023680, cust
 ## Separate, unresolved finding from the same testing session — order cancellation/deletion mechanics (KB0022345)
 
 While cleaning up Low Margin Alert test orders (6062516–6062520), investigated the difference between P21's **Cancel** action and the `delete_flag` on `oe_hdr`, using **KB0022345** for reference. This is **not part of the Low Margin Alert feature** — it belongs to the Cancel-order stored procs project and is documented there (`Deploy-Guides\cancel-order-stored-procs.md`, `project_2026_09_09_cancel_order_procs.md`) — noted here only because it was found during this alert's test-order cleanup. Per the user's explicit instruction, KB0022345 is to be referenced when reporting these findings to Matt (not yet drafted).
+
+## 2026-10-05/06 — Evan's four-item follow-up. #4 DEPLOYED TO PROD; #1/#2 Play only; #3 blocked.
+
+Evan Jenkins' 10/5 email "Low Margin Alert Follow Up" raised four items. Reply **sent 10/6** with two live Play
+sample alerts attached (order 6062535). Items #1, #2 and #3 wait on his answer.
+
+### #4 — Jami Klitzman added to the PAD alerts — **LIVE ON PROD 2026-10-06**
+
+Script: `Alerts/Low-Margin-Alert/13-add-jami-klitzman-pad-alerts.sql` (preview / apply / rollback blocks).
+
+| alert | alert_message_uid | alert_recipient_uid | type |
+|---|---|---|---|
+| 106 Low PAD Margin Alert - Team | 109 | **237** | To (1281) |
+| 107 Low PAD Margin Alert - Purchasing Escalation (MAC) | 110 | **238** | To (1281) |
+
+Identity: `users.id = 'JKLITZMAN'`, `jklitzman@allsurfaces.com`, `delete_flag = 'N'`.
+**Do not use** the `JBARAN` users row — it is the deleted `** MISSPELLING ** Use JKLITZMAN` marker. Several
+`contacts` rows still carry the retired `@alltileccs.com` domain; also not used.
+
+**UID allocation — correction to the standing counter-drift warning on this table.**
+`counter.alert_recipient` has `counter_num = -1` and `seq_name = 'seq_alert_recipient'`. P21 draws these uids from a
+SQL **SEQUENCE**, not from `counter_num`, so `NEXT VALUE FOR dbo.seq_alert_recipient` keeps P21 and the data in step
+and **there is no counter to realign**. Verified before (`current_value` 236 = `MAX(alert_recipient_uid)` 236) and
+after (238 = 238). The documented drift hazard applies to **hardcoded** uids, not sequence-drawn ones.
+
+**Why SQL and not Alert Maintenance:** saving uid 106 in the client regenerates the whole `where_clause` from the
+Filter grid, and 106's `-5% off MAC OR -5% off standard` trigger has no grid representation (trap 10). Re-verified
+after the insert that 106's `-5%` clause is still intact.
+
+**Deliberately NOT applied to Play.** Play sends real email and its 106/107 recipient lists hold only
+`mgoldyn@allsurfaces.com` on purpose, so test orders do not spam anyone. Adding Jami there would mail her
+`[P21Play]` test alerts on every future test. The INSERT matched the shape of the 19 recipient rows already on these
+two alerts, so Play had nothing to prove.
+
+**Rollback:** the DELETE block at the bottom of script 13. Sequence gaps are harmless; P21 never reuses them.
+
+### #2 — footer note rewording — **PLAY ONLY, Prod NOT applied**
+
+`12-evan-footer-note-wording.sql`, committed; applied to P21Play, 2 rows (**104** and **106**). Scoped `UPDATE` on
+`alert_message.footer` only. **105/107 deliberately untouched** — they carry a different first note and no contacts
+note at all. Whether they should also get the `customermaintenance@` line is an open question to Evan.
+**Deploy order for Prod:** script 12 alone; it does not depend on the view.
+
+### #1 — contract price description — **PLAY ONLY, no Prod script exists**
+
+`11-add-contract-price-description-PLAY.sql` is applied to Play. Confirmed 2026-10-06 by comparing
+`OBJECT_DEFINITION('dbo.p21_view_alert_oe_OrderEntry')` in both environments: Play contains `Contract Price`, **Prod
+does not**. `11-add-contract-price-description-PROD.sql` must be written **from Prod's own current view definition**,
+not copied from Play — Prod and Play have diverged before (the 8/11 NULL-hardening is still Play-only).
+**Deploy order if it goes ahead:** view first, then nothing else — the token already exists.
+
+### #3 — new routing alert — **blocked on Evan**
+
+Needs a new alert for the subset plus a matching exclusion on 104, because P21 allows one recipient list per alert.
+Build the exclusion as the literal negation of the new alert's clause rather than retyping the logic, or the subset
+can produce two emails.
+
+Open questions to Evan: does #3 apply to the PAD pair as well, and is the threshold the current 5% or another number.
+
+**Supplier Cost is reachable** (it was dropped in June on Evan's own "not located in Order Entry" note):
+`inv_loc.primary_supplier_id` → `inventory_supplier.cost`. Measured on Prod 10/6: `primary_supplier_id` is
+**100% populated** (4,895,254 of 4,895,254 rows). **`inventory_supplier.primary_supplier_flag` is blank on all
+157,584 rows — do not reach for it.** Caveat: this gives the *primary supplier's* cost, not the cost behind the PO
+that actually sourced the line.
+
+### Finding — one order can already trigger more than two alerts
+
+104/105 exclude PAD and 106/107 require it, but `product_group_id` lives on **`inv_loc`, per item per location**, and
+the `where_clause` is evaluated per line. An order carrying both PAD and non-PAD lines can therefore satisfy both
+pairs. **4,578 such orders on Prod in the last 120 days** — that count is orders *structurally capable* of it, not
+orders that did fire both; the margin tests still have to be breached independently on each side. Not measured.
+Raised with Evan as an email-volume question.
+
+### Testing note — validate the pricing mechanism, not the contract
+
+Five consecutive test-order recipes failed by predicting margins without checking which pricing mechanism the line
+would actually use. `SCHSETA50W` / Guy's Floor Service 3015065 was predicted at 4.62% off MAC from the **contract**
+price $23.79; the line priced at **$27.74** off `price_page_uid 82906` with `job_price_line_uid` NULL → 18.20% off
+MAC, so 105 correctly did not fire. Check `oe_line.job_price_line_uid` vs `price_page_uid` **on the line**, not the
+customer's contract. Also: `low_margin_flag` is `pct_mac < 5 OR pct_std < 5`, not Standard-Cost-only.
+
+Working sample: order **6062535**, manual price $23.50 → 3.45% / 1.47%, both 104 and 105 fired, `Price Overridden: Y`.
+
+**Status: 🟡 #4 live on Prod and verified. #1 and #2 built and proven in Play, neither deployed to Prod. #3 not
+started, blocked on Evan. Awaiting his reply.**
