@@ -86,12 +86,19 @@ BEGIN TRY
         (alert_implementation_uid, alert_type_uid, alert_implementation_name,
          activation_date, expiration_date, date_created, date_last_modified,
          last_maintained_by, row_status_flag, where_clause, execution_mode_cd,
-         job_id, last_execution_error, email_notification_flag, task_notification_flag)
+         job_id, last_execution_error, email_notification_flag, task_notification_flag,
+         next_execution_start_point)
   VALUES(@ai, @type_uid, @name,
-         GETDATE(), '2049-12-31 23:59:59', GETDATE(), GETDATE(),
+         CAST(CAST(GETDATE() AS date) AS datetime), '2049-12-31 23:59:59', GETDATE(), GETDATE(),
          'MGOLDYN', 705,
          'total_amount > 1000 AND customer_id NOT IN (3021352,3023035,3023036) AND corp_address_id <> 1046538 AND taker NOT LIKE ''%ESTORE%''  AND product_group_id NOT IN (''OCHARGE'',''SAMPLES'',''PAD'',''SURFACE'') AND new_order = ''Y'' AND extended_standard_cost > ''500'' AND low_margin_flag = ''Y'' AND route_pricing_only = ''Y'' AND job_name NOT LIKE ''%CLOSEOUT%'' AND job_name NOT LIKE ''%E&O%'' AND rma_flag <> ''Y''',
-         1092, '', 0, 'Y', 'N');
+         1092, '', 0, 'Y', 'N',
+         /* next_execution_start_point: must NOT be left NULL. Alert Maintenance
+            reads it and throws "An error has occurred accessing alert information"
+            on save when it is missing. Copy whatever the live family currently
+            carries - the scheduler advances them all together. */
+         (SELECT next_execution_start_point FROM dbo.alert_implementation
+          WHERE alert_implementation_uid = 104));
 
   /* ---- 2. its message, cloned from 104 + the Supplier Cost line ---- */
   INSERT INTO dbo.alert_message
