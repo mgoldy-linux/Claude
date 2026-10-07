@@ -41,7 +41,7 @@
 
   Idempotent: guarded on 'customermaintenance' not already being present.
 ==============================================================================*/
-USE P21Play;      -- <<< change to P21 for Prod
+USE P21Play; --P21; --      -- <<< change to P21 for Prod
 GO
 SET NOCOUNT ON;
 
@@ -74,8 +74,8 @@ GO
 /*------------------------------- APPLY ------------------------------------
   Uncomment to apply. Expect 2 rows (105 and 107).
 ---------------------------------------------------------------------------*/
-/*
-USE P21Play;      -- <<< change to P21 for Prod
+
+USE P21Play; -- P21; --      -- <<< change to P21 for Prod
 GO
 SET NOCOUNT ON;
 
@@ -118,7 +118,6 @@ BEGIN CATCH
   PRINT 'ROLLED BACK: ' + ERROR_MESSAGE();
 END CATCH;
 GO
-*/
 
 /*------------------------------ ROLLBACK ----------------------------------
   Strips the contacts note back out of 105/107. Leaves 104/106 alone.

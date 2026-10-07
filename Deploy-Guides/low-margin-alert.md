@@ -769,3 +769,129 @@ would have printed "(no price page)" and now render e.g.
 `Contract Price: DeGeorge Ceilings of SW Ohio Inc (Contract #3001709)`.
 
 **Status: 🟡 #1, #2 and #4 all LIVE on Prod. #3 is the only build left, plus Evan's new one-email-per-order ask.**
+
+## 2026-10-07 (later) — Evan #3 built end-to-end in P21Play. ACTIVE, NOT TESTED.
+
+Evan's 10/6 reply scoped #3: **main pair only** (104/105, NOT the PAD pair — "the relationship/programming
+between MAC, Standard Cost and Price is materially different for PAD"), threshold **the current 5%**, and
+"let's setup as own alert". Five scripts, all applied to Play and verified. **Nothing on Prod.**
+
+| script | what | state |
+|---|---|---|
+| `16-add-supplier-cost-PLAY.sql` | `unit_supplier_cost` + `std_cost_exceeds_supplier_cost` on the view | applied |
+| `17-register-supplier-cost-tokens-PLAY.sql` | tokens 747 (decimal, area 4) and 748 (char, area 32) | applied |
+| `18-add-route-pricing-only-PLAY.sql` | `route_pricing_only` column + token 749 | applied |
+| `19-create-pricing-review-alert-PLAY.sql` | alert **110** + message 113 + recipient 209, and `route_pricing_only = 'N'` on 104 | applied |
+| `20-populate-filter-grids-PLAY.sql` | the Filter grid rows for 110 and 104 | applied |
+
+Alert 110 is now **704 (ACTIVE)** in Play — flipped by SQL, not the client. Play recipient is `mgoldyn` only;
+**Evan's Alex Sivongsay + Erik Bullock go on the Prod build, not Play.**
+
+### Supplier cost — where it actually comes from
+
+`inv_loc.primary_supplier_id` → `inventory_supplier.cost`. Three columns that look like the obvious choice are
+all empty and must not be used (measured 2026-10-07):
+
+| column | state |
+|---|---|
+| `inventory_supplier.primary_supplier_flag` | blank on all **157,584** rows |
+| `inventory_supplier.supplier_purchase_unit` | NULL on all **157,600** rows |
+| `inventory_supplier_x_loc.loc_cost` | present but **ZERO** on 702 of 704 lines |
+
+`loc_cost` is kept in the expression behind `NULLIF(,0)` so it is honoured if Purchasing ever populates it — a
+plain `COALESCE(loc_cost, cost)` would return 0 for nearly every line.
+
+### Why the rule is ONE view column and not an exclusion clause
+
+`NOT (A AND B)` expands to `(NOT A) OR (NOT B)` — an **OR**, which has no Filter-grid representation. Alert
+Maintenance regenerates the whole `where_clause` from that grid on save, so the first person to open and save 104
+would silently lose the exclusion and the subset would flood back to the Team. That is the defect uid 106 already
+carries, and 104 is the busiest of the four. `route_pricing_only` keeps both alerts as single simple predicates
+and makes them **exact complements by construction**:
+
+```
+104  ... AND low_margin_flag = 'Y' AND route_pricing_only = 'N'
+110  ... AND low_margin_flag = 'Y' AND route_pricing_only = 'Y'
+```
+
+`low_margin_flag` is on both on purpose, so the pair partitions the same population — a line can neither satisfy
+both nor fall through neither.
+
+### Two gaps in script 19, both caught in the client, both fixed
+
+1. **The Filter grid lives in `dbo.Alert_implementation_query`**, separate from `where_clause`. Script 19 never
+   populated it, so 110 opened showing "No items to display" plus an error banner — and a save would have
+   regenerated the clause from an empty grid and wiped it. Nothing was lost (closed unsaved; both clauses verified
+   at 391 chars). Script 20 clones 104's 10 rows and adds the route row to both.
+2. **`next_execution_start_point` must not be NULL.** With the grid populated the client still threw
+   *"An error has occurred accessing alert information"* on save. A field-by-field comparison against 104 showed
+   that column was the only real difference. Set from 104's value; script 19 patched so a Prod run won't repeat it.
+
+Also worth knowing for the Prod build: `alert_implementation.job_id` is `varchar(255) NOT NULL` and live rows hold
+an empty string, not NULL.
+
+### Correctness checks (measured, not asserted)
+
+| check | result |
+|---|---|
+| both new join keys unique, Play **and** Prod | 0 duplicate groups each — no fan-out |
+| row count with vs without the new joins | 1,891,537 = 1,891,537 |
+| both joins LEFT | no line can drop out of any alert |
+| Play view still has contract-price block + script 06 hardening | yes |
+
+**Not measured:** logical reads / CPU for the two new joins. Two attempts were killed by the host for low memory.
+The view only ever runs against the transient `pending_alerts` queue, so exposure is small, but the number is
+genuinely unknown — do not claim it is cheap.
+
+### Impact, measured on Prod (120 days, main-pair scope, orders with ≥1 low-margin line)
+
+| | orders |
+|---|---|
+| move **entirely** to the new Pricing alert | **1,388** (26.5%) |
+| **mixed — fire BOTH 104 and 110** | **186** (3.6%) |
+| unaffected | 3,666 |
+| total alerting | 5,240 |
+
+Net −1,388 / +186. The 186 are two emails where there is one today (~1.5/day) and **cut against Evan's "one email
+to one order" ask** — tell him. Cause: the `where_clause` is evaluated per **line**, so an order with one routing
+line and one non-routing line satisfies both. Fixing it means an ORDER-level routing decision and belongs with his
+separate one-email item.
+
+**Unit caveat for Evan:** standard and supplier cost share a unit for 72.2% of 553,609 lines, but 16.3% sit below
+0.5x and that tail does not reduce to one conversion factor (ratios cluster at 12, 9, 10 but also 105, 117, 122
+across hundreds of items). That tail **fails** the test, so it produces false negatives — never a wrongly
+suppressed Team alert. The 8.6% at 1.05–1.30x that will qualify matches his stated deliberate 2% markup.
+
+### ⚠ Defect found while doing this — NOT fixed, predates this work
+
+`rma_flag <> 'Y'` is in the `where_clause` of **all four** alerts (104/105/106/107) but has a grid row on **none**
+of them, because **`rma_flag` was never registered as a token for alert_type_uid 12** and therefore cannot be
+represented in the Filter grid. The first client save of any of those four silently drops the RMA exclusion, and
+**RMAs start generating low-margin alerts**. Measured on Play: grid rows 104=10, 105=10, 106=10, 107=11,
+`rma_flag` rows **zero** everywhere.
+
+Fix is small — register `rma_flag` (char, `available_areas` 32) and add one grid row per alert — but it touches
+four live alerts in both environments, so it needs the user's go-ahead. **It should land before #3 goes to Prod.**
+
+### RESUME HERE — validated test case, not yet run
+
+Pre-flight was clean (all five alerts ACTIVE, each to `mgoldyn` only, `alert_queued_mail` and `pending_alerts`
+both empty).
+
+| | |
+|---|---|
+| Customer | Guy's Floor Service Inc Denver — **3015065** (not excluded, `corp_address_id` 3015065, primary rep 1260) |
+| Item / loc | **`TRAORX-6683`**, loc **380** |
+| Qty / price | **60**, price **typed manually as `20.00`** |
+
+Validated against every clause: TOOLS not excluded, `track_lots` N, avail 105, total $1,200, ext_std $1,884,
+`pct_mac` 98.64% (≥5), `pct_std` −57.00% (<5), std 31.40 > sup 30.78 → `route_pricing_only = 'Y'`.
+
+Expect **exactly one** email, `[P21Play] Low Margin - Pricing Review - ...`, with a `Supplier Cost: $30.78` line.
+110 fires; **104 must not** (that is the actual test); 105 won't (needs `pct_mac < 5`); 106/107 are PAD only.
+Type the price manually — that sets `manual_price_overide = 'Y'` and beats any price page or contract.
+
+Backup candidate with realistic margins, needs the line location set to 100: `ROP54933M401`, qty 25, price 55.00
+(`pct_mac` 17.78%, `pct_std` −7.13%, std 58.92 > sup 57.76).
+
+**Status: 🟡 #1/#2/#4 LIVE on Prod. #3 complete and ACTIVE in Play, NOT TESTED. Prod twins of 16–20 not written.**
