@@ -710,3 +710,62 @@ Working sample: order **6062535**, manual price $23.50 → 3.45% / 1.47%, both 1
 
 **Status: 🟡 #4 live on Prod and verified. #1 and #2 built and proven in Play, neither deployed to Prod. #3 not
 started, blocked on Evan. Awaiting his reply.**
+
+## 2026-10-07 — Evan #2 and #1 both LIVE ON PROD
+
+### #2 footer wording — Prod, all four alerts
+
+104/106 reworded, 105/107 given the full contacts note. Verified from SQL afterwards.
+
+**The deploy went wrong first, in a way worth not repeating.** Script 12's UPDATE ran live but its
+`COMMIT TRANSACTION` was commented out behind a "uncomment once the text reads right" note. Running the file
+applied the change and left the transaction **open on Prod for ~5 minutes**, holding exclusive locks on
+`alert_message`. Two symptoms, both misleading:
+
+- script 14 (105/107) blocked behind it and looked like it was hanging;
+- a verification `SELECT` from another session returned the **old** text, which looked like the script had done
+  nothing. Cause: **P21 has `READ_COMMITTED_SNAPSHOT` ON**, so readers get the last committed version rather than
+  blocking. Absence of the change in a different session is NOT evidence the change did not run.
+
+`alert_message` is read by alert generation, so an open lock there can stall live sends. Resolved by committing in
+the original SSMS window (found via `SELECT @@SPID, @@TRANCOUNT`); script 14 then completed on its own, because its
+`COMMIT` is live inside a `BEGIN TRY`.
+
+**Script 12 has been rewritten** to the self-committing pattern used by 13/14/15 — commits only on exactly 2 rows,
+no commented-out `COMMIT`, no path that leaves a transaction open. `15-PROD-footer-changes-READY-TO-RUN.sql`
+combines both parts for a single Prod run and needs no uncommenting.
+
+### #1 contract price in `price_page_description` — Prod
+
+`11-add-contract-price-description-PROD.sql`. `CREATE OR ALTER VIEW` on `p21_view_alert_oe_OrderEntry`, so grants
+survive. Rollback: `ROLLBACK-11-p21_view_alert_oe_OrderEntry-PROD-BEFORE-2026-10-07.sql` (Prod's exact definition
+before the change).
+
+**Generated from Prod's own `OBJECT_DEFINITION`, not copied from Play — and here that was load-bearing.** Play also
+carries the 2026-08-11 NULL-hardening (script 06: separate, still unapproved, deliberately not on Prod). Copying
+Play's view text would have smuggled all of script 06 into Prod under cover of this change. The build applied only
+three edits (CREATE OR ALTER header, the `price_page_description` CASE, two LEFT JOINs) and diffed the result back
+against Prod to prove nothing else moved.
+
+⚠ **A first attempt produced a 222-line diff** — the extraction regex matched the wrong `CASE` and would have
+spliced ~200 lines of unrelated column definitions into the Prod view. The diff-back check caught it before
+anything was written. **Keep that check on any future edit to this view.**
+
+Post-deploy verification (all from SQL, 2026-10-07):
+
+| check | result |
+|---|---|
+| live Prod == generated script | True |
+| before → after changed lines | 12, only the intended hunks |
+| `mg harden 2026-08-11` present on Prod | **False** — script 06 still Play-only |
+| contract-price CASE + both joins | present |
+| Prod vs Play remaining diff | 44 lines, 5 of them hardening comments — as intended |
+
+Both joins are LEFT and `job_price_hdr` is filtered to `approved='Y' AND cancelled='N'`, so no row can be dropped
+from the alert; a line with no contract still renders `(no price page)`.
+
+Proven on real Prod data: 20 recent lines, all with `price_page_uid` 0/NULL and no price-page description — all
+would have printed "(no price page)" and now render e.g.
+`Contract Price: DeGeorge Ceilings of SW Ohio Inc (Contract #3001709)`.
+
+**Status: 🟡 #1, #2 and #4 all LIVE on Prod. #3 is the only build left, plus Evan's new one-email-per-order ask.**
