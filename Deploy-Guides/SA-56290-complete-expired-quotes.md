@@ -1,6 +1,6 @@
 # Deployment Guide — SA 56290 Complete Expired Quotes (scheduled job)
 
-> Status: DRAFT 2026-10-02. Nothing run in any environment yet.
+> Status: cancel job DRAFT 2026-10-02, nothing run. **Portal-by-role cleanup (added 2026-10-08):** Play role script RUN, Prod scripts written NOT run - see the last section.
 
 ## Artifact(s)
 - `Sql-Scripts/Quotes/SA-56290-Complete-Expired-Quotes.sql` — table `dbo.asi_expired_quote_complete_log`, proc `dbo.asi_proc_complete_expired_quotes`, SQL Agent job `ASI - Complete Expired Quotes` (commented in script)
@@ -26,3 +26,17 @@
 
 ## Open
 - Complete vs Cancel (ticket wording conflicts); final X days from Sales.
+
+
+## Part 2 - Open Quote portals: role-based access (added 2026-10-08)
+Why: Sales/Counter/CS need to review open quotes before the cancel job runs; access today is a mix of roles and 23 direct (per-user) assignments.
+
+**Scripts** (`Sql-Scripts/Portals Queries/`, `Sql-Scripts/Quotes/`)
+1. `SA-56290-Open-Quote-Portal-Roles.sql` - read-only: roles + direct users per quote portal (Prod).
+2. `SA-56290-Assign-OpenQuoteSearch-ToRoles-Play.sql` - adds OPEN QUOTES SEARCH to Sales Manager (exists), Branch Manager, Outside Sales, Customer Service, Customer Service Manager, Purchasing, Management; inactivates (705) the 10 direct rows of 7 current users. New uids from `seq_portal_assignment`. **Play: RUN 10/8 (6 inserts, counter 2103 = max 2103); the direct-row step was not separately confirmed.** Prod version NOT written yet.
+3. `SA-56290-Unassign-DeletedUsers-OpenQuotePortals-Play.sql` / `-Prod.sql` - inactivate the 13 direct rows of 5 deleted users (DMUSICK, RGERLACH, KBENISH, LBERRY, RGUDERJAHN). Prod: auto-ROLLBACK unless exactly 13. **Neither run.**
+
+**Order:** Play deleted-user script -> verify -> Prod deleted-user script; Play role script verified -> write the Prod role script (re-run script 1 first: Prod role rows may have changed) -> Prod.
+**Waiting on Matt:** do Customer Service + CS Manager get Search (if no, undo those two in Play, drop them from the Prod script); is the front counter = Branch Manager (no Counter role exists).
+**Rollback:** each script writes a backup table (`asi_portal_assignment_quote_*_bak_20261008`; the role script also logs inserted uids) and ends with a restore block; never a hard DELETE.
+**Traps:** portal_assignment_uid is not identity (use the sequence); Play users.delete_flag is stale vs Prod, so the Play scripts hardcode user IDs; Play portal/role ids differ from Prod (look up by name).
