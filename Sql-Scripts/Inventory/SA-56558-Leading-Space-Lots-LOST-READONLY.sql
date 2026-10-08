@@ -18,6 +18,7 @@ WHERE x.inv_mast_uid = @im AND x.location_id = 342 AND x.bin_cd = 'LOST' AND x.q
 SELECT 'inv_bin' AS s, b.bin, CAST(b.quantity AS decimal(38,12)) AS qty
 FROM inv_bin b WHERE b.inv_mast_uid = @im AND b.location_id = 342 AND b.bin = 'LOST';
 
-/* NOT RUN - widespread check (how many lots in Prod carry a leading/trailing space):
+/* RUN 2026-10-08 in Prod: 92 lots / 81 items / 8 locs, all leading space, only 7 with qty (4 CONUP160121, CONTX402101R1, LFCGACO900705, LFCOCWO900969).
+   Widespread check (how many lots in Prod carry a leading/trailing space):
 SELECT COUNT(*) AS lots_with_space, COUNT(DISTINCT inv_mast_uid) AS items
 FROM lot WHERE lot <> LTRIM(RTRIM(lot)); */
