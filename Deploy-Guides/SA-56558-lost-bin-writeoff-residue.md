@@ -44,3 +44,9 @@ Play (`P21Play` @ `P21Dev.allsurfaces.com`) first -> Prod (`P21` @ `P21.allsurfa
 - Every change is in `dbo.asi_sa56558_lost_cleanup_log` (`before_qty` / `after_qty` per row, keyed by item + `row_key`). To revert, `UPDATE` the four tables back from `before_qty` for `inv_mast_uid` + `row_key` (steps: 1 `lot_bin_xref`, 2 `lot`, 3 `inv_bin`, 4 `inv_loc`). Sub-penny quantities, so rollback is rarely worth it.
 - A later **Rebuild Inventory Quantities** (rebuilds from `inv_tran`) *could* bring a residue back — a Play test on CON72050121 showed it did not. Re-run `SA-56558-Item-Issues-Status.sql` after any rebuild on these items.
 - **Do not** trust "LOST is locked so nothing can be written off": Teresa wrote off ~145 lines from LOST 9/14–10/6. Check the lot header vs bin/xref at 12 decimals first.
+
+## Addendum 2026-10-08 - third cause: leading-space lot values (no deploy)
+- CONUP160121 in the 342 LOST bin: lots 16174073 / 16176029 / 16174077 / 16174080 are stored with a **leading space** (hex `20...`), each with a 0.00 no-space twin. Typing the roll # without the space hits the empty twin -> "lot/Bin combination does not exist". Reproduced in Prod (Inventory Adjustments, Lost) 10/8.
+- **Workaround (no data change):** type a leading space for those four lots; 16210009, 16210095, 13061046 (and CONAP412121 lot 15142005, CON88015121 lot 16079028) have no space.
+- CON88015121 LOST qty is 1.403 - write off 1.403, not 1.40, or a 0.003 residue remains.
+- Read-only query: `Sql-Scripts/Inventory/SA-56558-Leading-Space-Lots-LOST-READONLY.sql`. Data fix (merge/rename the lot values) NOT written - Play first if the workaround fails or the pattern is widespread. Prod: nothing changed.
