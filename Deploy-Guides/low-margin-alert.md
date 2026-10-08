@@ -895,3 +895,80 @@ Backup candidate with realistic margins, needs the line location set to 100: `RO
 (`pct_mac` 17.78%, `pct_std` −7.13%, std 58.92 > sup 57.76).
 
 **Status: 🟡 #1/#2/#4 LIVE on Prod. #3 complete and ACTIVE in Play, NOT TESTED. Prod twins of 16–20 not written.**
+
+## 2026-10-08 — two findings from live Prod alerts. Nothing built. Read before building anything else.
+
+No code was written or deployed today. Two live alerts exposed two separate problems, both measured, one proposed
+to Evan (draft unsent).
+
+### A. Internal/employee orders generate alerts
+
+Order 6197683, **Lisa Patenaude(ASI)** (customer 1022825, `class_1id = 'EM'`, `class_3id = 'EMP'`).
+
+- `class_1id = 'EM'` → 292 active customers, **34 alerting orders / 120 days**.
+- **EM alone is insufficient.** 16 active `(ASI)` customers carry a different class — Alex Boeve `ET`, Jere Butler
+  `IC`, Mark Ames `RF`, Justin White `RW`. The real rule is
+  `class_1id = 'EM' OR customer_name LIKE '%(ASI)%'` — **an OR, so no Filter-grid representation.** Build it the same
+  way as `route_pricing_only`: one `internal_customer` 'Y'/'N' view column, one predicate per alert.
+- **Rejected:** reclassing those 16 to `EM`. `IC`/`RF`/`ET`/`RW` presumably matter to other reports; changing customer
+  classes to suit an alert is the wrong lever.
+
+### B. The alert names the wrong Sales Rep on product-line-split accounts
+
+Order 6197885, Jay Henges. **John Henthorn (RSM):** *"The system is sending an email to Jeff Haupt who does not sell
+Pad, he is a flooring rep. Andy Thuston sells pad to Henges and would be the appropriate rep."*
+
+P21 already holds the mapping — `dbo.asi_table_customer_comclass_salesrep`, customer 1020310:
+
+| commission class | rep |
+|---|---|
+| BAG1 | 1033 Jeff Haupt |
+| BAG3 · **PADDING** · SUPPLIES | 1065 Andrew Thuston |
+
+All three lines on that order are PADDING or SUPPLIES, so every line points at Andy. The alert used
+`oe_hdr_salesrep.primary_salesrep = 'Y'`, which is Jeff on every order for that account whatever is on it.
+
+**Working chain:** `inv_mast.commission_class_id` → `asi_table_customer_comclass_salesrep` (`customer_id` +
+`commission_class_id`, `row_status_flag = 704`) → `contacts.email_address`.
+**Trap:** `oe_line.item_commission_class_id` is **blank** on this order's lines — do not rely on the line-level
+column; take the class from `inv_mast`.
+
+**Measured on Prod, 120 days, 7,207 alerting orders:**
+
+| | orders |
+|---|---|
+| mapping agrees with the primary rep — no change | 3,953 |
+| **mapping names a DIFFERENT rep than the one emailed** | **1,848** (~15/day) |
+| no mapping for that customer + class — keeps today's behaviour | 1,402 |
+| lines in multiple classes → multiple reps | 4 |
+
+About a quarter reach the wrong rep. The fix changes **who** is on the email, not how many emails — relevant to
+Evan's volume concern. Proposal: route by commission class, fall back to the primary rep where unmapped.
+**Forward to Evan drafted in Outlook, UNSENT.**
+
+### ⚠ Resolve this before building B
+
+Three live `kb_` objects sit beside the table the proposal depends on:
+
+| object | rows |
+|---|---|
+| `kb_table_customer_comclass_salesrep` | 364,598 — the twin of the `asi_` table |
+| `kb_table_customer_salesrep_audit_trail` | 44,061 |
+| `kb_table_salesrep_commission_classes` | 804 |
+
+The `asi_` table's rows were created by `AHI\kbenish` (departed). **Confirm which of the two is actually maintained
+before routing alerts off either** — routing off a stale table would be worse than today's behaviour.
+
+### Correction — the `Sales Rep <>` theory is dead again
+
+Both of today's queued failures (uids 241/242, order 6197683, 09:05) carry `Sales Rep <>`, because house rep 1041
+"All Surfaces House Flooring" has a NULL email → `p21_fn_validate_email_address` returns `<email_not_found/>` →
+`p21_sp_alert_generation` strips it to `<>`. That is **not** the failure cause: **1,033 of 4,600 alerting orders
+(22%) over 120 days carry `Sales Rep <>`** across 20 reps with no usable email, and essentially all deliver. With
+row 240 having failed in September on a fully valid To line, `<>` is neither necessary nor sufficient. The send
+failures remain unexplained.
+
+**⚠ The two failed emails (uids 241, 242) are still sitting in the Prod queue and will not send themselves.**
+
+**Status: 🟡 nothing built. Awaiting Evan on the rep-routing proposal; the `asi_` vs `kb_` question must be settled
+first.**
