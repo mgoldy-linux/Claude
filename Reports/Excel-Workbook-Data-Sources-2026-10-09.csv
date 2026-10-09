@@ -1,0 +1,88 @@
+File,Folder,Kind,Server,Database,Class
+Inventory Value ATCCS.xlsx,Documents-Excel,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Display Product Changes.xlsm,Platforms,PowerQuery,ahi-db1.ahi.local,P21,DEAD (ahi-db1)
+Jami-Derek's\History\Inventory Value ATCCS 3_12_2023.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Jami-Derek's\History\Inventory Value ATCCS.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Jami-Derek's\History\Inventory Value Detail.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Jami-Derek's\History\Inventory Value Summary.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Jami-Derek's\History\Open Orders & POs 4-8-2024.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Jami-Derek's\History\Open Orders & POs.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Jami-Derek's\History\PO Receipts 4-15-2024.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Jami-Derek's\History\PO Receipts.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Jami-Derek's\History\Transfer Receipts 4-1-2024.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Jami-Derek's\History\Transfer Receipts.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Jami-Derek's\History\Trasnfer Receipts vs2.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Jami-Derek's\Inventory Value ATCCS.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Jami-Derek's\Item Crossover File.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Jami-Derek's\Location & Item Order Cycle & Current Forecast.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Jami-Derek's\Location Stock Status.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Jami-Derek's\PO Receipts v2.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Jami-Derek's\Transfer Receipts v3.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+Loan Balance Updater.xlsm,Platforms,PowerQuery,ahi-db1.ahi.local,P21,DEAD (ahi-db1)
+OPs-Derek's\RMAs_refreshable.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,p21,DEAD (ahi-db1)
+P21 Email Log ODBC - 3 Days.xlsx,Platforms,PowerQuery,ahi-db1.ahi.local,P21,DEAD (ahi-db1)
+Ship To Export - Refreshable (DW P21 Source).xlsx,Documents-Excel,PowerQuery,asdwdb01.ahi.local,P21,DW
+Supplier Cost Changes in Last 7 Days - Refreshable.xlsx,Documents-Excel,PowerQuery,asdwdb01.ahi.local,P21,DW
+P21Training-MAPE-GT-500-v2.xlsx,Documents-Excel,PowerQuery,P21Dev.allsurfaces.com,P21Training,LOWER-ENV
+P21Training-MAPE-GT-500-v3.xlsx,Documents-Excel,PowerQuery,P21Dev.allsurfaces.com,P21Training,LOWER-ENV
+P21Training-MAPE-GT-500.xlsx,Documents-Excel,PowerQuery,P21Dev.allsurfaces.com,P21Training,LOWER-ENV
+Test-Saleday-Discount.xlsm,Documents-Excel,PowerQuery,P21Dev.allsurfaces.com,P21Dev,LOWER-ENV
+Test-Saleday-Discount.xlsx,Documents-Excel,PowerQuery,P21Dev.allsurfaces.com,P21Dev,LOWER-ENV
+Test-Simple-Power-Qry-customer-id.xlsx,Documents-Excel,PowerQuery,P21Dev.AllSurfaces.com,P21Dev,LOWER-ENV
+Testing Workbook.xlsx,Documents-Excel,PowerQuery,P21Dev.allsurfaces.com,P21Dev,LOWER-ENV
+Testing Workbook.xlsx,Documents-Excel,PowerQuery,P21Dev.AllSurfaces.com,P21Dev,LOWER-ENV
+OPs-Derek's\RMAs refreshable r1.xlsx,Platforms,Connection,Data Model Connection,,OTHER
+OPs-Derek's\RMAs_refreshable.xlsx,Platforms,Connection,Data Model Connection,,OTHER
+1 Location MAC  Standard Cost Query - Supplier  Location Variable  Query Template v2.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+Copy of Lost List 2025.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+GMROI inventory turns by manufacturer from Derek refreshable 8.19.25 JB.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+GMROI inventory turns by manufacturer from Derek refreshable 8.19.25 MG.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+GMROI inventory turns by manufacturer from Derek refreshable 8.19.25 MG_unprotected.PRE-KBFIX-20260903-111101.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+GMROI inventory turns by manufacturer from Derek refreshable 8.19.25 MG_unprotected.PRE-PRIMARYSUPPLIER-20260911-200944.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+GMROI inventory turns by manufacturer from Derek refreshable 8.19.25 MG_unprotected.PRE-REFFIX-20260911-145951.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+GMROI inventory turns by manufacturer with primary supplier 2026-09-14 MG_unprotected.PRE-INVCOLFIX-20260914-091023.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+GMROI inventory turns by manufacturer with primary supplier 2026-09-14 MG_unprotected.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+Loc-221-Bins-ML-Update.xlsx,Documents-Excel,PowerQuery,P21.Allsurfaces.com,P21,PROD
+Loc-221-Bins.xlsx,Documents-Excel,PowerQuery,P21.Allsurfaces.com,P21,PROD
+Location & Item Order Cycle & Current Forecast-mg.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+Location & Item Order Cycle & Current Forecast-mg.xlsx,Documents-Excel,PowerQuery,P21.allsurfaces.com,p21,PROD
+Location & Item Order Cycle & Current Forecast.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+Location & Item Order Cycle & Current Forecast.xlsx,Documents-Excel,PowerQuery,P21.allsurfaces.com,p21,PROD
+Location-Supplier  Item Order Cycle  Current Forecast - Updated.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+Location-Supplier  Item Order Cycle  Current Forecast - Updated.xlsx,Documents-Excel,PowerQuery,P21.allsurfaces.com,p21,PROD
+Location-Supplier  Item Order Cycle  Current Forecast-20260810.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+Location-Supplier  Item Order Cycle  Current Forecast-20260810.xlsx,Documents-Excel,PowerQuery,P21.allsurfaces.com,p21,PROD
+Location-Supplier  Item Order Cycle  Current Forecast.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+Location-Supplier  Item Order Cycle  Current Forecast.xlsx,Documents-Excel,PowerQuery,P21.allsurfaces.com,p21,PROD
+MG Copy of Lost List 2021.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+New Item Set up - By Supplier.xlsm,Documents-Excel,PowerQuery,P21.AllSurfaces.com,P21,PROD
+New Item Set up - By Supplier.xlsx,Documents-Excel,PowerQuery,P21.AllSurfaces.com,P21,PROD
+New Item Set up .xlsx,Documents-Excel,PowerQuery,P21.AllSurfaces.com,P21,PROD
+New-Location-Items.xlsx,Documents-Excel,PowerQuery,P21.AllSurfaces.com,P21,PROD
+Open Orders - Low Margin v2 - different sales & cost targets.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+Open SO V8 Template -mg.xlsx,Documents-Excel,PowerQuery,p21.allsurfaces.com,p21,PROD
+Test-Saleday-Discount-V2 - Copy.xlsm,Documents-Excel,PowerQuery,P21.AllSurfaces.com,P21,PROD
+Test-Saleday-Discount-V2 - Copy.xlsm,Documents-Excel,PowerQuery,P21.Allsurfaces.com,P21,PROD
+Test-Saleday-Discount-V2 - Copy.xlsm,Documents-Excel,PowerQuery,P21.allsurfaces.com,P21,PROD
+Test-Saleday-Discount-V2.xlsm,Documents-Excel,PowerQuery,P21.AllSurfaces.com,P21,PROD
+Test-Saleday-Discount-V2.xlsm,Documents-Excel,PowerQuery,P21.Allsurfaces.com,P21,PROD
+Test-Saleday-Discount-V2.xlsm,Documents-Excel,PowerQuery,P21.allsurfaces.com,P21,PROD
+Test-Saleday-Discount-V3.xlsm,Documents-Excel,PowerQuery,P21.AllSurfaces.com,P21,PROD
+Test-Saleday-Discount-V3.xlsm,Documents-Excel,PowerQuery,P21.Allsurfaces.com,P21,PROD
+Test-Saleday-Discount-V3.xlsm,Documents-Excel,PowerQuery,P21.allsurfaces.com,P21,PROD
+Test-Saleday-Discount.xlsm,Documents-Excel,PowerQuery,P21.AllSurfaces.com,P21,PROD
+Testing Workbook.xlsx,Documents-Excel,PowerQuery,P21.Allsurfaces.com,P21,PROD
+281_Standard_Cost.xlsx,Platforms,PowerQuery,p21.allsurfaces.com,p21,PROD
+Credit Team\Credit Inquiry macro form v1.xlsm,Platforms,PowerQuery,p21.allsurfaces.com,p21,PROD
+Jami-Derek's\Cost Changes in Last 7 Days.xlsx,Platforms,PowerQuery,P21.allsurfaces.com,p21,PROD
+Jami-Derek's\Open Orders & POs v4.xlsx,Platforms,PowerQuery,P21.allsurfaces.com,p21,PROD
+Jennifer's\! 2022 08 17 Jennifer Inventory Usage Refreshable.xlsx,Platforms,PowerQuery,p21.allsurfaces.com,P21,PROD
+Justine's\Empire_-_all_open_orders_1.xlsx,Platforms,PowerQuery,p21.allsurfaces.com,p21,PROD
+Justine's\Empire_-_all_open_orders_V3.xlsx,Platforms,PowerQuery,p21.allsurfaces.com,p21,PROD
+OPs-Derek's\RMAs refreshable r1.xlsx,Platforms,PowerQuery,p21.allsurfaces.com,p21,PROD
+Purchasing-Derek's\Pricing - Average Mac v1.xlsx,Platforms,PowerQuery,p21.allsurfaces.com,P21,PROD
+Sansara - Vivian\All Surfaces - Power Query Script V4.1.xlsm,Platforms,PowerQuery,p21.allsurfaces.com,p21,PROD
+eCommerce Inventory Reports (refreshable) v3.xlsx,Platforms,PowerQuery,p21.allsurfaces.com,P21,PROD
+Lost List 2021-copy.xlsx,Documents-Excel,PowerQuery,ASP21DB1.ahi.local,p21,PROD? (asp21db1)
+Pricing Team - Open Orders V1 - Refreshable.xlsx,Platforms,PowerQuery,asp21db1.ahi.local,P21,PROD? (asp21db1)
+Pricing Team - Open Orders V2 - Refreshable.xlsx,Platforms,PowerQuery,asp21db1.ahi.local,P21,PROD? (asp21db1)
