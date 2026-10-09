@@ -1,6 +1,10 @@
 # Deployment Guide - SA-55980 Customer Sales Rep Username Export
 
-> Updated 2026-10-02. **Built and tested on Play/Training; NOT deployed to Prod; SFTP upload untested.**
+> Updated 2026-10-09. **Built and tested on Play/Training; NOT deployed to Prod.** 10/9: SFTP connection + test put proven from ASWEB1 (key-only Serv-U user `SalesRepExport`, RSA key); the script's upload step is now `sftp.exe` + key and SQL auth can use the `orosvc` credential file - both written 10/9, **offline-tested only, not yet run against the server.** Parked - Mark to resume.
+>
+> **Companion files (10/9):** `Deploy-Guides\SA-55980-ASWEB1-sftp-test-guide.md` (session steps), `C:\PowerShell-Scripts\Export-SQL\Test-SftpKeySetup.ps1` (key/connection/upload/drill tests), `C:\PowerShell-Scripts\Export-SQL\New-SalesRepSqlCredential.ps1` (DPAPI `orosvc` credential file, run as the job account), `Sql-Scripts\SalesReps\Check-SA55980-Departed-Reps-And-Deleted-Customers.sql` (Matt's departed-rep question).
+>
+> **Facts learned 10/9:** Serv-U 15.5.4.108 accepts RSA/ECDSA, not ed25519 -> RSA 4096. The `tneuman` account requires key AND password (unusable unattended); `SalesRepExport` is key-only. sftp options go before user@host; `-i` takes the next word as its path. The 10/2 Play-Dev export was left in `/Dev/SalesRepImport/` by the test put - delete it and check Oro Dev did not ingest it.
 
 ## Artifact(s)
 - `SQL-Schema\CREATE-OR-ALTER-PROC-asi_proc_sales_rep_export.sql` - stored proc (2 result sets: snapshot, exceptions; params `@IgnoreDeleteFlag` test-only, `@ResultSet` for testing). Includes `GRANT EXECUTE` to `p21_application_role`, `PxxiUser`.
@@ -33,7 +37,7 @@ Play-Dev: P21Dev.allsurfaces.com / P21Play -> /DEV | Play-Sandbox: same DB -> /S
 6. Real run with `-SftpHost`, then register the scheduled task (Matt).
 
 ## Test everything on lower environments BEFORE Prod (user's rule, 2026-10-02)
-1. Add a `-ConfirmProd` switch so `Prod-Prod` cannot run (or be scheduled) by accident. [TODO]
+1. `-ConfirmProd` switch so `Prod-Prod` cannot upload (or be scheduled) by accident. [DONE 10/9 - uploads only; untested]
 2. SFTP upload from ASWEB1 to the DEV / Sandbox / Stage folders (Tony's team creates the Serv-U user + public key and the Windows service account; script uses sftp.exe with the key; guided test from ASWEB1). [TODO]
 3. Failure drills: bad credential, wrong folder, missing proc -> exit code 1, record line `FAILED`, file left in `out\`, email summary. [TODO]
 4. Register the scheduled task for Play-Dev only; run now, then daily for several days; confirm under the service account (execution policy: `Unblock-File` or `-ExecutionPolicy Bypass`). [TODO]
@@ -41,7 +45,8 @@ Play-Dev: P21Dev.allsurfaces.com / P21Play -> /DEV | Play-Sandbox: same DB -> /S
 
 ## SFTP method (decided 2026-10-05, Tony Neuman)
 - `sftp.exe` (already on ASWEB1) with an SSH key; public key on a dedicated Serv-U user (key-only, limited to the SalesRepImport folder(s)); host `ftp.allsurfaces.com`, Play-Dev `/Dev/SalesRepImport/`; Sandbox/Stage/Prod folders TBD (Matt). Private key stays on ASWEB1, readable only by the job's Windows account (empty passphrase; protected by file ACL); verify the server fingerprint on first connect.
-- NOT Posh-SSH/WinSCP: nothing is installed or downloaded. The script's upload step still uses Posh-SSH and must be rewritten for `sftp.exe -i <key> -b <batchfile>` (exit code + `ls -l` size check). [TODO]
+- NOT Posh-SSH/WinSCP: nothing is installed or downloaded. **Upload step rewritten 10/9** for `sftp.exe -i <key> -o BatchMode=yes -b <batchfile>` (`Send-SftpFile`: exit code 0 AND remote `ls -l` size = local size; `-UseTempName` optional .part+rename; `-ConfirmProd` required for Prod-Prod). Offline-tested only - first real run must confirm the `ls -l` size parses. [VERIFY]
+- **SQL login (10/9 decision): `orosvc`** via `-SqlCredFile` (DPAPI Export-Clixml PSCredential, created AS THE JOB ACCOUNT with `New-SalesRepSqlCredential.ps1`; password never in the script/log/repo). Without `-SqlCredFile` the script uses Windows auth (testing as yourself). `orosvc` is shared with the live Oro sync - a password rotation breaks the export until the file is recreated; owner TBD.
 - Accounts: ecommerce jobs on ASWEB1 connect to SQL as SQL login `orosvc` (db_datareader/db_datawriter + CONNECT + EXECUTE in P21, P21Play, P21Training - no new SQL grants needed); the job still needs a WINDOWS account (not pimsvc - not a PIM job) to run on ASWEB1 and hold the key, plus CONNECT/EXECUTE for that account if the script keeps Windows authentication. Open with Tony's team.
 
 - **Matt 2026-10-06:** existing Serv-U account `OroUser` has root access to all outbound folders/environments; each environment (Dev, Stage, Sandbox, Prod) has its OWN `SalesRepImport` folder (exact names to verify on first listing; script has only `/Dev/SalesRepImport/` confirmed). Existing ASWEB1 scheduled jobs run under the **pimsvc** Windows service account (PIM + Oro); use as-is or rename (ASWEB1SVC). => scheduler = Task Scheduler on ASWEB1 under pimsvc. **Gap:** only SQL logins `pimsvc`/`orosvc` exist on the SQL servers (no Windows login seen) - the script uses Windows authentication, so the Windows account needs CONNECT + EXECUTE on `dbo.asi_proc_sales_rep_export` in P21, P21Play, P21Training (or switch to SQL auth with a protected password file). Recommended: separate key-only Serv-U user limited to the four SalesRepImport folders (OroUser can reach every environment incl. Prod). Reply-all to Matt/Tony drafted 10/6, not sent.
