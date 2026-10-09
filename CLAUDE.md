@@ -96,6 +96,13 @@ On **any** code touched here (SQL, business rules, portal `.srd`, reports, Power
 
 Run `/kbjs` for the full checklist, established replacements, and the P21 traps (split commissions, DataWindow SQL, positional column binding). Details in `.claude/skills/kbjs/SKILL.md`.
 
+## Standing Rule - Excel data sources use the Data Warehouse
+
+Any Excel workbook / Power Query connection built or edited here reads from the data warehouse -
+`Sql.Database("asdwdb01.ahi.local", "P21", ...)` - not Prod (`p21.allsurfaces.com`). It is a nightly (~2:05 AM)
+restore of Prod, so data is current through last night: say so in the hand-off. Never create objects in the
+DW `P21` database (wiped nightly). Use Prod only when the user explicitly needs same-day data, and flag it.
+
 ## C# Business Rule
 
 `ASI_IM_Gen_Discontinued_Check.cs` is a Prophet21 validator that enforces a 4-step workflow when marking items as discontinued in the EDI system. It references Prophet21 SDK types — it cannot be compiled standalone.
