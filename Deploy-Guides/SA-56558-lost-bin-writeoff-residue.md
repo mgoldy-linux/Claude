@@ -50,3 +50,8 @@ Play (`P21Play` @ `P21Dev.allsurfaces.com`) first -> Prod (`P21` @ `P21.allsurfa
 - **Workaround (no data change):** type a leading space for those four lots; 16210009, 16210095, 13061046 (and CONAP412121 lot 15142005, CON88015121 lot 16079028) have no space.
 - CON88015121 LOST qty is 1.403 - write off 1.403, not 1.40, or a 0.003 residue remains.
 - Read-only query: `Sql-Scripts/Inventory/SA-56558-Leading-Space-Lots-LOST-READONLY.sql`. Data fix (merge/rename the lot values) NOT written - Play first if the workaround fails or the pattern is widespread. Prod: nothing changed.
+
+## Addendum 2026-10-09 - round 2 residue cleanup + phantom allocation (APPLIED IN PROD)
+- `Sql-Scripts/Inventory/SA-56558-Zero-LOST-Residue-PROD-Round2.sql` - same logic as the 10/7 script, scoped to CON88015121 and CONUP160121 (0.008 / 0.006 left in LOST), `@Commit` defaults to 0. Previewed, then applied 10/9: 8 rows (2/2/2/2), logged in `dbo.asi_sa56558_lost_cleanup_log`. Rollback = same log table, `before_qty` per `row_key`.
+- **WARNING:** the 10/7 `-PROD.sql` has `@Commit = 1` in the file (its header says 0). Set it to 0 before any reuse.
+- CONAP412121 83.34: `inv_loc.qty_allocated` = 83.34 from **Inventory Return Entry #3070** (3/20/2026, tdoerr, nothing picked). Not changed by us - Teresa cancels/updates it in P21, then writes off. Find such allocations with `p21_view_find_transaction_allocations` (inv_mast_uid + location_id).
