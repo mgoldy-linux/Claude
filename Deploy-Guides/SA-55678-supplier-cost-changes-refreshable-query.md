@@ -3,14 +3,14 @@
 > Produced during development. Update as the artifact changes; commit with the code.
 
 ## Artifact(s)
-- `Supplier Cost Changes in Last 7 Days - Refreshable.xlsx` (copy of Jere's workbook, in `Documents\Excel`; attached to the SysAid ticket) — two Power Query tables: `HeaderChanges` (sheet Header, A–F) and `LocationChanges` (sheet Location, A–H incl. `Concat`). Direct SQL to `p21.allsurfaces.com` / db `p21`, rolling 7 days.
+- `Supplier Cost Changes in Last 7 Days - Refreshable.xlsx` (copy of Jere's workbook, in `Documents\Excel`; attached to the SysAid ticket) — two Power Query tables: `HeaderChanges` (sheet Header, A–F) and `LocationChanges` (sheet Location, A–H incl. `Concat`). Direct SQL to the **data warehouse** `asdwdb01.ahi.local` / db `P21` (switched from Prod 10/9), rolling 7 days.
 - `Sql-Scripts\Supplier\SA-55678-Supplier-Cost-Changes-Discovery.sql` — audit_trail discovery (3 steps).
 - `Sql-Scripts\Supplier\SA-55678-Supplier-Cost-Changes-Last-7-Days.sql` — the two queries (same SQL as the workbook).
 - `SQL-Schema\CREATE-OR-ALTER-VIEWS-asi_view_supplier_cost_changes.sql` — **optional** views, NOT deployed.
 - Ticket: SA-55678
 
 ## Target environments
-- Prod read only (`p21.allsurfaces.com`). Nothing is deployed to any database; the workbook is the deliverable.
+- Reads the reporting data warehouse (`asdwdb01.ahi.local`, db `P21`) - a copy of Prod restored nightly ~2:05 AM, so the 7-day window ends at the last restore (data through yesterday). Nothing is deployed to any database; the workbook is the deliverable.
 
 ## Dependencies & deploy order
 1. Nothing in SQL to deploy. (If the optional views are ever wanted: Play first, then Prod, with `GRANT SELECT ... TO p21_application_role`; then repoint the two queries at the views.)
@@ -24,7 +24,7 @@
 1. Attach the workbook to the ticket; user opens it and uses Data > Refresh All.
 
 ## Verification
-- Refresh → expect ~118 header / ~7 location rows for the 7 days ending 2026-10-01 (matched SSMS on 10/1). Compare to the SQL file run in SSMS.
+- Refresh → on 10/1 against Prod: 118 header / 7 location rows (matched SSMS). On 10/9 against the DW: 73 header / 1 location row, newest 10/8 9:19 AM. Counts differ from Prod because of the nightly-restore lag and a different window. Compare to the SQL file run in SSMS.
 
 ## Rollback
 - Original workbook was left untouched (`Supplier Cost Changes in Last 7 Days .xlsx`). Nothing else to revert.
