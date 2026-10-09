@@ -1,9 +1,9 @@
 # Deployment Guide — SA-56113 Invoice Detail: multi-select Manufacturer
 
-> 2026-10-02: **tested locally by Mark (multi-select works, test settings below); NOT uploaded.** Edited RDL is local only: `C:\SSRS-Local\Invoice Detail.rdl`.
+> **DEPLOYED to Prod SSRS 2026-10-09 (Mark).** Tested in `/Test-Mark` first (all 5 test cases passed). Old report archived at `/Company Reports/Sales/Archive Sales/Invoice Detail - Cannot select MFG`; new one is `/Company Reports/Sales/Invoice Detail` (new item ID `90359525-2bb4-4196-8cfb-b949d0daa204`). Awaiting Jere's confirmation before the ticket is closed.
 
 ## Artifact(s)
-- `C:\SSRS-Local\Invoice Detail.rdl` — SSRS report `/Company Reports/Sales/Invoice Detail` (Id 07e52b1f-6ecb-4bef-af83-05894ea98973)
+- **Upload this file:** `C:\SSRS-Local\Invoice Detail - SA56113 multi-mfg only.rdl` (multi-select only; existing queries/`kb_` views unchanged). SSRS report `/Company Reports/Sales/Invoice Detail` (Id 07e52b1f-6ecb-4bef-af83-05894ea98973)
 - Ticket: SA-56113 (requested by Jere, Purchasing)
 
 ## What changed
@@ -11,7 +11,7 @@
 - Dropdown now uses existing shared dataset `/Datasets/Manufacturers` (no null row) instead of `ManufacturersNULL`. Report dataset renamed `Manufacturers`. Shared datasets are NOT changed.
 - Filter: `@mfg IS NULL OR item_class1 IN (@mfg)` -> `@mfg_cnt >= (count of active class-1 manufacturers) OR item_class1 IN (@mfg)`. New query parameter `@mfg_cnt = Parameters!mfg.Count`. "All selected" = no filter, so invoice lines with a retired/blank class still appear (old "(Null)" behavior). Last-year check on the DW: 0 null, 7 of 1.38M lines have a class not in the active list.
 - Header text: lists the chosen manufacturers, and is omitted when all are selected.
-- **`kb_` cleanup (3 of 4 references removed, same session):**
+- **Deferred to the kb_ cleanup project (NOT in the SA 56113 upload):** three `kb_` swaps built and proven, saved as `C:\SSRS-Local\Invoice Detail - multi-mfg + 3 kb swaps (for kb cleanup project).rdl`. Decision 2026-10-06 (Mark): keep the existing queries for this ticket.
   - `kb_view_users` -> `users` (only `name` is used). DW check: 905 vs 905 rows, 0 differences either way, 0 duplicate ids.
   - `kb_view_carrier` -> `p21_view_address` with `carrier_flag = 'Y'` in the join. 127 vs 127, 0 differences, 0 duplicate ids.
   - `kb_view_customer_x_dealer_type` (also hid `kb_view_customer`) -> `customer_x_dealer_type` + `dealer_type` (`row_status_flag = 704`) + `customer` (`delete_flag = 'N'`). All dealer types: 11,353 vs 11,353 id/customer pairs, 0 differences either way.
@@ -27,7 +27,7 @@
 
 ## Deploy steps
 1. Test locally in Report Builder / Visual Studio: pick one, several, and all manufacturers; confirm row counts and the header text.
-2. Upload `Invoice Detail.rdl` over `/Company Reports/Sales/Invoice Detail` (portal Upload, or REST `PUT Reports(<id>)/Content`).
+2. Upload `Invoice Detail - SA56113 multi-mfg only.rdl` over `/Company Reports/Sales/Invoice Detail` (portal Upload, or REST `PUT Reports(<id>)/Content`).
 3. Open the report in the portal and confirm the Manufacturer box shows checkboxes with Select All.
 
 ## Verification
@@ -44,3 +44,8 @@
 
 ## Test settings (DW, 9/21/2026 - 9/25/2026 11:59:59 PM, other parameters default)
 - Toli = 33 lines; Toli + Taylor Tools = 71; Toli + Taylor Tools + Lotte = 104; all manufacturers = 25,554; dealer type `MFT-CONDUALDAR` = 9,460 (query-level checks; the report may differ slightly through its own joins).
+
+## Deployed 2026-10-09
+- Order used: upload to `/Test-Mark` -> test -> move old report to `Archive Sales` (renamed "Invoice Detail - Cannot select MFG") -> place tested report as `/Company Reports/Sales/Invoice Detail`. The new item has a new ID, so ID-based bookmarks/favorites break; folder/name links work. No subscriptions.
+- Live file is identical to `Invoice Detail - SA56113 multi-mfg only.rdl`. Rollback: upload the PRE-SA56113 backup over the live report (or move the archived one back).
+- The `kb_` swaps and the Product Manager dropdown were NOT part of this deploy (kb cleanup project / separate issue).
