@@ -1,6 +1,6 @@
 # Deployment Guide — SA-56113 Invoice Detail: multi-select Manufacturer
 
-> **DEPLOYED to Prod SSRS 2026-10-09 (Mark).** Tested in `/Test-Mark` first (all 5 test cases passed). Old report archived at `/Company Reports/Sales/Archive Sales/Invoice Detail - Cannot select MFG`; new one is `/Company Reports/Sales/Invoice Detail` (new item ID `90359525-2bb4-4196-8cfb-b949d0daa204`). Awaiting Jere's confirmation before the ticket is closed.
+> **DEPLOYED to Prod SSRS 2026-10-09 (Mark).** Tested in `/Test-Mark` first (all 5 test cases passed). Old report archived at `/Company Reports/Sales/Archive Sales/Invoice Detail - Cannot select MFG`; new one is `/Company Reports/Sales/Invoice Detail` (new item ID `90359525-2bb4-4196-8cfb-b949d0daa204`). **Ticket closed 2026-10-09 (Jere confirmed).**
 
 ## Artifact(s)
 - **Upload this file:** `C:\SSRS-Local\Invoice Detail - SA56113 multi-mfg only.rdl` (multi-select only; existing queries/`kb_` views unchanged). SSRS report `/Company Reports/Sales/Invoice Detail` (Id 07e52b1f-6ecb-4bef-af83-05894ea98973)
