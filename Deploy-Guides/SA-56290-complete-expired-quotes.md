@@ -24,8 +24,11 @@
 ## Rollback
 - Log table lists every order_no touched. Reverse by setting the four flags back for those orders (not scripted yet). Disable the Agent job to stop future runs.
 
+## Play test before building (10/10)
+- `Sql-Scripts/Quotes/SA-56290-Cancel-2-Test-Quotes-Play.sql`: cancel 2 quotes past 90 days, skip 1 inside the window; backup table `asi_bak_SA56290_cancel_test`; rollback default. Written, NOT run. Goal: confirm a cancelled quote can be reopened in Order Entry with a new expiration date.
+
 ## Open
-- Complete vs Cancel (ticket wording conflicts); final X days from Sales.
+- Sales (Al Ross 10/7) wants CANCEL 90 days after expiry; proc currently completes, switch after the reopen test passes. Final X still pending Sales.
 
 
 ## Part 2 - Open Quote portals: role-based access (added 2026-10-08)
