@@ -1,5 +1,108 @@
 # Deployment Guide — Order Ack email subject: add customer PO (SA 54321)
 
+## 2026-10-10 — requirements document drafted; scope reversed to PO + Sidemark
+
+Nothing built, nothing deployed, no environment touched. The deliverable is
+`C:\Claude\Docs\SA-54321-Order-Ack-Subject-Requirements-v1.0.docx` (12 pages),
+built from the SharePoint `Requirements Template v1.0.docx` using its own styles.
+
+### The scope reversed, and why that is not a contradiction
+
+The 2026-09-18 recommendation was PO-only: adding the Sidemark degraded 7.50% of
+orders against 0.69%. The user then specified a different rule set — **if the
+sender types their own subject, add nothing**, plus a 3-character minimum, a
+content filter and truncation. The first of those removes the objection
+entirely, because the whole 7.50% was the sender's own text competing with the
+stamp for the same 60 characters. Stand aside on those orders and the conflict
+cannot arise; when the rule does act it has the full field.
+
+Re-modelled against all 216,912 2026 acknowledgments using each sender's real
+typed text:
+
+| Outcome | Share |
+|---|---|
+| Sender typed a subject — skipped | 33.3% of all |
+| Eligible | 66.7% of all |
+| → PO + Sidemark | 81.3% of eligible |
+| → PO only | 14.8% of eligible |
+| → nothing usable | 3.1% of eligible |
+| Sidemark dropped, under 3 chars | 2.1% |
+| Sidemark dropped by filter | 0.3% |
+| Sidemark truncated | 1.2% |
+
+No modelled subject exceeded 60 characters.
+
+### Two ideas rejected, with the evidence
+
+1. **Truncate the PO at 50** — a no-op. `po_no` is already `varchar(50)`, the
+   longest value all year is exactly 50 (11 orders), `"| PO " + 50 = 55 < 60`,
+   and **zero** of the 1,440 PO-only failures involve a PO over 50.
+2. **Truncate the PO to fit** — rejected. A partial identifier looks valid,
+   matches nothing, and defeats searchability, which is the feature's only
+   purpose. Every failure is driven by the sender's own text (median 45 chars
+   against a median PO of 19).
+
+**Design judgement, flagged as such in the document:** truncate the Sidemark at
+a **word boundary**, never mid-word. Hard truncation gives `Minnetonka High
+Schoo`; word-boundary gives `Minnetonka High`. Affects 1,595 of 1,720
+truncations and never drops below 3 characters. The 3-character minimum is also
+a judgement, not a business requirement — both are Open Issues for the reviewers.
+
+### Document structure
+
+Non-technical by request. `w_email_response`, `d_dw_email_info.subject`,
+`char(60)`, `FormPreEmail`, `cb_ok` and the implementation constraints were moved
+out of the body into an **Appendix marked "For IT reference only"**, per
+`feedback_br_summary_doc_format`. Verified: zero technical terms in the 167
+elements before the appendix heading.
+
+Testing section: development testing in **P21BusinessRules**, user acceptance
+testing in **P21Play**, live only on written sign-off. Ten test cases with real
+2026 order numbers (3790264, 4160361, 5576477, 3650573, 5555124, 4041048,
+4725486, plus an RMA negative test, the SA 53475 regression and a length ceiling).
+
+Reviewers: Tina Thousand (CIO), Jossy Vadakkel (Director, IT Business
+Applications), Matt Munson (Director, IT Customer Applications), Chad Skelton
+(IT Product Manager, ERP).
+
+### OPEN DESIGN GAP — raised late, not resolved
+
+The rule hooks the OK button on the **desktop** PowerBuilder email window. Its
+Configuration Options show *Enabled For Version: Both*, but that setting existing
+is not evidence the web client exposes the same window and button for a rule to
+hook, and **every test so far has been the desktop client**. If reps send
+acknowledgments from the web client and the rule does not fire there,
+acknowledgments go out without the PO **silently** — no error, nothing logged.
+
+Question put to the user, unanswered: do reps use the web client for this in
+practice? Desktop-only means a scope line in the document; both means a web test
+case plus an open issue.
+
+### Waiting on
+
+- The desktop-vs-web answer above.
+- Four screenshots: Order Entry and the email window **with the subject box
+  empty**, desktop and web. Ideally order **6108923** (`PO 57354`, Sidemark
+  `Serena Residence`) so they match the Examples table. Pillow is available
+  locally, so they can be cropped, scaled, annotated and blurred before embedding.
+  A dashed placeholder box sits in the document where the first one goes.
+- Agreement on the content filter word list (a draft exists; `test` and `credit`
+  will false-positive on genuine job names).
+
+### Build traps worth not repeating
+
+- **`unzip` silently dropped `_rels/.rels`**, the root relationship Word uses to
+  find the document part. Word **repaired it invisibly on the first open**, which
+  masked the bug until the file grew, then reported "file appears to be
+  corrupted" twice. Packaging now copies entries straight from the template zip
+  and asserts the part is present. A .docx that opens once is not proof the
+  package is sound.
+- Word requires a paragraph after the final table before `sectPr`, and
+  `<w:spacing>` must precede `<w:ind>` inside `pPr`.
+- The 216,912-row export has **no `transaction_type` filter** — only 189,893
+  rows carry a real `Acknowledgement#` marker, so the first attempt at choosing
+  test orders returned non-acknowledgments.
+
 ## 2026-09-18 — evidence pack for the Tina call (analysis only, nothing deployed)
 
 No code shipped and no environment touched. A `ExcludedTakers` change was
