@@ -59,7 +59,8 @@ GO
 
 CREATE OR ALTER PROCEDURE dbo.asi_proc_cancel_expired_quotes
     @DaysAfterExpiration int = 90,
-    @Preview bit = 1                    -- 1 = list only, 0 = update
+    @Preview bit = 1,                   -- 1 = list only, 0 = update
+    @OnlyExpiredOn date = NULL          -- optional test limiter: only quotes whose expiration_date is on this ONE day (still must be past the cutoff)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -75,7 +76,8 @@ BEGIN
       AND ISNULL(oh.completed,'N') <> 'Y'
       AND ISNULL(oh.cancel_flag,'N') <> 'Y'
       AND oh.delete_flag = 'N'
-      AND qh.expiration_date < @cutoff;
+      AND qh.expiration_date < @cutoff
+      AND (@OnlyExpiredOn IS NULL OR (qh.expiration_date >= @OnlyExpiredOn AND qh.expiration_date < DATEADD(DAY, 1, @OnlyExpiredOn)));
 
     IF @Preview = 1
     BEGIN
@@ -118,6 +120,10 @@ GO
 -- ============================================================
 -- STEP 3: test on PLAY (preview first, eyeball, then run)
 -- ============================================================
+-- One-day test (no order numbers): preview, eyeball the list, then run. Day must be older than today-90 or nothing matches.
+-- EXEC dbo.asi_proc_cancel_expired_quotes @DaysAfterExpiration = 90, @Preview = 1, @OnlyExpiredOn = '2026-07-13';
+-- EXEC dbo.asi_proc_cancel_expired_quotes @DaysAfterExpiration = 90, @Preview = 0, @OnlyExpiredOn = '2026-07-13';
+-- Full run (all qualifying quotes):
 -- EXEC dbo.asi_proc_cancel_expired_quotes @DaysAfterExpiration = 90, @Preview = 1;
 -- EXEC dbo.asi_proc_cancel_expired_quotes @DaysAfterExpiration = 90, @Preview = 0;
 -- Then open one affected quote in Order Entry (should show cancelled, no allocation) and check Item Maintenance delete.
