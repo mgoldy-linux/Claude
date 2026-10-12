@@ -122,3 +122,9 @@ Root cause not identified — this file predates both the current script and the
 | 810 Manual | 61,818 | 58,861 | 56,439 |
 
 This confirms FYQ3 2026 (Apr–Jun 2026) is in the same range as the true FYQ3 2025 figures — B2B/EDI adoption up modestly (~8%), volumes roughly flat.
+
+## FYQ4 2026 sent 2026-10-12
+
+Generated against Prod (data through 2026-09-30) and sent to Lewis Davis via Outlook with **Chad Skelton on CC** (standing practice - CC Chad on every submission). Next: FYQ1 2027 (Oct-Dec 2026), due ~2027-01-10: `-FiscalYear 2027 -Quarter 1`.
+
+Note: the script prints a harmless 'handle is invalid' error on its $RawUI.CursorPosition line when run from a non-interactive shell; the file is still written.
