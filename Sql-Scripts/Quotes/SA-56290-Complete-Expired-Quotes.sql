@@ -2,7 +2,7 @@
 SA 56290 - Scheduled job: CANCEL quotes whose expiration date is over X days old (Sales, Al Ross 10/7: cancel 90 days after expiry).
 Test value: 90 days AFTER expiration_date (Sales still deciding the final number).
 
-DRAFT - NOT RUN. Run on PLAY first (SSMS; Claude's sandbox can't open SQL TDS).
+Tested on PLAY 2026-10-12. Always run on PLAY first, and preview before running.
 Approach follows the P21WWUG thread (Topic196767): set oe_hdr/oe_line complete + quote_hdr/quote_line complete flags, PLUS oe_hdr.cancel_flag='Y'.
   Play test 10/12: cancel via flags then reopen in Order Entry worked (flags cleared; a new quote_hdr.expiration_date saved). Reopened quotes MUST get a new expiration date or the next run re-cancels them.
 Differences from the forum scripts:
@@ -114,7 +114,7 @@ BEGIN
     SELECT COUNT(*) AS quotes_cancelled FROM #q;
 END
 GO
--- per feedback: new objects need EXECUTE for the app role
+-- new objects need EXECUTE for the app role
 -- GRANT EXECUTE ON dbo.asi_proc_cancel_expired_quotes TO p21_application_role;
 
 -- ============================================================
