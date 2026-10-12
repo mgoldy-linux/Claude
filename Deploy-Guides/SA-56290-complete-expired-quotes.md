@@ -3,7 +3,7 @@
 > Status: cancel job DRAFT 2026-10-02, nothing run. **Portal-by-role cleanup (added 2026-10-08):** Play role script RUN, Prod scripts written NOT run - see the last section.
 
 ## Artifact(s)
-- `Sql-Scripts/Quotes/SA-56290-Complete-Expired-Quotes.sql` — table `dbo.asi_expired_quote_complete_log`, proc `dbo.asi_proc_complete_expired_quotes`, SQL Agent job `ASI - Complete Expired Quotes` (commented in script)
+- `Sql-Scripts/Quotes/SA-56290-Complete-Expired-Quotes.sql` — table `dbo.asi_expired_quote_cancel_log`, proc `dbo.asi_proc_cancel_expired_quotes`, SQL Agent job `ASI - Cancel Expired Quotes` (commented in script)
 - Ticket: SA-56290
 
 ## Target environments
@@ -19,7 +19,7 @@
 1. Step 0 (schema check) and Step 1 (counts) — read-only. 2. Step 2 creates objects. 3. `EXEC ... @Preview = 1`, review, then `@Preview = 0`. 4. Create Agent job (Step 4).
 
 ## Verification
-- Preview rows = quotes expected; after run, `asi_expired_quote_complete_log` rows match; open a touched quote in Order Entry (complete, no allocation); Item Maintenance delete of an item only on those quotes no longer blocked (UNCONFIRMED).
+- Preview rows = quotes expected; after run, `asi_expired_quote_cancel_log` rows match; open a touched quote in Order Entry (complete, no allocation); Item Maintenance delete of an item only on those quotes no longer blocked (UNCONFIRMED).
 
 ## Rollback
 - Log table lists every order_no touched. Reverse by setting the four flags back for those orders (not scripted yet). Disable the Agent job to stop future runs.
@@ -43,3 +43,7 @@ Why: Sales/Counter/CS need to review open quotes before the cancel job runs; acc
 **Waiting on Matt:** do Customer Service + CS Manager get Search (if no, undo those two in Play, drop them from the Prod script); is the front counter = Branch Manager (no Counter role exists).
 **Rollback:** each script writes a backup table (`asi_portal_assignment_quote_*_bak_20261008`; the role script also logs inserted uids) and ends with a restore block; never a hard DELETE.
 **Traps:** portal_assignment_uid is not identity (use the sequence); Play users.delete_flag is stale vs Prod, so the Play scripts hardcode user IDs; Play portal/role ids differ from Prod (look up by name).
+
+## Play test result (10/12)
+- Cancelled 5815698 + 5815931 (>90 days past expiry) via flags; control 5819761 (90 days) untouched. Reopened both in Order Entry: cancel_flag/completed/complete_flag and all lines reset, edits save; a new expiration date saved on 5815931 (`quote_hdr.expiration_date`). Reopened quotes without a new date would be re-cancelled by the next run.
+- Job script switched from complete to cancel (`cancel_flag='Y'`); NOT yet created/run on Play. Item Maintenance delete check still unconfirmed.
