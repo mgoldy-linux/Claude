@@ -39,9 +39,13 @@ Open quotes that are past their expiration date stay open and cause problems whe
 - Not yet confirmed: that a cancelled quote stops blocking Item Maintenance deletes (the original problem).
 
 ## What Matt should test on Play
-1. Preview and run for a different single day, and check the quotes and the log table.
-2. Reopen one cancelled quote with a new expiration date.
-3. Try an Item Maintenance delete for an item that is only on cancelled quotes.
+Run this on Play (P21Play), changing the date to any day that is more than 90 days ago:
+
+`EXEC dbo.asi_proc_cancel_expired_quotes @DaysAfterExpiration = 90, @Preview = 1, @OnlyExpiredOn = '2026-07-10';`
+
+- This is a preview only. It lists the quotes that would be cancelled for that one day and changes nothing. Dates that have quotes on Play: 7/10 (1 quote), 7/3 (6 quotes), 7/5 (48 quotes). 7/4 no longer works because it was already used for my test.
+- Check that the quotes listed look like expired, open quotes for that day.
+- Optional: to actually cancel them, run the same line with `@Preview = 0`. Then reopen one in Order Entry with a new expiration date, and try an Item Maintenance delete for an item that is only on cancelled quotes.
 
 ## SQL Agent job (not created yet)
 - Name: ASI - Cancel Expired Quotes. One T-SQL step in database P21: `EXEC dbo.asi_proc_cancel_expired_quotes @DaysAfterExpiration = 90, @Preview = 0;`. Weekly, Sunday 2:00 AM.
