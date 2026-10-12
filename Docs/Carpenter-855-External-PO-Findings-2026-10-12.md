@@ -4,6 +4,10 @@
 **Requested by:** Chad Skelton (Comparatio ticket, Carpenter 2000692)
 **Question:** Why doesn't Carpenter's 855 update `po_hdr.external_po_no`, when Roppe (3003400) and Schluter (3012610) do?
 
+## Update 2026-10-12 (later) - cause corrected by Chad
+
+Chad replied: P21 automatically fills `external_po_no` with the **customer PO from Order Entry** when one exists, and Carpenter has many Ship Directs. So the field is not blank when the 855 arrives, and the import never overwrites it. The values seen (`F100926`, `CMH0000164`, `Pad Stock - Tim`) fit customer POs. **The "buyer types a value" explanation and the "buyer leaves it blank" process fix below are probably wrong and should not be sent to the Carpenter buyer.** Not yet verified in data (needs a join from the PO to its sales order customer PO). No setting to force the import to overwrite is known; Mark is searching Epicor KBs, meeting Chad 2026-10-13. Fallback options: Epicor-supported setting, business rule clearing the field at PO creation, or a scheduled job copying the ack value to `po_hdr` (direct table write).
+
 ## Answer
 
 P21 is not treating Carpenter differently. The 855 import fills `external_po_no` only when the field is empty, and it does not overwrite a value that is already there. Roppe and Schluter POs are created with the field blank, so the import fills it. Carpenter POs usually have a number typed in at creation, so the 855 leaves it alone.
