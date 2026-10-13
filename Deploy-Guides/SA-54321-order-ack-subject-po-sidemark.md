@@ -1,5 +1,13 @@
 # Deployment Guide — Order Ack email subject: add customer PO (SA 54321)
 
+## 2026-10-13 - requirements document revised (v1.1); still nothing built
+
+Mark reviewed the 10/10 document and it was revised the same day. Changes: **Rule 5** - orders whose source location is 281 are left alone, checked before the other rules; the results-modelling section was removed; the appendix is now a reviewer-facing **sample of unsuitable words and phrases** (technical reference moved verbatim to `Docs\SA-54321-Technical-Reference.md`); screenshot redacted ("P21 Taker") and resized to the template's 5.5" column; test emails go to internal users only, tester sets the To address to themselves, and the body reads "This is a test email - take no action"; **test case 9 (marketing-message regression) dropped**; **case 10** = test user Island2 with default location 281, email an internal user, verify nothing is added to the subject. Version 1.1, 13 pages.
+
+Testing split: Mark in P21BusinessRules, a not-yet-named person in P21Play. The "does it fire in the web client" gap below is closed by Mark's statement that the email works from both versions - not independently tested.
+
+**Not yet true:** Island2/281 case not run (no real order number yet); Overview example and Examples table disagree on the Sidemark for order 6109021; the wording list is a sample, not agreed. Deploy order and rollback are unchanged - the environments still hold the PO-only v1.0.0.4 build.
+
 ## 2026-10-10 — requirements document drafted; scope reversed to PO + Sidemark
 
 Nothing built, nothing deployed, no environment touched. The deliverable is
