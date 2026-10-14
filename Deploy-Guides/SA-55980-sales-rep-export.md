@@ -54,6 +54,12 @@ Play-Dev: P21Dev.allsurfaces.com / P21Play -> /DEV | Play-Sandbox: same DB -> /S
 ## Output layout (under `-BaseDir`, created automatically)
 `out\<instance>\` unsent files | `sent\<instance>\` backup copy of every SFTP'd file (SHA256-checked, kept 90 days) | `logs\<instance>\` run log | `logs\Record-of-<PC>-Scripts-Ran-yyyyMM.txt` one line per run | `secure\` credential.
 
+## Status 2026-10-14 (ASWEB1 test)
+- Scripts live in `D:\SalesRepExport\scripts\` (copied from `C:\PowerShell-Scripts\Export-SQL\`); key + known_hosts in `scripts\.ssh` (ACL: one account, Read only); credential file `D:\SalesRepExport\secure\sql-orosvc.cred.xml`.
+- Real `-Instance Play-Dev` run: CSV written, SFTP upload OK, `SFTP size check OK` (87,359 bytes with `-IgnoreDeleteFlag`). Play delete flags are mostly 'Y' after the refresh, so lower-env tests need `-IgnoreDeleteFlag`; Prod does not.
+- Prod proc scripts for the DBA step: `Documents\SQL Server Management Studio\SA-55980-Sales-Rep-Export\` on ASDWDEVTOOLS (create proc, then crosscheck 1-9, then DMV reads/CPU).
+- Scheduled tasks: one per environment (Play-Dev first, Prod last with `-ConfirmProd`); job account TBD; credential file + key Read must be set for that account. NOT registered yet.
+
 ## Verification
 - Cross-check checks 1-8 return no rows; proc logical reads/CPU from `sys.dm_exec_procedure_stats` (Prod numbers pending).
 - Script: exit 0, record line `result=OK`, backup copy present after a real upload.
