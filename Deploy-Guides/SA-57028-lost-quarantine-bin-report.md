@@ -1,6 +1,6 @@
 # SA 57028 - Lost and Quarantine Bin report (all locations)
 
-**Ticket:** SA 57028 (Jerome Butler) | **Status:** 🟡 delivered 10/13, awaiting Jere/Jami confirmation | **Env:** none - Excel workbook only, reads DW (`asdwdb01.ahi.local` / `P21`), nothing created in any P21 DB
+**Ticket:** SA 57028 (Jerome Butler, Jami Klitzman) | **Status:** 🟢 done 10/15, Jami approved | **Env:** none - Excel workbook only, reads DW (`asdwdb01.ahi.local` / `P21`)
 
 ## Artifacts
 - `Documents\Excel\Lost and Quarantine Bin - SA 57028.xlsx` (new copy; original `Lost and Quarantine Bin.xlsx` unchanged)
@@ -18,3 +18,6 @@ Nothing to roll back; original workbook untouched.
 
 ## Notes
 Rule = `bin_type.quarantine_flag='Y'` OR bin in (LOST, EDS-LOST, QUARANTINED, QUARANTINE). EDS-LOST is a pickable WOOD DALE-type bin. If renaming the query again via COM, also update the connection `Location=` and `CommandText`.
+
+## 10/15 add-on (Jami)
+v2 query `SA-57028-Quarantine-Flag-Bins-All-Locations-v2.sql` adds `first_added_date/by` and `last_added_date/by` from `inv_bin_audit` / `lot_bin_xref_audit` (positive qty deltas). Delivered as `Lost_and_Quarantine_Bin -by who.xlsx`.
