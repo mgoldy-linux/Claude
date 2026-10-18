@@ -31,7 +31,7 @@ SELECT 'transfer_hdr' AS tbl, COUNT(*) AS rows_affected FROM dbo.transfer_hdr WH
 -- Check ship_to default carrier against all WC carriers
 SELECT
     st.ship_to_id,
-    st.name,
+    --st.
     st.customer_id,
     st.default_carrier_id,
     a.name AS carrier_name
