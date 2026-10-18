@@ -22,6 +22,22 @@ This is internal engineering work on AllSurfaces' own ERP codebase and infrastru
 
 ---
 
+## A Concrete Example: Claude vs. Microsoft Copilot
+
+Ran the identical, plain-language request past both tools, side by side, on this laptop:
+
+> *"Please look at `C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents` — recommend a folder to move the files in the root folder to the sub folder."*
+
+**Claude Code** read the folder and returned a table matching every loose root file to an existing topical subfolder, with a one-line reason for each — e.g., `business_rules_curriculum.md` → **Business Rules** ("Exact topical match — folder already holds Business Rule docs/notes"), `P21 TRAINING - Location-Supplier Item Order Cycle...xlsx` → **P21** ("Same naming/content pattern as existing P21 folder xlsx files"). Immediately usable output.
+
+**Microsoft Copilot**, given the exact same request on the same machine, against a OneDrive folder — a Microsoft product — responded: *"I can't directly access folders on your computer, including: C:\Users\mgoldyn\OneDrive - All Surfaces Inc\Documents."* No attempt made.
+
+This wasn't a contrived test — it's the kind of small, everyday task Claude actually gets used for. Two things worth drawing from it:
+1. It's a real capability gap between AI tools already present in the org's toolset today — not something unique or novel about Claude.
+2. It's a live example of the access model described below: Claude reading this folder isn't a hidden or automatic capability — it happened because I asked, in that session, and it's scoped to files I (mgoldyn) already have access to. Nothing Copilot couldn't also reach if it chose to attempt it.
+
+---
+
 ## What Data Claude Can Actually See
 
 **No standing access of its own.** Claude Code runs locally on my laptop under my own Windows/AD identity. It has no service account, no stored database credentials, and no VPN or network access that I don't already have. Every SQL connection it makes uses the same SQL logins and AD permissions already granted to me for this job — it cannot reach anything I couldn't already reach with SSMS or PowerShell.
@@ -40,10 +56,12 @@ This is internal engineering work on AllSurfaces' own ERP codebase and infrastru
 
 Anthropic publishes its security and compliance documentation at **trust.anthropic.com**, including its SOC 2 Type II report, sub-processor list, and data-handling commitments. Two points worth IT confirming directly against that source rather than my summary:
 
-1. **Commercial/API and Team/Enterprise usage is not used to train Anthropic's models by default** — this is documented in Anthropic's commercial terms, and is a different (stricter) default than the consumer claude.ai Free/Pro tier's retention policy.
-2. **Which plan AllSurfaces is actually on matters.** If this account is a personal/consumer login rather than a Team or Enterprise plan with a signed data-processing agreement, that's a real gap worth closing — not because anything has gone wrong, but because it's the cleanest way to get contractual guarantees (zero/limited retention, no training use, audit logs, admin-level controls) instead of relying on default policy.
+1. **Commercial/API and Team/Enterprise usage is not used to train Anthropic's models by default** — this is documented in Anthropic's commercial terms, and is a different (stricter) default than the consumer claude.ai Free/Pro/Max tier's retention policy.
+2. **Checked directly, 2026-08-21: this login is a personal Pro plan, not Team/Enterprise.** Under Anthropic's Aug 2025 consumer-terms update, Free/Pro/Max chats and coding sessions are eligible for model training by default (retained up to 5 years) unless the account's "Help improve our AI models" toggle (`claude.ai/settings/data-privacy-controls`) is switched off. Checked it directly — as of 8/21 it was **switched on**. This is a real, concrete gap, not a hypothetical.
 
-**Recommended action:** confirm which Anthropic plan this login is under, and if it's not already Team/Enterprise, that's the actual lever to pull for stronger guarantees — not blocking the tool.
+**Recommended action, two parts:**
+- **Immediate:** switch "Help improve our AI models" off on this account. One click, fully reversible, closes the training/retention exposure today.
+- **Durable:** move this work to a Claude Team or Enterprise seat with a signed DPA. A personal privacy toggle isn't an IT-auditable, contractual control — an org-provisioned plan is, and it also unlocks admin console visibility, SSO, and audit logs that a Pro account doesn't have.
 
 ---
 
@@ -71,4 +89,4 @@ If IT wants tighter controls without removing access entirely:
 | Does it ever see customer data? | Only in query results, when diagnosing a Prod-specific issue; non-Prod is the default |
 | Does it ever handle credentials? | No — hard rule, enforced every session |
 | Is traffic visible to IT's existing security stack? | Yes — same SWG/proxy path as everything else |
-| What's the actual open item? | Confirm the Anthropic plan tier (Team/Enterprise vs. consumer) and get a DPA in place if not already |
+| What's the actual open item? | Confirmed this login is Pro (consumer), training toggle was on — switch it off immediately, then move to a Team/Enterprise seat with a DPA for a durable, IT-managed control |

@@ -596,9 +596,11 @@ try {
     }
     
     # Run initialization scripts (with error handling)
+    # auto-update-modules.ps1 moved to on-demand (Launch-Menu.ps1) - its Update-Module -Force
+    # + dbatools.library folder deletion trips SentinelOne's windows.penetration engine every
+    # morning, ~15s before the kill, matched via its once-daily stamp file timestamp.
     $initScripts = @(
         'C:\Users\mgoldyn\Documents\PowerShell\Check-For-Transcript-Folder.ps1',
-        'C:\PowerShell-Scripts\auto-update-modules.ps1',
         'C:\PowerShell-Scripts\PS_Skills\Find-all-shortcut-keys.ps1'
     )
     
@@ -613,35 +615,10 @@ try {
         }
     }
 
-    # Run Check-Job-History once per day on first terminal launch
-    $Script:CheckJobScript = 'C:\PowerShell-Scripts\DBATools\Jobs\Check-Job-History.ps1'
-    $Script:CheckJobLog    = 'C:\_P25\Logs\PS-Rec-Of\Check-Job-History.ps1' + (Get-Date).ToString('-yyyyMMdd') + '.txt'
-
-    if (Test-Path $Script:CheckJobScript) {
-        if (-not (Test-Path $Script:CheckJobLog)) {
-            Write-Host "Running job history check script"
-            try {
-                & $Script:CheckJobScript
-            }
-            catch {
-                Write-ProfileLog "Check-Job-History.ps1 failed: $_" -Level Warning
-            }
-        }
-        else {
-            Write-Host "Job history already checked today, skipping."
-        }
-    }
-
-    # Daily SSRS subscription-send digest (script self-guards to once per day)
-    $Script:SsrsSendCheckScript = 'C:\PowerShell-Scripts\SSRS\Check-SSRS-Subscription-Sends.ps1'
-    if (Test-Path $Script:SsrsSendCheckScript) {
-        try {
-            & $Script:SsrsSendCheckScript -Quiet
-        }
-        catch {
-            Write-ProfileLog "Check-SSRS-Subscription-Sends.ps1 failed: $_" -Level Warning
-        }
-    }
+    # Check-Job-History and Check-SSRS-Subscription-Sends no longer auto-run here.
+    # dbatools' reflective SMO loading trips SentinelOne's windows.penetration engine,
+    # which kills the terminal on first launch most mornings. Both scripts are now
+    # available on-demand from the "Selected" category in Launch-Menu.ps1 instead.
 
     # Configure dbatools (suppress encryption warnings)
     if (Get-Module -ListAvailable -Name dbatools) {
@@ -732,5 +709,15 @@ Write-ProfileLog "Profile loaded successfully in $([math]::Round($loadTime, 2))m
 
 # Restore progress preference
 $ProgressPreference = 'Continue'
+
+#endregion
+
+#region Launch Menu
+
+# End profile load by handing off to the PS Skills launcher menu
+$Script:LaunchMenuScript = 'C:\PowerShell-Scripts\PS_Skills\Launch-Menu.ps1'
+if (Test-Path $Script:LaunchMenuScript) {
+    & $Script:LaunchMenuScript
+}
 
 #endregion

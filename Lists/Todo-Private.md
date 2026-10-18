@@ -9,6 +9,7 @@
 5. Is it possible to create a widget for price check
 6. Is it possible to create a portal for price check
 7. Deleted users - remove portal assignment
+8. Clean up my tables from P21 Prod
 
 ---
 

@@ -1,6 +1,6 @@
 # Deployment Guide — Order Acknowledgment Custom Email Message (SA 53475)
 
-> **Status (2026-09-04): verified in P21Play; Prod deployment started and paused mid-run.** DLLs are staged in Prod, the flag table is not yet created there, and neither rule is registered. See `## 2026-09-04 — Prod deployment (in progress)` below for exactly where to pick up. Sections written before 2026-08-26 (Artifact(s), Target environments, Deploy steps) still describe the pre-deployment "blocked on Matt / nothing in Play" state and need a fuller reconciliation pass — trust the dated sections.
+> **Status (2026-09-04): verified in P21Play; Prod deployment underway — table + DLLs done, registrations remain.** `dbo.asi_email_context_flag` now exists in Prod with the correct grants, both DLLs are staged, and neither rule is registered yet. See `## 2026-09-04 — Prod deployment (in progress)` below for exactly where to pick up. Sections written before 2026-08-26 (Artifact(s), Target environments, Deploy steps) still describe the pre-deployment "blocked on Matt / nothing in Play" state and need a fuller reconciliation pass — trust the dated sections.
 
 > Produced during development. Update as the artifact changes; commit with the code.
 
@@ -43,7 +43,7 @@ Matt approved the Prod rollout. Started 2026-09-03, paused 2026-09-04 partway th
 
 | Check | Result |
 |---|---|
-| `dbo.asi_email_context_flag` | **missing** |
+| `dbo.asi_email_context_flag` | **missing** → **created 2026-09-04 08:21** (see below) |
 | `business_rule` rows for either rule | **none** — clean slate, no duplicate-registration risk |
 | `\\ASP21FS1.ahi.local\Prod\BusinessRulesDLL\asi_email_context_flag.dll` | present, 1.0.0.0, SHA-256 `7535F9AE…` |
 | `\\ASP21FS1.ahi.local\Prod\BusinessRulesDLL\asi_oe_email_close_diag.dll` | present, **1.0.0.8**, SHA-256 `C39127CF…` |
@@ -66,8 +66,8 @@ Rights are sufficient and no DBA escalation is needed: `HAS_PERMS_BY_NAME('dbo',
 
 ### Remaining Prod steps
 
-1. `DROP TABLE [AHI\mgoldyn].asi_email_context_flag;` — verified 0 rows on 2026-09-04.
-2. Re-run `Sql-Scripts\Business-Rules\Create-asi-email-context-flag.sql` against `P21`. Confirm the closing SELECT reports `schema_name = dbo`.
+1. ~~`DROP TABLE [AHI\mgoldyn].asi_email_context_flag;`~~ — **done 2026-09-04**, stray copy gone.
+2. ~~Re-run `Sql-Scripts\Business-Rules\Create-asi-email-context-flag.sql` against `P21`.~~ — **done 2026-09-04 08:21** (run in SSMS). Verified after the fact: schema `dbo`; columns `user_id varchar(30) NOT NULL`, `is_order_ack bit NOT NULL`, `form_type varchar(255) NULL`, `updated_at datetime NOT NULL`; clustered `PK_asi_email_context_flag`; SELECT/INSERT/UPDATE granted to both `PxxiUser` and `p21_application_role`; 0 rows.
 3. Register `asi_email_context_flag` — On Event → Form Printing Pre-Email Response Window; Field Selector `EmailDataMisc` → `form_type` (Selected only); **Multi-Row checked at creation**; enable for all users.
 4. Register `asi_oe_email_close_diag` — On Demand, window `w_email_response`; Field Selector `d_dw_email_info` → `memo` (Selected) and Window Controls → Buttons → `cb_ok` (Selected **+ Triggers Rule**); **Multi-Row checked at creation** (not editable in place — changing it needs delete+recreate, which is how the 7/30 duplicate bug happens); enable for all users.
 5. **Verify exactly one live registration each** before any test send:

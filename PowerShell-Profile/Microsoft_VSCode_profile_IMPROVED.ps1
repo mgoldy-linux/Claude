@@ -639,9 +639,11 @@ try {
     
     # Run initialization scripts (with error handling) - skip only in VSCode debug sessions
     if (-not ($env:VSCODE_PID -and (Test-Path env:VSCODE_IPC_HOOK_CLI))) {
+        # auto-update-modules.ps1 moved to on-demand (Launch-Menu.ps1) - its Update-Module -Force
+        # + dbatools.library folder deletion trips SentinelOne's windows.penetration engine every
+        # morning, ~15s before the kill, matched via its once-daily stamp file timestamp.
         $initScripts = @(
             'C:\Users\mgoldyn\Documents\PowerShell\Check-For-Transcript-Folder.ps1',
-            'C:\PowerShell-Scripts\auto-update-modules.ps1',
             'C:\PowerShell-Scripts\PS_Skills\Find-all-shortcut-keys.ps1'
         )
         

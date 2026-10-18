@@ -1,6 +1,13 @@
 === Low PAD Margin Alert - Team (uid 106) ===
 Trigger/where_clause:
-low_margin_flag = 'Y' AND new_order = 'Y' AND total_amount > 1000 AND corp_address_id <> 1046538 AND product_group_id = 'PAD' AND customer_id NOT IN (3021352,3023035,3023036) AND taker NOT LIKE '%ESTORE%' AND extended_standard_cost > '500' AND rma_flag <> 'Y'
+new_order = 'Y' AND 
+total_amount > 1000 AND 
+corp_address_id <> 1046538 AND 
+product_group_id = 'PAD' AND 
+customer_id NOT IN (3021352,3023035,3023036) AND 
+taker NOT LIKE '%ESTORE%' AND extended_standard_cost > '500' 
+low_margin_flag = 'Y' AND 
+AND rma_flag <> 'Y'
 
 Subject:
 [TEST-Play] Low PAD Margin - Order# <order_number> for <customer_name> - Total: $<total_amount>
