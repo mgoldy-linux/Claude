@@ -58,4 +58,5 @@ WHERE h.completed = 'T'
 
 SELECT @@ROWCOUNT AS rows_updated;
 
-ROLLBACK TRAN;   -- change to COMMIT TRAN after the count is checked
+--ROLLBACK TRAN;   -- change to COMMIT TRAN after the count is checked
+COMMIT TRAN;

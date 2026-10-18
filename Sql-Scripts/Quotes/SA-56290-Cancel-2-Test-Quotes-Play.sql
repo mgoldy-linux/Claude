@@ -30,7 +30,7 @@ SELECT 'SKIP - inside 90',  * FROM (SELECT TOP 1 * FROM q WHERE days_past_expira
 GO
 
 -- ============================================================
--- STEP 2: backup + cancel. @Commit = 0 shows the result and ROLLS BACK; set to 1 to keep it.
+-- STEP 2: backup + cancel. @Commit = 0 (as set) COMMITS; set to 1 for a dry run that ROLLS BACK.
 -- ============================================================
 DECLARE @Commit bit = 0;
 DECLARE @orders TABLE (order_no varchar(8) PRIMARY KEY);
@@ -70,8 +70,8 @@ SELECT oh.order_no, oh.cancel_flag, oh.completed, qh.complete_flag, qh.expiratio
        (SELECT COUNT(*) FROM oe_line ol WHERE ol.order_no = oh.order_no) AS lines_total
 FROM oe_hdr oh JOIN @orders o ON o.order_no = oh.order_no LEFT JOIN quote_hdr qh ON qh.oe_hdr_uid = oh.oe_hdr_uid;
 
-IF @Commit = 1 COMMIT; ELSE ROLLBACK;
-PRINT CASE WHEN @Commit = 1 THEN 'COMMITTED' ELSE 'ROLLED BACK (set @Commit = 1 to keep)' END;
+IF @Commit = 0 COMMIT; ELSE ROLLBACK;
+PRINT CASE WHEN @Commit = 0 THEN 'COMMITTED' ELSE 'ROLLED BACK (set @Commit = 0 to keep)' END;
 GO
 -- Note: RCSI is ON -- a SELECT from another session before COMMIT shows the OLD values.
 

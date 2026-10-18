@@ -1,6 +1,6 @@
 /* =====================================================================
    Trailing-90-Day-qry  -- REWRITTEN, no kb_ references
-   Workbook: "GMROI inventory turns by manufacturer from Derek refreshable"
+   Workbook: ". Wil  by manufacturer from Derek refreshable"
    Feeds: Sales sheet  (Power Query connection id=2)
 
    CHANGE (one join only):
@@ -104,3 +104,4 @@ ORDER BY
       END
     , SUM(sales) DESC
     , l.location_name
+    , 

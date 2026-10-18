@@ -79,3 +79,9 @@ FROM dbo.address a
 LEFT JOIN dbo.corp_id ci ON ci.company_id = '1' AND ci.address_id = a.corp_address_id
 WHERE a.customer = 'Y' AND a.date_created >= '2026-09-01' AND a.id <> 3029245
 ORDER BY a.date_created DESC;
+
+
+SELECT a.id, a.corp_address_id, ci.address_id AS corp_id_row
+FROM dbo.address a
+LEFT JOIN dbo.corp_id ci ON ci.company_id = '1' AND ci.address_id = a.corp_address_id
+WHERE a.id = 3029245;   -- expect 3029245 / 3029245 / 3029245

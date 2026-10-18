@@ -7,7 +7,7 @@
 -- hasn't been verified for P21BusinessRules -- it's a separate, less-frequently-
 -- refreshed test env -- so treat this run as a candidate list too and cross-check
 -- anything it returns against Prod before acting on it.
-use [P21BusinessRules]
+use [P21] --[P21BusinessRules]
 
 ;WITH active_salesreps AS (
     SELECT DISTINCT ohs.salesrep_id
@@ -35,3 +35,8 @@ CROSS APPLY (
 ) order_counts
 WHERE u.delete_flag = 'Y'
 ORDER BY order_counts.orders_as_primary_rep_all_time DESC;
+
+
+select *
+from message_log
+where message_date > CAST(GETDATE() AS DATE) and user_id = 'mgoldyn'
