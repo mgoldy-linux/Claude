@@ -1,4 +1,4 @@
-/* =============================================================================
+h/* =============================================================================
    Deleted-user portal-assignment removal -- single-user test, HARD DELETE
    Instance : P21Play  (P21Dev.allsurfaces.com)  -- TEST FIRST, do not run on Prod
    Author   : mgoldyn
@@ -50,7 +50,7 @@ PRINT 'Deleted rows: ' + CAST(@@ROWCOUNT AS varchar(10));
 
 -- Review the PRINT output and the SELECTs above, then COMMIT (or ROLLBACK to abort):
 -- COMMIT TRAN;
--- ROLLBACK TRAN;
+-- 
 
 /* =============================================================================
    RESTORE (run later if needed) -- re-inserts the original rows from the backup:
