@@ -4,12 +4,12 @@
 --          inv_loc/pending-qty derived tables no longer span the whole system (OUTER APPLY keyed on the BO line);
 --          p21_view_audit_trail_oe_hdr_1319 -> audit_trail, narrowed to column_changed='disposition' + uid range (see below).
 DECLARE @buyer_id AS VARCHAR(7)
-SET @buyer_id = (SELECT ISNULL(contact_id, '%') FROM p21_view_users WHERE id = '<user_id>')
+SET @buyer_id = (SELECT ISNULL(contact_id, '%') FROM p21_view_users WHERE id = '<user_id>') -- CPOLAK
 
 -- audit_trail is 171M rows and the optimizer scans ~2M pages for the date filter. The cover index
 -- (source_area_cd, key1_cd, column_changed, date_created) finds the first uid in the 30-day window in ~2K reads;
 -- the clustered key (source_area_cd, audit_trail_uid) then lets the main read start there.
--- NOTE: KBJS_audit_trail_Cover01 is a KB/JS-era index - if it is ever dropped, remove the hint (slower, not wrong).
+-- WARNING: KBJS_audit_trail_Cover01 is a KB/JS-era index slated for retirement; the INDEX hint FAILS (error) if it is dropped.
 DECLARE @win_start DATETIME = DATEADD(dd, -30, DATEDIFF(dd, 0, GETDATE()))
 DECLARE @win_end   DATETIME = DATEDIFF(dd, 0, GETDATE())
 DECLARE @min_audit_uid BIGINT = (
