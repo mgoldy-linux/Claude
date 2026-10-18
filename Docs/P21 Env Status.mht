@@ -1,0 +1,688 @@
+MIME-Version: 1.0
+Content-Location: file:///C:/ED725F13/P21EnvStatus.htm
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="utf-8"
+
+<html xmlns:o=3D"urn:schemas-microsoft-com:office:office"
+xmlns:dt=3D"uuid:C2F41010-65B3-11d1-A29F-00AA00C14882"
+xmlns=3D"http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=3DContent-Type content=3D"text/html; charset=3Dutf-8">
+<meta name=3DProgId content=3DOneNote.File>
+<meta name=3DGenerator content=3D"Microsoft OneNote 15">
+<link id=3DMain-File rel=3DMain-File href=3DP21EnvStatus.htm>
+<link rel=3DFile-List href=3D"P21EnvStatus_files/filelist.xml">
+</head>
+
+<body lang=3Den-US style=3D'font-family:Calibri;font-size:11.0pt'>
+
+<div style=3D'direction:ltr;border-width:100%'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:0in;width:19.8659in'>
+
+<div style=3D'direction:ltr;margin-top:0in;margin-left:.075in;width:2.1937i=
+n'>
+
+<p style=3D'margin:0in;font-family:"Calibri Light";font-size:20.0pt'>P21 Env
+Status</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.0388in;margin-left:.075in;width:2.7=
+09in'>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:#767676'>=
+Wednesday,
+February 12, 2025</p>
+
+<p style=3D'margin:0in;font-family:Calibri;font-size:10.0pt;color:#767676'>=
+7:17
+AM</p>
+
+</div>
+
+<div style=3D'direction:ltr;margin-top:.4305in;margin-left:0in;width:19.865=
+9in'>
+
+<div style=3D'direction:ltr'>
+
+<table border=3D1 cellpadding=3D0 cellspacing=3D0 valign=3Dtop style=3D'dir=
+ection:ltr;
+ border-collapse:collapse;border-style:solid;border-color:#A3A3A3;border-wi=
+dth:
+ 1pt' title=3D"" summary=3D"">
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  background-color:#44546A;vertical-align:top;width:1.3798in;padding:2.0pt =
+3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:white'>=
+Server</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  background-color:#44546A;vertical-align:top;width:1.175in;padding:2.0pt 3=
+.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:white'>=
+DB
+  Name</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  background-color:#44546A;vertical-align:top;width:1.6833in;padding:2.0pt =
+3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:white'>=
+Used
+  For</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  background-color:#44546A;vertical-align:top;width:1.0791in;padding:2.0pt =
+3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:white'>=
+Last
+  Refresh</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  background-color:#44546A;vertical-align:top;width:2.9159in;padding:2.0pt =
+3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:white'>=
+Notes</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  background-color:#44546A;vertical-align:top;width:2.3388in;padding:2.0pt =
+3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:white'>=
+Links</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  background-color:#44546A;vertical-align:top;width:3.0361in;padding:2.0pt =
+3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:white'>=
+Middleware</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  background-color:#44546A;vertical-align:top;width:1.1465in;padding:2.0pt =
+3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:white'>=
+Port</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  background-color:#44546A;vertical-align:top;width:4.3625in;padding:2.0pt =
+3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:white'>=
+Customizations
+  / Open Items</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.3798in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>ASP21DB1</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.175in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>P21</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.6055in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Production</=
+p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.1569in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <ul style=3D'direction:ltr;unicode-bidi:embed;margin-top:0in;margin-botto=
+m:
+   0in'>
+   <ul type=3Ddisc style=3D'direction:ltr;unicode-bidi:embed;margin-top:0in;
+    margin-bottom:0in'>
+    <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'>&nbsp;=
+</li>
+   </ul>
+  </ul>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.9159in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Users login =
+to
+  Users server</p>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>API reserved=
+ for
+  Interfaces</p>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Mobile not b=
+eing
+  used in Prod</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.3583in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><a
+  href=3D"https://p21web.allsurfaces.com:3443/prophet21/#/login">https://p2=
+1web.allsurfaces.com:3443/prophet21/#/login</a><br
+  />
+    <br />
+    <a href=3D"https://p21api.allsurfaces.com:3443/prophet21/#/login">https=
+://p21api.allsurfaces.com:3443/prophet21/#/login</a><br
+  />
+    <br />
+    <a
+  href=3D"https://p21mobile.allsurfaces.com:2121/P21Mobile/Account/LogOn?Re=
+turnUrl=3D%2fp21mobile">p21mobile.allsurfaces.com:2121/P21Mobile/Account/Lo=
+gOn?ReturnUrl=3D%2fp21mobile</a></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.0437in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><a
+  href=3D"https://p21web.allsurfaces.com:3443/docs/Logon.aspx">https://p21w=
+eb.allsurfaces.com:3443/docs/Logon.aspx</a><br
+  />
+    <br />
+    <a href=3D"https://p21api.allsurfaces.com:3443/docs/Logon.aspx">https:/=
+/p21api.allsurfaces.com:3443/docs/Logon.aspx</a></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.1465in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>3443</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.9409in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>For excel re=
+ports:
+  Conn.ConnectionString =3D &quot;Provider=3DSQLOLEDB;Data Source=3D&quot; =
+&amp;
+  &quot;p21.allsurfaces.com&quot; &amp; &quot;;Trusted_connection=3Dyes;Ini=
+tial
+  Catalog =3DP21&quot;<br />
+    <br />
+    &nbsp;</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.3798in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>ASDWDB01</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.175in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>P21</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.6833in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Data Warehou=
+se</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.0791in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Nightly</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.9159in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.3388in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.0361in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.1465in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.3625in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.3798in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'text-decoration:line-through'>ASP21DB1-DEV</span></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.175in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'text-decoration:line-through'>Kb-JungleGym</span></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.6833in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.0791in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.9159in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'text-decoration:line-through'>Karen used for testing</span></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.3388in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.0361in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.1465in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.3625in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'text-decoration:line-through'>Replaced with P21 Upgrade</span></=
+p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.3798in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>ASP21DB1-DEV=
+</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.175in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Accounting</=
+p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.6833in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Finance </p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.0791in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Monthly</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.9159in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Derek has
+  refreshes from prod backup as needed.</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.3388in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.0361in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.1465in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.3625in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.3798in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>ASP21DB1-DEV=
+</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.175in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>P21Dev</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.6833in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Dev</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.0791in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>06/22/26</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.9347in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Connected to=
+ lower
+  level Commission App<br />
+    2/12 - Scheduled for Web Testing (Mark) (AHI-API1) - 2/19/26 <span
+  style=3D'background:#FF99CC'>- Users TKIREVA, OBARABANOV, VHIRNYI &amp;
+  LMOLOTIIEVSKYI</span></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.3388in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><a
+  href=3D"https://p21devweb.allsurfaces.com:3448/prophet21/#/login">P21Dev =
+Web
+  Login</a></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.0361in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><a
+  href=3D"https://p21devweb.allsurfaces.com:3448/docs/Logon.aspx">Dev Middl=
+eware</a></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.1465in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>3448</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.8902in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>User: websvc=
+-dev
+  for sales rep tool dev -broken</p>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Configure fo=
+r the
+  web</p>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'background:#FFC000'><span style=3D'mso-spacerun:yes'>=C2=A0</spa=
+n>Dynachange
+  in Prod, waiting on Data to populate tables. After Tables are populated w=
+ith
+  create ASI view with user define fields.</span> Has view </p>
+  <p style=3D'margin:0in;font-family:"Cascadia Mono";font-size:9.0pt;color:=
+black'>asi_view_inv_mast</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.3798in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>ASP21DB1-DEV=
+</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.175in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>P21Play</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.6833in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Dev / QA</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.0791in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>08/03/26</p>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.9159in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Comparatio, =
+Test
+  shop.allsurfaces.com, Mind Harbor</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.3388in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><a
+  href=3D"https://p21play.allsurfaces.com:3445/prophet21/#/login">P21Play W=
+eb
+  Login</a></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.0361in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><a
+  href=3D"https://p21play.allsurfaces.com:3445/docs/Logon.aspx">P21Play
+  Middleware</a></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.0687in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>3445</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.4402in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <ul style=3D'direction:ltr;unicode-bidi:embed;margin-top:0in;margin-botto=
+m:
+   0in'>
+   <ul type=3Ddisc style=3D'direction:ltr;unicode-bidi:embed;margin-top:0in;
+    margin-bottom:0in'>
+    <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+        style=3D'font-family:Calibri;font-size:11.0pt'>User &nbsp;Neil Van
+        Walbeck-SA 51571</span></li>
+    <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+        style=3D'font-family:Calibri;font-size:11.0pt'>Custom import settin=
+gs for
+        EDI</span></li>
+   </ul>
+  </ul>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.3798in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'text-decoration:line-through'>ASP21DB1-DEV</span></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.175in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'text-decoration:line-through'>P21Play2</span></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.6833in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'text-decoration:line-through'>Project Testing</span></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.0791in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'text-decoration:line-through'>1/24/23</span></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.9159in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'text-decoration:line-through'>DocStar setup</span></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.3388in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.0361in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.1465in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.3625in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Deleted 04/2=
+7/2026</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.3798in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>ASP21DB1-DEV=
+</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.175in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Training</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.6833in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Project Test=
+ing</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.0791in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>5/18/26</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.9159in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>4/13/26<span
+  style=3D'mso-spacerun:yes'>=C2=A0 </span>- Ecommerce UAT Testing</p>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.3388in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><a
+  href=3D"https://p21train.allsurfaces.com:3447/prophet21/#/login">P21Train=
+ing
+  Web Login</a></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.0361in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><a
+  href=3D"https://p21train.allsurfaces.com:3447/docs/Logon.aspx">Training
+  Middleware</a></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.1465in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>3447</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.3625in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in'><span style=3D'font-family:Calibri;font-size:11.0=
+pt'>Modifications
+  to </span><span style=3D'font-family:"Cascadia Mono";font-size:9.0pt'>apc=
+_od_apply_surcharge_shipping</span></p>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><span
+  style=3D'mso-spacerun:yes'>=C2=A0</span>for LOGISTICS SURCHARGE unit_quan=
+tity =3D 2</p>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt;color:black'>=
+price_page_description
+  token for OE alerts</p>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.3798in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>ASP21DB1-DEV=
+</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.175in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Business Rul=
+es</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.6833in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>WWMS</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.0791in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>07/19/26</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.9347in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>WWMS Testing=
+, plan
+  to refresh 1st Tuesday of the month</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.3388in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><a
+  href=3D"https://p21businessrules.allsurfaces.com:3444/prophet21/#/login">=
+P21Business
+  Rules Web Login</a></p>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.0361in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><a
+  href=3D"https://p21businessrules.allsurfaces.com:3444/docs/Logon.aspx">P21
+  Business Rules Middleware</a></p>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.0687in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>3444</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.968in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <ul style=3D'direction:ltr;unicode-bidi:embed;margin-top:0in;margin-botto=
+m:
+   0in'>
+   <ul type=3Ddisc style=3D'direction:ltr;unicode-bidi:embed;margin-top:0in;
+    margin-bottom:0in'>
+    <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+        style=3D'font-family:Calibri;font-size:11.0pt'>Location 221<span
+        style=3D'mso-spacerun:yes'>=C2=A0 </span>enabled for WWMS -</span><=
+/li>
+    <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+        style=3D'font-family:Calibri;font-size:11.0pt'>Enable CMECHEM<span
+        style=3D'mso-spacerun:yes'>=C2=A0 </span></span></li>
+    <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+        style=3D'font-family:Calibri;font-size:11.0pt'>SA 47981 Add Item
+        Description to WWMS to Sales Order Picking - BR
+        asi_WWMS-sales_order_picking_item_desc is active</span></li>
+    <li style=3D'margin-top:0;margin-bottom:0;vertical-align:middle'><span
+        style=3D'font-family:Calibri;font-size:11.0pt'>Has labels setup for=
+ 221</span></li>
+   </ul>
+  </ul>
+  </td>
+ </tr>
+ <tr>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.3798in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>ASP21DB1-DEV=
+</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.175in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>P21 Upgrade<=
+/p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.6833in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>P21 2025.02
+  Testing</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.0791in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>2/15/26</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.9159in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>For testing =
+P21
+  Upgrade Application, web<span style=3D'mso-spacerun:yes'>=C2=A0 </span>ve=
+rsion only</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:2.3388in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><a
+  href=3D"https://p21upgrade.allsurfaces.com:3450/prophet21/#/login">P21 Up=
+grade
+  Web Login</a></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:3.0361in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'><a
+  href=3D"https://p21upgrade.allsurfaces.com:3450/docs/logon.aspx">P21 Upgr=
+ade
+  Middleware</a></p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:1.1465in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  </td>
+  <td style=3D'border-style:solid;border-color:#A3A3A3;border-width:1pt;
+  vertical-align:top;width:4.3625in;padding:2.0pt 3.0pt 2.0pt 3.0pt'>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Version
+  25.2.5776.92</p>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>&nbsp;</p>
+  <p style=3D'margin:0in;font-family:Calibri;font-size:11.0pt'>Currently MG=
+ &amp;
+  AZ only users enabled, Need Print Service`</p>
+  </td>
+ </tr>
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<div>
+
+<p style=3D'margin:0in'>&nbsp;</p>
+
+<p style=3D'text-align:left;margin:0in;font-family:Arial;font-size:9pt;
+color:#969696;direction:ltr'>Created with OneNote.</p>
+
+</div>
+
+</body>
+
+</html>
