@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>P21_Price_Lookup</RootNamespace>
+    <UserSecretsId>9c16609b-14e4-4b44-9aab-788ce8eebf4c</UserSecretsId>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,64 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "P21 Price Lookup";
+}
+
+<h1>P21 Price Lookup</h1>
+<p class="text-muted">Internal use only — queries P21Dev, not Production.</p>
+
+<form method="post" class="row g-3 col-md-6">
+    <div class="col-12">
+        <label asp-for="Input.CustomerId" class="form-label"></label>
+        <input asp-for="Input.CustomerId" class="form-control" autocomplete="off" />
+        <span asp-validation-for="Input.CustomerId" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="Input.ItemId" class="form-label"></label>
+        <input asp-for="Input.ItemId" class="form-control" autocomplete="off" />
+        <span asp-validation-for="Input.ItemId" class="text-danger"></span>
+    </div>
+    <div class="col-6">
+        <label asp-for="Input.QtyOrdered" class="form-label"></label>
+        <input asp-for="Input.QtyOrdered" class="form-control" />
+        <span asp-validation-for="Input.QtyOrdered" class="text-danger"></span>
+    </div>
+    <div class="col-6">
+        <label asp-for="Input.UnitName" class="form-label"></label>
+        <input asp-for="Input.UnitName" class="form-control" />
+        <span asp-validation-for="Input.UnitName" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <button type="submit" class="btn btn-primary">Get Price</button>
+    </div>
+</form>
+
+@if (Model.Result is not null)
+{
+    <div class="mt-4 col-md-6">
+        @if (Model.Result.Success)
+        {
+            <div class="alert alert-success">
+                <div class="fs-4">Unit Price: @Model.Result.NetPrice?.ToString("0.00###") / @Model.Input.UnitName</div>
+                @if (Model.Result.PricedByContract)
+                {
+                    <div>Priced by vendor contract.</div>
+                }
+                else if (Model.Result.PricePageUid is not null)
+                {
+                    <div class="text-muted">Price Page UID: @Model.Result.PricePageUid</div>
+                }
+                @if (Model.Result.ListPrice is > 0)
+                {
+                    <div class="text-muted">List Price: @Model.Result.ListPrice?.ToString("0.00###")</div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-danger">
+                @Model.Result.ErrorMessage
+            </div>
+        }
+    </div>
+}
