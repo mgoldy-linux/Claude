@@ -103,6 +103,16 @@ Any Excel workbook / Power Query connection built or edited here reads from the 
 restore of Prod, so data is current through last night: say so in the hand-off. Never create objects in the
 DW `P21` database (wiped nightly). Use Prod only when the user explicitly needs same-day data, and flag it.
 
+## Standing Rule - Verify the P21 counter on every INSERT
+
+Any time a row is INSERTed into a P21 table by raw SQL (users, alerts, anything), verify the table's counter
+is good - before and after. Read-only check: `sys.sequences.current_value` vs `MAX(<uid col>)`; find the
+sequence through `dbo.counter` by counter id (`pc_user_def` is counter `USER` / `seq_USER`, not the table
+name). Never use `NEXT VALUE FOR` to peek. Prefer drawing `NEXT VALUE FOR dbo.seq_<x>` inside the INSERT; if a uid
+was hardcoded, fix with `p21_set_counter` (`@expert_mode = 1` + `@counter_num` for `USER`). Re-check after any
+refresh/restore too - post-refresh account inserts left `seq_USER` behind on Dev and P21BusinessRules
+(2026-10-15, `pk_pc_user_def` violation). Details: memory `feedback_p21_counter_drift`.
+
 ## C# Business Rule
 
 `ASI_IM_Gen_Discontinued_Check.cs` is a Prophet21 validator that enforces a 4-step workflow when marking items as discontinued in the EDI system. It references Prophet21 SDK types — it cannot be compiled standalone.

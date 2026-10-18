@@ -25,3 +25,9 @@ Thumbs.db
 
 # Logs (operational / one-off run logs, e.g. Backup-SqlScripts.log, Cleanup-ClaudeFolder.log)
 *.log
+
+# Office temp lock files
+~$*
+
+# Bundled Bootstrap files in the price tool (restorable, not our code)
+Tools/P21-Price-Lookup/wwwroot/lib/
