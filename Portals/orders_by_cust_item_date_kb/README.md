@@ -1,6 +1,6 @@
 # Order Search tab (`orders_by_cust_item_date_kb.srd`) - kb_ retirement
 
-Status 2026-10-16: **built and verified in P21Play. NOT deployed to Prod. No .srd file written yet.**
+Status 2026-10-19: **LIVE IN PROD** (Play, Dev, BRR, Training too). View created in Prod 4:20 PM 10/19; Prod EXCEPT check 8 searches 0/0 (cust 1036638, item ROP154VXP675, order date, taker MBLONIGAN, PO SF0826, mgr 1008, rep 1077, mgr+rep); asi_orders_by_cust_item_date.srd (135,262 bytes, no embedded data) on Prod Portals; element 329 ORDERS SEARCH on ORDER SEARCH portal, old element 25 renamed ORDER SEARCH KB and off portal (rollback = swap back). Mark tested OK. Lesson: InfoMaker saves preview rows into the .srd and P21 then throws "Error serializing DW definition" - strip the data( line.
 
 Tab: ORDER SEARCH (portal ORDER SEARCH). 808 opens / 45 users from 2026-06-22 to 2026-10-16 (XE capture), the most-used tab that touches kb_ objects. It does NOT use `kb_sales_history_report_view` (only an old copy in `SRD Backup 181015\` does).
 

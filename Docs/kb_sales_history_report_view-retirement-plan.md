@@ -49,3 +49,12 @@ Portal-assignment findings: `customer_tab_sales` is NOT in any portal (it is a c
 8. Final gate: no dependents, no plan-cache hits across a month-end, rename to `kb_..._retired` for a period, then drop.
 
 Related: SA 55014 (`Portals\SA-55014\`), `Deploy-Guides\asi_sales_history_report_view_roii_costs.md`, `Deploy-Guides\asi_ribbon_cm_SYTD-ytd-sales-ribbon.md`, `Docs\SA-42483-summary.txt`.
+
+## PROD ROLLOUT TO-DO (added 2026-10-19; Play/Dev/BRR/Training done for item 1, Play done for item 2)
+Do together in one Prod window; keep each old element renamed + off the portal for rollback.
+1. Order Search - `asi_view_salesrep_division_manager` view + grants; rerun EXCEPT on Prod; deploy `asi_orders_by_cust_item_date.srd` (135,262 bytes, NO embedded data); new element on ORDER SEARCH portal (trailing backslash in library path); old `orders_by_cust_item_date_kb` -> "ORDER SEARCH KB", off portal. Reminder set 4:45 PM 10/19.
+2. Invoice Tab Price Cost Detail - `asi_fnt_invoice_line_rewards` + `asi_fnt_invoice_price_cost` + grants (SQL-Schema\CREATE-OR-ALTER-FUNCTION-asi_fnt_invoice_price_cost.sql); rerun EXCEPT on Prod invoices incl. order_type 1706 + advance bill (not found in Play); deploy `asi_invoice_tab_price_cost_detail.srd` (no embedded data); repoint element 120 (keep old). Perf: no win (13K reads already) - retirement only. Details: Portals\invoice_tab_price_cost_detail\README.md
+Lesson: InfoMaker saves preview rows into the .srd -> "Error serializing DW definition" in P21. Always strip `data(` line / close preview before saving.
+3. Customer Tab Sales - asi_fnt_customer_period_sales + grants (SQL-Schema\CREATE-OR-ALTER-FUNCTION-asi_fnt_customer_period_sales.sql); EXCEPT on Prod customers incl. 1706/advance bill; deploy asi_customer_tab_sales.srd (no embedded data); repoint customer-window tab, keep old. Perf: -35..40% reads, -50% CPU (Play). Details: Portals\customer_tab_sales\README.md
+
+**2026-10-19 DONE in Prod: item 1 Order Search (tested OK by Mark). Remaining Prod: #2 Invoice Tab Price Cost Detail, #3 Customer Tab Sales. Next candidate: sibling tab orders_by_cust_item_date_sm (ORDER SEARCH SM, element 175) - kb refs: see below.**
