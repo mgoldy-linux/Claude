@@ -30,7 +30,7 @@
 --
 -- Test:  EXEC dbo.asi_proc_sales_rep_export          (both result sets)
 --        EXEC dbo.asi_proc_sales_rep_export @ResultSet = 1   (snapshot only)
---        EXEC dbo.asi_proc_sales_rep_export @MaxSlots = 5    (fixed 5 columns, extras logged - used by the cross-check,
+--        EXEC dbo.asi_proc_sales_rep_export @MaxSlots = 5    (EXACTLY 5 columns, extras logged - used by the cross-check,
 --                                                              whose INSERT...EXEC table needs a fixed width)
 --        EXEC dbo.asi_proc_sales_rep_export @IgnoreDeleteFlag = 1   (TEST ONLY - lower envs)
 -- =============================================================================
@@ -95,7 +95,7 @@ BEGIN
     IF @ResultSet IN (0, 1)
     BEGIN
         DECLARE @n INT = ISNULL((SELECT MAX(rn) FROM #usr), 0)
-        IF @MaxSlots IS NOT NULL AND @n > @MaxSlots SET @n = @MaxSlots
+        IF @MaxSlots IS NOT NULL SET @n = @MaxSlots   -- fixed-width mode: exactly @MaxSlots columns (padded blank) so INSERT...EXEC always fits
         IF @n < 1 SET @n = 1
 
         DECLARE @cols NVARCHAR(MAX) =
