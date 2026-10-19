@@ -5,10 +5,13 @@
 -- Called daily by Export-SalesRepSftp.ps1 (scheduled task on ASWEB1). Read-only.
 -- Returns TWO result sets:
 --   1. Snapshot: one row per P21 Customer ID that has an 'Oro User' contact,
---      up to 5 distinct P21 usernames (lowercase) in salesRep 1..5 columns.
+--      distinct P21 usernames (lowercase) in salesRep 1..N Username columns.
+--      N = the MOST users any customer has in this run (ORO_INT09 requirement, Matt v1.0 10/6:
+--      "enough columns to accommodate the maximum"), minimum 1. No cap unless @MaxSlots is given.
 --      Customers with no eligible rep are included with blank rep columns.
 --   2. Exceptions (customer_id, issue, detail):
---        OVER_5_USERS      customer has > 5 eligible user IDs (extras NOT in file)
+--        OVER_MAX_USERS    ONLY when @MaxSlots is given: customer has more eligible users than @MaxSlots
+--                          (extras NOT in file). Never raised in production (no cap).
 --        NO_USERS_UD       active salesrep_id has no users_ud row (house / placeholder accounts are
 --                          ignored per Matt 10/2 - see the pattern in the exceptions query)
 --        NO_ELIGIBLE_USER  salesrep_id maps to users_ud row(s), but none are
@@ -27,11 +30,14 @@
 --
 -- Test:  EXEC dbo.asi_proc_sales_rep_export          (both result sets)
 --        EXEC dbo.asi_proc_sales_rep_export @ResultSet = 1   (snapshot only)
+--        EXEC dbo.asi_proc_sales_rep_export @MaxSlots = 5    (fixed 5 columns, extras logged - used by the cross-check,
+--                                                              whose INSERT...EXEC table needs a fixed width)
 --        EXEC dbo.asi_proc_sales_rep_export @IgnoreDeleteFlag = 1   (TEST ONLY - lower envs)
 -- =============================================================================
 CREATE OR ALTER PROCEDURE dbo.asi_proc_sales_rep_export
     @IgnoreDeleteFlag BIT = 0,   -- TEST ONLY: 1 = treat deleted logins as eligible (lower envs with stale delete flags). NEVER 1 in Prod.
-    @ResultSet TINYINT = 0   -- 0 = both (production), 1 = snapshot only, 2 = exceptions only (lets INSERT...EXEC capture one set for testing)
+    @ResultSet TINYINT = 0,  -- 0 = both (production), 1 = snapshot only, 2 = exceptions only (lets INSERT...EXEC capture one set for testing)
+    @MaxSlots INT = NULL     -- NULL = no cap, columns grow to the biggest customer (production). A number caps the columns and logs the rest.
 AS
 BEGIN
     SET NOCOUNT ON
@@ -84,31 +90,43 @@ BEGIN
           FROM #usr) AS y
       ON y.customer_id = x.customer_id AND y.user_id = x.user_id
 
-    -- Result set 1: snapshot
+    -- Result set 1: snapshot. Width is dynamic: one MAX(CASE) column per slot up to the largest rn (or @MaxSlots).
+    -- sp_executesql sees the #cust / #usr temp tables of this procedure; only integers are concatenated into the text.
     IF @ResultSet IN (0, 1)
-    SELECT CONVERT(VARCHAR(20), cu.customer_id)                   AS [P21 Customer ID],
-           MAX(CASE WHEN x.rn = 1 THEN x.user_id END)            AS [salesRep 1 Username],
-           MAX(CASE WHEN x.rn = 2 THEN x.user_id END)            AS [salesRep 2 Username],
-           MAX(CASE WHEN x.rn = 3 THEN x.user_id END)            AS [salesRep 3 Username],
-           MAX(CASE WHEN x.rn = 4 THEN x.user_id END)            AS [salesRep 4 Username],
-           MAX(CASE WHEN x.rn = 5 THEN x.user_id END)            AS [salesRep 5 Username]
+    BEGIN
+        DECLARE @n INT = ISNULL((SELECT MAX(rn) FROM #usr), 0)
+        IF @MaxSlots IS NOT NULL AND @n > @MaxSlots SET @n = @MaxSlots
+        IF @n < 1 SET @n = 1
+
+        DECLARE @cols NVARCHAR(MAX) =
+            (SELECT N',' + CHAR(13) + CHAR(10) + N'           MAX(CASE WHEN x.rn = ' + CONVERT(NVARCHAR(10), s.i)
+                    + N' THEN x.user_id END) AS [salesRep ' + CONVERT(NVARCHAR(10), s.i) + N' Username]'
+             FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS i FROM sys.all_columns) AS s
+             WHERE s.i <= @n
+             ORDER BY s.i
+             FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)')
+
+        DECLARE @sql NVARCHAR(MAX) =
+            N'SELECT CONVERT(VARCHAR(20), cu.customer_id) AS [P21 Customer ID]' + @cols + N'
     FROM #cust AS cu
     LEFT JOIN #usr AS x ON x.customer_id = cu.customer_id
     GROUP BY cu.customer_id
-    ORDER BY cu.customer_id
+    ORDER BY cu.customer_id'
+        EXEC sys.sp_executesql @sql
+    END
 
     -- Result set 2: exceptions (nothing silently omitted)
     IF @ResultSet IN (0, 2)
     SELECT CONVERT(VARCHAR(20), customer_id) AS customer_id, issue, detail
     FROM (
-        SELECT customer_id, 'OVER_5_USERS' AS issue,
+        SELECT customer_id, 'OVER_MAX_USERS' AS issue,
                CONVERT(VARCHAR(10), COUNT(*)) + ' eligible users; omitted: ' +
                ISNULL(STUFF((SELECT ',' + z.user_id FROM #usr AS z
-                             WHERE z.customer_id = x.customer_id AND z.rn > 5
+                             WHERE z.customer_id = x.customer_id AND z.rn > ISNULL(@MaxSlots, 2147483647)
                              ORDER BY z.rn FOR XML PATH('')), 1, 1, ''), '') AS detail
         FROM #usr AS x
         GROUP BY customer_id
-        HAVING COUNT(*) > 5
+        HAVING COUNT(*) > ISNULL(@MaxSlots, 2147483647)   -- no @MaxSlots = nothing is omitted, so nothing to report
 
         UNION ALL
         SELECT a.customer_id, 'NO_USERS_UD', a.salesrep_id

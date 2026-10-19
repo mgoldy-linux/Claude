@@ -8,7 +8,10 @@
 -- pipeline, no ROW_NUMBER pivot), UNPIVOT the proc's snapshot back to
 -- (customer, slot, username), then compare both ways with EXCEPT.
 -- Expected result of every check: 0 rows (except 0a / 0b which are informational).
--- Run the whole script after the proc has been created/updated (needs @ResultSet).
+-- Run the whole script after the proc has been created/updated (needs @ResultSet and @MaxSlots).
+-- NOTE: production runs the proc with NO cap (columns = most users any customer has; ORO_INT09).
+-- This script calls it with @MaxSlots = 5 because INSERT...EXEC needs a fixed-width table; checks 1-9
+-- therefore prove slots 1-5 and the overflow log. Check 10 (end of script) proves the uncapped width.
 -- =============================================================================
 SET NOCOUNT ON
 DECLARE @ign BIT = 0   -- 1 = test run that ignores users.delete_flag (must match the proc's @IgnoreDeleteFlag)
@@ -18,7 +21,7 @@ IF OBJECT_ID('tempdb..#proc') IS NOT NULL DROP TABLE #proc
 CREATE TABLE #proc (
     cust VARCHAR(20) NOT NULL PRIMARY KEY,
     u1 VARCHAR(30) NULL, u2 VARCHAR(30) NULL, u3 VARCHAR(30) NULL, u4 VARCHAR(30) NULL, u5 VARCHAR(30) NULL)
-INSERT #proc EXEC dbo.asi_proc_sales_rep_export @IgnoreDeleteFlag = @ign, @ResultSet = 1
+INSERT #proc EXEC dbo.asi_proc_sales_rep_export @IgnoreDeleteFlag = @ign, @ResultSet = 1, @MaxSlots = 5
 
 -- ---- Proc output unpivoted to (customer, slot, username) --------------------
 IF OBJECT_ID('tempdb..#got') IS NOT NULL DROP TABLE #got
@@ -114,14 +117,14 @@ WHERE NOT EXISTS (SELECT 1 FROM dbo.users u WHERE LOWER(u.id) = g.usr AND (u.del
 
 PRINT '--- 7. Overflow customers: independent count of users beyond 5 vs proc exceptions (expect 0 rows) ---'
 DECLARE @exc TABLE (customer_id VARCHAR(20), issue VARCHAR(30), detail VARCHAR(4000))
-INSERT @exc EXEC dbo.asi_proc_sales_rep_export @IgnoreDeleteFlag = @ign, @ResultSet = 2
+INSERT @exc EXEC dbo.asi_proc_sales_rep_export @IgnoreDeleteFlag = @ign, @ResultSet = 2, @MaxSlots = 5
 SELECT e.cust, 'overflow not logged' AS issue
 FROM (SELECT cust FROM #exp_ranked GROUP BY cust HAVING MAX(slot) > 5) AS e
-WHERE NOT EXISTS (SELECT 1 FROM @exc x WHERE x.customer_id = e.cust AND x.issue = 'OVER_5_USERS')
+WHERE NOT EXISTS (SELECT 1 FROM @exc x WHERE x.customer_id = e.cust AND x.issue = 'OVER_MAX_USERS')
 UNION ALL
 SELECT x.customer_id, 'logged but not an overflow'
 FROM @exc x
-WHERE x.issue = 'OVER_5_USERS'
+WHERE x.issue = 'OVER_MAX_USERS'
   AND NOT EXISTS (SELECT 1 FROM #exp_ranked e WHERE e.cust = x.customer_id AND e.slot > 5)
 
 PRINT '--- 8. Exceptions: house / placeholder accounts must NOT be reported as NO_USERS_UD; real reps without a login must be (expect 0 rows) ---'
@@ -154,4 +157,11 @@ LEFT JOIN (SELECT DISTINCT customer_id FROM dbo.customer) cu_any ON cu_any.custo
 WHERE r.contact_role_id = 'Oro User' AND c.delete_flag = 'N' AND c.address_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM dbo.customer cu WHERE cu.customer_id = c.address_id AND cu.delete_flag = 'N')
 
-PRINT '--- Done. All numbered checks 1-9 should return no rows. ---'
+PRINT '--- 10. Uncapped (production) width: proc column count must equal the largest number of users any customer has ---'
+-- The uncapped proc output has a variable number of columns, so it cannot be captured with INSERT...EXEC into a
+-- fixed table. Read the column count from the result of the next statement (last column name = salesRep <N> Username)
+-- and compare it with expected_max_users below. They must be the same number.
+SELECT ISNULL(MAX(slot), 1) AS expected_max_users FROM #exp_ranked
+EXEC dbo.asi_proc_sales_rep_export @IgnoreDeleteFlag = @ign, @ResultSet = 1   -- last column header = 'salesRep <expected_max_users> Username'
+
+PRINT '--- Done. Checks 1-9 should return no rows; check 10: last column number = expected_max_users. ---'
