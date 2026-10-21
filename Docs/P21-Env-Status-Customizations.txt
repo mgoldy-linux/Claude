@@ -2,7 +2,7 @@
 P21 ENVIRONMENT STATUS - CUSTOMIZATIONS / OPEN ITEMS
 ========================================================================
 Source:       C:\Claude\Docs\P21 Env Status-20260827.pdf
-Last updated: 2026-10-21  (SA 55980 Dev task paths fixed after folder move, Stage task next; prior: Play-Dev export task runs as SYSTEM on ASWEB1; prior: kb_sales_history_report_view retirement, Zilliant sync timeouts on BRR)
+Last updated: 2026-10-21  (Zilliant Global Price Level Name API write tested on Dev + BRR; prior: SA 55980 Dev task paths fixed after folder move, Stage task next; prior: Play-Dev export task runs as SYSTEM on ASWEB1; prior: kb_sales_history_report_view retirement, Zilliant sync timeouts on BRR)
 Maintainer:   Update this file whenever a customization is added,
               changed, or closed in any environment.
 
@@ -96,6 +96,7 @@ P21Dev  (Dev)  -  middleware 3448
   - Nightly app pool reset task on AHI-API1 confirmed by Tony 2026-10-14; run time not yet captured   [REFERENCE]
   - SA 57068 purchasing portals - fn v2 + grants; V1/V4 added, six old elements deleted 2026-10-16; BO AGE OLD deleted by mistake (portal PURCH OPEN BO AGE (30-60) empty). Reads Prod share, no file moves needed. Lower-env portals not a priority; copy from Prod when Prod is done   [DONE]
   - ZILLIANTAPISVC-DEV (Zilliant API service account) - created 2026-10-15; users row identical to the BRR one (System Admin, no overrides). Typo twin 'ZILLIANTAPISVC-DEV`' exists only on BRR (inactive)   [REFERENCE]
+  - Global Price Level Name via Transaction API (Price Page SA 51350, Price Book SA 53150 per the descriptions) - API follows the W (web) DynaChange row per role. Price Page: System Admin enabled on R 3056 + W 3386 (W protect set to 0 by SQL 2026-10-20); R rows ALL/Mgmt/Marketing/Vendor re-protected, but W rows 3384/3385/3387 still protect 0 (TO REVERT). Price Book (R 2048-2050/3006/3062, W 3472-3475) untouched, all protected. Test pages 121149-121154 on Dev   [IN TEST]
   - kb_sales_history_report_view retirement - Play has: asi_view_salesrep_division_manager; asi_fnt_invoice_line_rewards + asi_fnt_invoice_price_cost (Invoice Tab Price Cost Detail, element 120 .srd rebuilt by Mark, works); asi_fnt_customer_period_sales (Customer Tab Sales; .srd NOT built yet). All with grants to p21_application_role + PxxiUser. Order Search element 329 ORDERS SEARCH on ORDER SEARCH, old element 25 = ORDER SEARCH KB off portal   [IN TEST]
 
 ========================================================================
@@ -182,6 +183,7 @@ Business Rules  (WWMS)  -  middleware 3444   -  last refresh 2026-09-11
   - SA 55980 asi_proc_sales_rep_export - re-run 2026-10-02 (not one of the 4 Oro instances)   [IN TEST]
   - SA 57068 purchasing portals - fn asi_fn_purchasing_open_bo_age v2 + grants; V1/V4 added and six old elements deleted 2026-10-16; also deleted BOP Order Detail V2 / Manager V3 / Summary V3 (red-X, files absent on this share) and BO AGE OLD, so 3 portals have 0 elements. Old BO Age/NonSamples .srd not yet moved to BusinessRules Portal Cleanup   [DONE]
   - Zilliant sync (P21ZilliantSync, Environment UAT) POSTs to /uiserver0/api/v2/transaction time out at 180 s (2026-10-19). ZILLIANTAPISVC-DEV created here 10/19 (System Admin; token + GET services work). Token endpoint is /api/security/token/ (no /uiserver0). Cause of the hang not found; uiserver0 app pool not restarted; awaiting Oleksandr's exact failing request 10/20   [IN TEST]
+  - Global Price Level Name via API (Price Page) - 10/20: enabling the field on every Price Page DynaChange made the API write; Mark then re-protected all but System Admin R 3056 (12:39-12:54); BRR has no W rows. Final BRR result not reported to Claude. Price Book not tested here. Test pages 121042-121047   [IN TEST]
   - kb_ retirement Order Search tab - asi_view_salesrep_division_manager + asi_orders_by_cust_item_date.srd (element 'ORDERS SEARCH' on ORDER SEARCH portal) deployed to BRR 2026-10-19 per Mark (not independently verified by Claude); old element kept off-portal for rollback   [DONE]
 
 ========================================================================
