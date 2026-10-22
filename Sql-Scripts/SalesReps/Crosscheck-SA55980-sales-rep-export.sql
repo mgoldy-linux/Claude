@@ -14,7 +14,7 @@
 -- therefore prove slots 1-5 and the overflow log. Check 10 (end of script) proves the uncapped width.
 -- =============================================================================
 SET NOCOUNT ON
-DECLARE @ign BIT = 0   -- 1 = test run that ignores users.delete_flag (must match the proc's @IgnoreDeleteFlag)
+DECLARE @ign BIT = 1   -- 1 = test run that ignores users.delete_flag (must match the proc's @IgnoreDeleteFlag)
 
 -- ---- Capture the proc output (snapshot only) --------------------------------
 IF OBJECT_ID('tempdb..#proc') IS NOT NULL DROP TABLE #proc
@@ -159,9 +159,9 @@ WHERE r.contact_role_id = 'Oro User' AND c.delete_flag = 'N' AND c.address_id IS
 
 PRINT '--- 10. Uncapped (production) width: proc column count must equal the largest number of users any customer has ---'
 -- The uncapped proc output has a variable number of columns, so it cannot be captured with INSERT...EXEC into a
--- fixed table. Read the column count from the result of the next statement (last column name = salesRep <N> Username)
+-- fixed table. Read the column count from the result of the next statement (last column name = Assigned Sales Representatives <N> Username)
 -- and compare it with expected_max_users below. They must be the same number.
 SELECT ISNULL(MAX(slot), 1) AS expected_max_users FROM #exp_ranked
-EXEC dbo.asi_proc_sales_rep_export @IgnoreDeleteFlag = @ign, @ResultSet = 1   -- last column header = 'salesRep <expected_max_users> Username'
+EXEC dbo.asi_proc_sales_rep_export @IgnoreDeleteFlag = @ign, @ResultSet = 1   -- last column header = 'Assigned Sales Representatives <expected_max_users> Username'
 
 PRINT '--- Done. Checks 1-9 should return no rows; check 10: last column number = expected_max_users. ---'

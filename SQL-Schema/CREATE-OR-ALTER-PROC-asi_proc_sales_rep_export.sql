@@ -5,7 +5,7 @@
 -- Called daily by Export-SalesRepSftp.ps1 (scheduled task on ASWEB1). Read-only.
 -- Returns TWO result sets:
 --   1. Snapshot: one row per P21 Customer ID that has an 'Oro User' contact,
---      distinct P21 usernames (lowercase) in salesRep 1..N Username columns.
+--      distinct P21 usernames (lowercase) in 'Assigned Sales Representatives 1..N Username' columns.
 --      N = the MOST users any customer has in this run (ORO_INT09 requirement, Matt v1.0 10/6:
 --      "enough columns to accommodate the maximum"), minimum 1. No cap unless @MaxSlots is given.
 --      Customers with no eligible rep are included with blank rep columns.
@@ -100,7 +100,7 @@ BEGIN
 
         DECLARE @cols NVARCHAR(MAX) =
             (SELECT N',' + CHAR(13) + CHAR(10) + N'           MAX(CASE WHEN x.rn = ' + CONVERT(NVARCHAR(10), s.i)
-                    + N' THEN x.user_id END) AS [salesRep ' + CONVERT(NVARCHAR(10), s.i) + N' Username]'
+                    + N' THEN x.user_id END) AS [Assigned Sales Representatives ' + CONVERT(NVARCHAR(10), s.i) + N' Username]'
              FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS i FROM sys.all_columns) AS s
              WHERE s.i <= @n
              ORDER BY s.i
